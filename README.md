@@ -72,18 +72,19 @@ func main() {
     // 浮点型字符串+整型
     // 最终输出结果的底层类型将变为浮点型
     // example:
-    // a = '333.910'+0.01
-	src := []byte(`a = '333.910'+0.01`)
+	src := []byte(`
+        a = 123;
+		b = a + 456.1 + (11-2*(30-1))
+    `)
     exec, err := goExpr.NewExpr(src)
     fmt.Println(expr.GetVal("a"))
     // output
-    // &{ FLOAT 333.92} <nil>
+    // &{ FLOAT 532.1} <nil>
 
     --------------------------------------
 
     // 其他字符串+整型将会报错
     // example
-    // a = "abcwwww1230"+0.01
 	src := []byte(`a = "abcwwww1230"+0.01`)
     exec, err := goExpr.NewExpr(src)
     fmt.Println(expr.GetVal("a"))
@@ -94,7 +95,7 @@ func main() {
 
 ---
 
-####  请注意，goExpr 优先使用 Golang 的算术符号优先级进行数据计算。
+#### 请注意，goExpr 优先参考了 Golang 的算术符号优先级进行数据计算。
 **每个语言对算术符号的优先级处理都有一定区别，如，针对以下表达式进行计算时：**
 
 ``` golang

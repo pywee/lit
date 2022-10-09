@@ -269,8 +269,8 @@ func findExprBetweenSymbool(l, m, r *structure) (bool, *exprResult) {
 			if _, err = strconv.ParseInt(lit, 10, 64); err != nil {
 				return false, nil
 			}
-			l.Lit = lit
 			lTok = "INT"
+			l.Lit = lit
 		}
 		if !isFloat && !isInt {
 			return false, nil
