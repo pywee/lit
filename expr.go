@@ -83,7 +83,7 @@ func (r *Expression) parse(expr []*structure, pos token.Position) error {
 		}
 	} else {
 		// 解析变量
-		// output(":", expr)
+		output(":", expr)
 
 		// FIXME 仅针对等于号右边是表达式的情况
 		// 其余情况尚未处理
@@ -141,12 +141,18 @@ func (r *Expression) findExprK(expr []*structure, pos string) ([]*structure, err
 	// }
 
 	for k, v := range expr {
-		if v.Tok == "IDENT" && r.IsVariableOrFunction(v.Lit) {
-			ret, err := r.Get(v.Lit)
-			if err != nil {
-				return nil, err
+		if v.Tok == "IDENT" {
+			if b := strings.ToLower(v.Lit); b == "true" || b == "false" {
+				v.Tok = "BOOL"
+				v.Lit = strings.ToLower(v.Lit)
+				expr[k] = v
+			} else if r.IsVariableOrFunction(v.Lit) {
+				ret, err := r.Get(v.Lit)
+				if err != nil {
+					return nil, err
+				}
+				expr[k] = ret
 			}
-			expr[k] = ret
 		}
 	}
 
@@ -247,6 +253,7 @@ func findExprBetweenSymbool(l, m, r *structure) (bool, *exprResult) {
 	)
 
 	// 弱类型处理
+	// 数字字符串转为整型或浮点型
 	if lTok == "STRING" || lTok == "CHAR" {
 		lit := formatString(l.Lit)
 		isFloat, err := regexp.MatchString(`^[0-9]+[.]+[0-9]*$`, lit)
@@ -276,7 +283,6 @@ func findExprBetweenSymbool(l, m, r *structure) (bool, *exprResult) {
 			return false, nil
 		}
 	}
-
 	if rTok == "STRING" || rTok == "CHAR" {
 		_, err := strconv.ParseInt(formatString(r.Lit), 10, 64)
 		if err != nil {
@@ -284,6 +290,25 @@ func findExprBetweenSymbool(l, m, r *structure) (bool, *exprResult) {
 		}
 		rTok = "INT"
 		r.Lit = formatString(r.Lit)
+	}
+
+	// 弱类型处理
+	// 布尔值转整型
+	if l.Lit == "true" {
+		lTok = "INT"
+		l.Lit = "1"
+	}
+	if l.Lit == "false" {
+		lTok = "INT"
+		l.Lit = "0"
+	}
+	if r.Lit == "true" {
+		rTok = "INT"
+		r.Lit = "1"
+	}
+	if r.Lit == "false" {
+		rTok = "INT"
+		r.Lit = "0"
 	}
 
 	if lTok == "INT" && rTok == "INT" {
