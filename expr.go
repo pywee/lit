@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/scanner"
 	"go/token"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -31,7 +32,7 @@ func NewExpr(src []byte) (*Expression, error) {
 
 		if tok.String() == ";" {
 			if err := result.parse(list, fset.Position(pos)); err != nil {
-				fmt.Printf("%s", err.Error())
+				// fmt.Printf("%s", err.Error())
 				return nil, err
 			}
 			list = nil
@@ -65,7 +66,8 @@ func (r *Expression) parse(expr []*structure, pos token.Position) error {
 
 	// 执行函数
 	// print(a);
-	if rLen := len(result); rLen >= 3 && result[0].Tok == "IDENT" && result[1].Tok == "(" && result[rLen-1].Tok == ")" {
+	rLen := len(result)
+	if rLen >= 3 && result[0].Tok == "IDENT" && result[1].Tok == "(" && result[rLen-1].Tok == ")" {
 		if r.IsVariableOrFunction(result[0].Lit) {
 			if len(result[2:rLen-1]) == 1 {
 				varT := result[2 : rLen-1][0]
@@ -81,7 +83,7 @@ func (r *Expression) parse(expr []*structure, pos token.Position) error {
 		}
 	} else {
 		// 解析变量
-		// output(",", expr)
+		// output(":", expr)
 
 		// FIXME 仅针对等于号右边是表达式的情况
 		// 其余情况尚未处理
@@ -134,6 +136,10 @@ func (r *Expression) findExprK(expr []*structure, pos string) ([]*structure, err
 		return nil, ErrorWrongSentence
 	}
 
+	// for _, v := range expr {
+	// 	fmt.Println(",,,,,", v)
+	// }
+
 	for k, v := range expr {
 		if v.Tok == "IDENT" && r.IsVariableOrFunction(v.Lit) {
 			ret, err := r.Get(v.Lit)
@@ -166,7 +172,6 @@ func (r *Expression) findExprK(expr []*structure, pos string) ([]*structure, err
 			if err != nil {
 				return nil, err
 			}
-
 			result := expr[:startIdx]
 			result = append(result, temp...)
 			return r.findExprK(append(result, expr[endIdx+1:]...), pos)
@@ -184,7 +189,7 @@ func parsePlusReduceMulDivB(arr []*structure, pos string) ([]*structure, error) 
 	}
 
 	if len(result) != 1 {
-		return nil, ErrorWrongSentence
+		return nil, WithError(1002, fmt.Sprintf("%s wrong sentence", pos))
 	}
 	return result, nil
 }
@@ -220,8 +225,9 @@ func parsePlusReduceMulDiv(arr []string, expr []*structure) []*structure {
 				}
 				result = append(expr[:k-1], middle)
 				result = append(result, expr[k+2:]...)
+				return parsePlusReduceMulDiv(arr, result)
 			}
-			return parsePlusReduceMulDiv(arr, result)
+			return nil
 		}
 	}
 
@@ -239,6 +245,47 @@ func findExprBetweenSymbool(l, m, r *structure) (bool, *exprResult) {
 		mTok    = m.Tok
 		rTok    = r.Tok
 	)
+
+	// 弱类型处理
+	if lTok == "STRING" || lTok == "CHAR" {
+		lit := formatString(l.Lit)
+		isFloat, err := regexp.MatchString(`^[0-9]+[.]+[0-9]*$`, lit)
+		if err != nil {
+			return false, nil
+		}
+		if isFloat {
+			if _, err = strconv.ParseFloat(lit, 64); err != nil {
+				return false, nil
+			}
+			lTok = "FLOAT"
+			l.Lit = lit
+		}
+
+		isInt, err := regexp.MatchString(`^[0-9]+$`, lit)
+		if err != nil {
+			return false, nil
+		}
+		if isInt {
+			if _, err = strconv.ParseInt(lit, 10, 64); err != nil {
+				return false, nil
+			}
+			l.Lit = lit
+			lTok = "INT"
+		}
+		if !isFloat && !isInt {
+			return false, nil
+		}
+	}
+
+	if rTok == "STRING" || rTok == "CHAR" {
+		_, err := strconv.ParseInt(formatString(r.Lit), 10, 64)
+		if err != nil {
+			return false, nil
+		}
+		rTok = "INT"
+		r.Lit = formatString(r.Lit)
+	}
+
 	if lTok == "INT" && rTok == "INT" {
 		exprTyp = "INT"
 		left, _ = strconv.ParseInt(l.Lit, 10, 64)

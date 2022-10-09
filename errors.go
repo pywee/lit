@@ -14,3 +14,9 @@ var (
 func WithError(code int, err string) error {
 	return fmt.Errorf("found error (code %d), notice: %s\n", code, err)
 }
+
+func temp(arr []*structure) {
+	for _, v := range arr {
+		fmt.Println(v)
+	}
+}

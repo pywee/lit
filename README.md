@@ -15,7 +15,7 @@ go get github.com/pywee/goExpr
 
 示例：
 
-```
+```golang
 import "github.com/pywee/goExpr"
 
 func main() {
@@ -50,6 +50,47 @@ func main() {
     // &{ INT 125} <nil>
 }
 ```
+---
+
+**支持简单的变量操作**
+```golang
+	src := []byte(`
+        a = 123;
+        b = a + 456
+    `)
+    exec, err := goExpr.NewExpr(src)
+    fmt.Println(expr.GetVal("b"))
+
+    // output
+    // &{ INT 579} <nil>
+```
+---
+
+**支持针对字符串类型的整型或浮点型参与算术运算**
+
+```golang
+    // 浮点型字符串+整型
+    // 最终输出结果的底层类型将变为浮点型
+    // example:
+    // a = '333.910'+0.01
+	src := []byte(`a = '333.910'+0.01`)
+    exec, err := goExpr.NewExpr(src)
+    fmt.Println(expr.GetVal("a"))
+    // output
+    // &{ FLOAT 333.92} <nil>
+
+    --------------------------------------
+
+    // 其他字符串+整型将会报错
+    // example
+    // a = "abcwwww1230"+0.01
+	src := []byte(`a = "abcwwww1230"+0.01`)
+    exec, err := goExpr.NewExpr(src)
+    fmt.Println(expr.GetVal("a"))
+    // output 
+    // found error (code 1002), notice: xx:xx wrong sentence
+
+```
 
 ---
 
@@ -67,5 +108,6 @@ func main() {
 ---
 
 ##### goExpr 算术符号优先级
-第一级  ``` * / % ```
-第二级  ``` + - | & ^ ```
+第一级  ``` () ```
+第二级  ``` * / % ```
+第三级  ``` + - | & ^ ```
