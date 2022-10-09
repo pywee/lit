@@ -20,25 +20,25 @@ import "github.com/pywee/goExpr"
 func main() {
 
     // Golang 语言原生计算 
+    println((2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11))) / 10 * 2)
+    println(12/333+31+(5/10)-6|100)
     // output 
     // +1.600000e+001
     // 125
-	println((2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11))) / 10 * 2)
-    println(12/333+31+(5/10)-6|100)
 
 
     // 使用 goExpr 计算文本中的数据
     // 表达式文本
-	exprs := []byte(`
+    exprs := []byte(`
         a = (2 + 100^2-(10*1.1-22+(22|11)))/10*2;
         b = a+11203-(11*10&2/16);
         c = 12/333+31+(5/10)-6|100;
     `)
 
-	exec, err := goExpr.NewExpr(exprs)
+    exec, err := goExpr.NewExpr(exprs)
     valueA := exec.Get("a")
-	valueB := goExpr.Get("b")
-	valueC := goExpr.Get("c")
+    valueB := goExpr.Get("b")
+    valueC := goExpr.Get("c")
     println(valueA)
     println(valueB)
     println(valueC)
