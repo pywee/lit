@@ -93,6 +93,18 @@ func main() {
 
 ```
 
+**布尔值类型参与算术运算时将被底层转为整型**
+```golang
+    // 布尔值参与运算时 底层会将 true 转为 1, false 转为 0
+    // true = 1
+    // false = 2
+    src := []byte(`a = true - 1`)
+    exec, err := goExpr.NewExpr(src)
+    fmt.Println(expr.GetVal("a"))
+    // output
+    // 0
+```
+
 ---
 
 #### 请注意，goExpr 优先参考了 Golang 的算术符号优先级进行数据计算。
