@@ -33,6 +33,14 @@ type exprResult struct {
 	Value interface{}
 }
 
+func (s *structure) Val() string {
+	return s.Lit
+}
+
+func (s *structure) Type() string {
+	return s.Tok
+}
+
 // IsVariableOrFunction 判断是否为标准变量和函数名称
 func (r *Expression) IsVariableOrFunction(name string) bool {
 	match, _ := regexp.MatchString(`^[a-zA-Z_]{1}[a-zA-Z0-9_]{0,}$`, name)

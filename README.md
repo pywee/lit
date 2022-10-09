@@ -54,12 +54,12 @@ func main() {
 
 **支持简单的变量操作**
 ```golang
-	src := []byte(`
+    src := []byte(`
         a = 123;
         b = a + 456
     `)
     exec, err := goExpr.NewExpr(src)
-    fmt.Println(expr.GetVal("b"))
+    fmt.Println(expr.Get("b"))
 
     // output
     // &{ INT 579} <nil>
@@ -72,12 +72,12 @@ func main() {
     // 浮点型字符串+整型
     // 最终输出结果的底层类型将变为浮点型
     // example:
-	src := []byte(`
+    src := []byte(`
         a = 123;
-		b = a + 456.1 + (11-2*(30-1))
+        b = a + 456.1 + (11-2*(30-1))
     `)
     exec, err := goExpr.NewExpr(src)
-    fmt.Println(expr.GetVal("a"))
+    fmt.Println(expr.Get("a"))
     // output
     // &{ FLOAT 532.1} <nil>
 
@@ -85,7 +85,7 @@ func main() {
 
     // 其他字符串+整型将会报错
     // example
-	src := []byte(`a = "abcwwww1230"+0.01`)
+    src := []byte(`a = "abcwwww1230"+0.01`)
     exec, err := goExpr.NewExpr(src)
     fmt.Println(expr.GetVal("a"))
     // output 
