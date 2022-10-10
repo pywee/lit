@@ -56,34 +56,36 @@ func NewExpr(src []byte) (*Expression, error) {
 // parse 解析器主入口
 func (r *Expression) parse(expr []*structure, pos token.Position) error {
 	var vName string
-	var result []*structure
+	// var result []*structure
 	if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", expr); vLeftListEndIdx != -1 {
-		result = expr[vLeftListEndIdx+1:]
+		// result = expr[vLeftListEndIdx+1:]
 		vName = vleft[0].Lit
 	} else {
-		result = expr
+		// result = expr
 	}
 
 	// 执行函数
 	// print(a);
-	rLen := len(result)
-	if rLen >= 3 && result[0].Tok == "IDENT" && result[1].Tok == "(" && result[rLen-1].Tok == ")" {
-		if r.IsVariableOrFunction(result[0].Lit) {
-			if len(result[2:rLen-1]) == 1 {
-				varT := result[2 : rLen-1][0]
-				if r.IsVariableOrFunction(varT.Tok) {
-					if ret, ok := r.publicVariable[varT.Lit]; !ok {
-						return ErrorNotFoundVariable
-					} else {
-						fmt.Println("变量被函数调用", ret)
-					}
-				}
-			}
+	rLen := len(expr)
+	if rLen >= 3 && expr[0].Tok == "IDENT" && expr[1].Tok == "(" && expr[rLen-1].Tok == ")" {
+		funcName := expr[0]
+		if r.IsVariableOrFunction(funcName.Lit) {
+			exprT := expr[2 : rLen-1]
+			fmt.Println(r.parseExpr(exprT, pos.String()))
+			// fmt.Println(funcName.Lit)
+
+			// if r.IsVariableOrFunction(varT.Tok) {
+			// 	ret, ok := r.publicVariable[varT.Lit]
+			// 	if !ok {
+			// 		return ErrorNotFoundVariable
+			// 	}
+			// 	fmt.Println("变量被函数调用", ret)
+			// }
 			// output("<<<<", result[2:rLen-1])
 		}
 	} else {
 		// 解析变量
-		output(":", expr)
+		// output(":", expr)
 
 		// FIXME 仅针对等于号右边是表达式的情况
 		// 其余情况尚未处理
@@ -96,6 +98,8 @@ func (r *Expression) parse(expr []*structure, pos token.Position) error {
 			r.publicVariable[vName] = rv[0]
 		}
 	}
+
+	// temp(result)
 
 	// FIXME
 
