@@ -1,6 +1,7 @@
 package goExpr
 
 import (
+	"errors"
 	"fmt"
 	"go/scanner"
 	"go/token"
@@ -33,7 +34,7 @@ func NewExpr(src []byte) (*Expression, error) {
 		if tok.String() == ";" {
 			if err := result.parse(list, fset.Position(pos)); err != nil {
 				// fmt.Printf("%s", err.Error())
-				return nil, err
+				return nil, errors.New(fset.Position(pos).String() + " error: " + err.Error())
 			}
 			list = nil
 			continue
@@ -56,12 +57,8 @@ func NewExpr(src []byte) (*Expression, error) {
 // parse 解析器主入口
 func (r *Expression) parse(expr []*structure, pos token.Position) error {
 	var vName string
-	// var result []*structure
 	if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", expr); vLeftListEndIdx != -1 {
-		// result = expr[vLeftListEndIdx+1:]
 		vName = vleft[0].Lit
-	} else {
-		// result = expr
 	}
 
 	// 执行函数
@@ -70,38 +67,76 @@ func (r *Expression) parse(expr []*structure, pos token.Position) error {
 	if rLen >= 3 && expr[0].Tok == "IDENT" && expr[1].Tok == "(" && expr[rLen-1].Tok == ")" {
 		funcName := expr[0]
 		if r.IsVariableOrFunction(funcName.Lit) {
-			exprT := expr[2 : rLen-1]
-			fmt.Println(r.parseExpr(exprT, pos.String()))
-			// fmt.Println(funcName.Lit)
+			fArgs, err := checkFunctionName(funcName.Lit)
+			if err != nil {
+				return err
+			}
 
-			// if r.IsVariableOrFunction(varT.Tok) {
-			// 	ret, ok := r.publicVariable[varT.Lit]
-			// 	if !ok {
-			// 		return ErrorNotFoundVariable
-			// 	}
-			// 	fmt.Println("变量被函数调用", ret)
-			// }
-			// output("<<<<", result[2:rLen-1])
+			// 获取传入执行函数的具体参数
+			// 并将它们的结果值递归解析出来
+			args := getFunctionArgList(expr[2 : rLen-1])
+			// fmt.Println(args, "1")
+
+			argsLen := len(args)
+			if fArgs.MustAmount > argsLen {
+				return ErrorArgsNotEnough
+			}
+			if fArgs.MaxAmount != -1 && fArgs.MaxAmount < argsLen {
+				return ErrorTooManyArgs
+			}
+
+			var resultExprLit string
+			var fargsLen = len(fArgs.Args)
+			for k, arg := range args {
+				if fargsLen <= k {
+					break
+				}
+
+				// 非表达式的情况 仅单个字符串
+				if len(arg) == 1 {
+					realArg := arg[0]
+					farg := fArgs.Args[k]
+					if farg.TypeName != "interface" && realArg.Tok != farg.TypeName {
+						return ErrorArgsNotSuitable
+					}
+					if r.IsVariableOrFunction(realArg.Lit) {
+						value, err := r.Get(realArg.Lit)
+						if err != nil {
+							return err
+						}
+						realArg = value
+					}
+					resultExprLit = realArg.Lit
+				} else {
+					// 表达式处理
+					afterExpr, err := r.findExprK(arg, pos.String())
+					if err != nil {
+						return err
+					}
+					if len(afterExpr) != 1 {
+						return ErrorWrongSentence
+					}
+					resultExprLit = afterExpr[0].Lit
+				}
+				// 执行函数
+				fArgs.FN(resultExprLit)
+			}
 		}
-	} else {
-		// 解析变量
-		// output(":", expr)
+		return nil
+	}
 
-		// FIXME 仅针对等于号右边是表达式的情况
-		// 其余情况尚未处理
+	// 解析变量
+	// output(":", expr)
+
+	// FIXME 仅针对等于号右边是表达式的情况
+	// 其余情况尚未处理
+	if vName != "" {
 		rv, err := r.parseExpr(expr, pos.String())
 		if err != nil {
 			return err
 		}
-		if vName != "" {
-			// fmt.Printf("set %s with value %v\n", vName, rv[0])
-			r.publicVariable[vName] = rv[0]
-		}
+		r.publicVariable[vName] = rv[0]
 	}
-
-	// temp(result)
-
-	// FIXME
 
 	return nil
 }
@@ -111,6 +146,7 @@ func (r *Expression) parse(expr []*structure, pos token.Position) error {
 // 1+2+(3%10+(11*22+1.1-10)+41+(5+9)+10)+1+(2-(10*2%2));
 // 2+1/(20-1*(3+10)-1)%2^1;
 func (r *Expression) parseExpr(src []*structure, pos string) ([]*structure, error) {
+
 	var (
 		// vLeftListEndIdx 等于号左边的数据结束位置
 		vLeftListEndIdx int
@@ -199,7 +235,7 @@ func parsePlusReduceMulDivB(arr []*structure, pos string) ([]*structure, error) 
 	}
 
 	if len(result) != 1 {
-		return nil, WithError(1002, fmt.Sprintf("%s wrong sentence", pos))
+		return nil, ErrorWrongSentence
 	}
 	return result, nil
 }
