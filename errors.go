@@ -18,6 +18,8 @@ var (
 	ErrorTooManyArgs = errors.New("too many args to input")
 	// ErrorArgsNotSuitable 参数类型不符
 	ErrorArgsNotSuitable = errors.New("参数类型不符")
+	// ErrorNonNumberic 非法字符参与数学计算
+	ErrorNonNumberic = errors.New("a non-numeric value encountered has found")
 )
 
 func WithError(pos, err string) error {
