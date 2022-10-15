@@ -223,6 +223,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		}
 	}
 
+	// FIXME
 	if len(expr) == 0 {
 		println("表达式可能有误！！！")
 		return nil, nil
@@ -312,13 +313,19 @@ func parsePlusReduceMulDivB(arr []*global.Structure, pos string) ([]*global.Stru
 	if err != nil {
 		return nil, err
 	}
+	if len(result) == 1 {
+		return result, nil
+	}
 
+	if result, err = parsePlusReduceMulDiv([]string{"&"}, result); err != nil {
+		return nil, err
+	}
 	if len(result) == 1 {
 		return result, nil
 	}
 
 	if len(result) > 0 {
-		if result, err = parsePlusReduceMulDiv([]string{"+", "-", "|", "&", "^"}, result); err != nil {
+		if result, err = parsePlusReduceMulDiv([]string{"+", "-", "|", "^"}, result); err != nil {
 			return nil, err
 		}
 	}
