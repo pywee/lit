@@ -23,7 +23,7 @@ var strFunctions = []*functionInfo{
 			{Type: types.STRING, Must: true},
 			{Type: types.INT, Must: true},
 		},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			a0 := args[0].Lit
 			a1 := args[1].Lit
 			a2 := args[2].Lit
@@ -42,7 +42,7 @@ var strFunctions = []*functionInfo{
 			{Type: types.INTERFACE, Must: true},
 			{Type: types.STRING, Must: false},
 		},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			if len(args) > 1 {
 				return &global.Structure{Tok: types.STRING, Lit: strings.Trim(args[0].Lit, args[1].Lit)}, nil
 			}
@@ -59,7 +59,7 @@ var strFunctions = []*functionInfo{
 			{Type: types.INTERFACE, Must: true},
 			{Type: types.STRING, Must: false},
 		},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			if len(args) > 1 {
 				return &global.Structure{Tok: types.STRING, Lit: strings.TrimLeft(args[0].Lit, args[1].Lit)}, nil
 			}
@@ -76,7 +76,7 @@ var strFunctions = []*functionInfo{
 			{Type: types.INTERFACE, Must: true},
 			{Type: types.STRING, Must: false},
 		},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			if len(args) > 1 {
 				return &global.Structure{Tok: types.STRING, Lit: strings.TrimRight(args[0].Lit, args[1].Lit)}, nil
 			}
@@ -89,7 +89,7 @@ var strFunctions = []*functionInfo{
 		MustAmount:   1,
 		MaxAmount:    1,
 		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{Tok: types.STRING, Lit: strings.TrimSpace(args[0].Lit)}, nil
 		},
 	},
@@ -98,7 +98,7 @@ var strFunctions = []*functionInfo{
 		MustAmount:   1,
 		MaxAmount:    1,
 		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{Tok: "INT", Lit: fmt.Sprintf("%d", len(args[0].Lit))}, nil
 		},
 	},
@@ -107,7 +107,7 @@ var strFunctions = []*functionInfo{
 		MustAmount:   1,
 		MaxAmount:    1,
 		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{Tok: "INT", Lit: fmt.Sprintf("%d", strings.Count(args[0].Lit, "")-1)}, nil
 		},
 	},
@@ -120,7 +120,7 @@ var strFunctions = []*functionInfo{
 			{Type: types.INT, Must: true},
 			{Type: types.INT, Must: true},
 		},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			print(strings.Count(args[0].Lit, "") - 1)
 			return nil, nil
 		},
@@ -130,7 +130,7 @@ var strFunctions = []*functionInfo{
 		MustAmount:   1,
 		MaxAmount:    1,
 		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{
 				Tok: "STRING",
 				Lit: fmt.Sprintf("%x", md5.Sum([]byte(args[0].Lit))),

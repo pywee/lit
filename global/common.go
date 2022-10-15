@@ -32,9 +32,9 @@ func InArrayString(str string, arr []string) bool {
 	return false
 }
 
-func Output(expr []*Structure, k int) {
+func Output(expr []*Structure) {
 	for _, v := range expr {
-		fmt.Println(k, "output:", v)
+		fmt.Println("output:", v)
 	}
 	println("")
 }

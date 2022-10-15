@@ -54,7 +54,6 @@ func NewExpr(src []byte) (*Expression, error) {
 				result.publicVariable[vName] = rv
 			}
 			list = nil
-
 			continue
 		}
 
@@ -106,6 +105,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		startKey  int
 		funcK     int
 		foundFunc bool
+		firstList []*global.Structure
 		list      []*global.Structure
 	)
 
@@ -114,6 +114,16 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 			startKey = k
 			if xlen := len(list); xlen > 0 {
 				list = nil
+			}
+			if len(firstList) > 0 {
+				rv, err := r.parse(expr[k:], pos)
+				if err != nil {
+					return nil, err
+				}
+
+				expr = append(firstList, rv)
+				firstList = nil
+				break
 			}
 			foundFunc = true
 			list = append(list, v)
@@ -133,6 +143,8 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 			}
 			expr = append(expr[:startKey], append([]*global.Structure{rv}, expr[k:]...)...)
 			list = nil
+		} else {
+			firstList = append(firstList, v)
 		}
 	}
 
@@ -152,7 +164,6 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 				// 获取传入执行函数的具体参数
 				// 并将它们的结果值递归解析出来
 				args := fn.GetFunctionArgList(expr[2 : rLen-1])
-
 				argsLen := len(args)
 				if fArgs.MustAmount > argsLen {
 					return nil, types.ErrorArgsNotEnough
@@ -183,14 +194,29 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 						// fmt.Println(fa.Type, rv.Tok)
 						return nil, types.ErrorArgsNotSuitable
 					}
-
 					paramsList = append(paramsList, rv)
 				}
-
-				fRet, err := fArgs.FN(paramsList...)
+				fRet, err := fArgs.FN(pos, paramsList...)
 				return fRet, err
 			}
 			return nil, nil
+		}
+	}
+
+	// 找出剩余的未完成的函数
+	// 如 true+isInt(1)+isFloat(1.1)
+	// 如果不在此处进行检查 那么当前函数只会解析前面的 isInt
+	// 而后面的 isFloat 会丢失
+	// 这与 isInt(1)+isFloat(1.1)+true 的处理逻辑不一样
+	// 所以这里还需要一次递归处理
+	// foundLastFuncExpr := false
+	for k, v := range expr {
+		if v.Tok == "IDENT" && k+1 < len(expr) && expr[k+1].Tok == "(" {
+			rv, err := r.parse(expr, pos)
+			if err != nil {
+				return nil, err
+			}
+			expr = append(expr[:k], rv)
 		}
 	}
 
@@ -205,12 +231,12 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 // 1+11|23-12;
 // 1+2+(3%10+(11*22+1.1-10)+41+(5+9)+10)+1+(2-(10*2%2));
 // 2+1/(20-1*(3+10)-1)%2^1;
-func (r *Expression) parseExpr(src []*global.Structure, pos string) ([]*global.Structure, error) {
-	v, err := r.findExprK(src, pos)
+func (r *Expression) parseExpr(expr []*global.Structure, pos string) ([]*global.Structure, error) {
+	v, err := r.findExprK(expr, pos)
 	if err != nil {
 		return nil, err
 	}
-	return parsePlusReduceMulDivB(v, src[0].Position)
+	return parsePlusReduceMulDivB(v, expr[0].Position)
 }
 
 func (r *Expression) findExprK(expr []*global.Structure, pos string) ([]*global.Structure, error) {
@@ -226,18 +252,19 @@ func (r *Expression) findExprK(expr []*global.Structure, pos string) ([]*global.
 	// 如果返回的是最终值 则不再需要进一步解析了
 	// 加快处理速度
 	if exprLen == 1 {
-		if e0Tok := expr[0].Tok; global.InArrayString(e0Tok, []string{"INT", "STRING", "FLOAT", "BOOL"}) {
+		e0 := expr[0]
+		if sLit := strings.ToLower(e0.Lit); sLit == "true" || sLit == "false" {
+			expr[0].Lit = sLit
+			return expr, nil
+		}
+		if global.InArrayString(e0.Tok, []string{"INT", "STRING", "FLOAT", "BOOL"}) {
 			return expr, nil
 		}
 	}
 
 	for k, v := range expr {
 		if v.Tok == "IDENT" {
-			if b := strings.ToLower(v.Lit); b == "true" || b == "false" {
-				v.Tok = "BOOL"
-				v.Lit = strings.ToLower(v.Lit)
-				expr[k] = v
-			} else if global.IsVariableOrFunction(v.Lit) {
+			if global.IsVariableOrFunction(v.Lit) {
 				ret, err := r.Get(v.Lit)
 				if err != nil {
 					return nil, err
@@ -245,6 +272,14 @@ func (r *Expression) findExprK(expr []*global.Structure, pos string) ([]*global.
 				expr[k] = ret
 			}
 		}
+		// else if v.Tok == "BOOL" {
+		// 	print("...s")
+		// 	if b := strings.ToLower(v.Lit); b == "true" || b == "false" {
+		// 		v.Tok = "BOOL"
+		// 		v.Lit = strings.ToLower(v.Lit)
+		// 		expr[k] = v
+		// 	}
+		// }
 	}
 
 	var (
@@ -359,6 +394,29 @@ func findExprBetweenSymbool(l, m, r *global.Structure) (*exprResult, error) {
 		rTok    = r.Tok
 	)
 
+	// 弱类型处理
+	// 布尔值转整型
+	if l.Lit == "true" {
+		lTok = "INT"
+		l.Tok = "INT"
+		l.Lit = "1"
+	}
+	if l.Lit == "false" {
+		lTok = "INT"
+		l.Tok = "INT"
+		l.Lit = "0"
+	}
+	if r.Lit == "true" {
+		rTok = "INT"
+		r.Tok = "INT"
+		r.Lit = "1"
+	}
+	if r.Lit == "false" {
+		rTok = "INT"
+		r.Tok = "INT"
+		r.Lit = "0"
+	}
+
 	// 字符串拼接及弱类型处理的算术计算
 	if lTok == "STRING" && rTok == "STRING" {
 		// 弱类型处理 如果左右两边都是字符串数字则允许进行算术计算
@@ -428,25 +486,6 @@ func findExprBetweenSymbool(l, m, r *global.Structure) (*exprResult, error) {
 			return nil, types.ErrorWrongSentence
 		}
 		rTok = "INT"
-	}
-
-	// 弱类型处理
-	// 布尔值转整型
-	if l.Lit == "true" {
-		lTok = "INT"
-		l.Lit = "1"
-	}
-	if l.Lit == "false" {
-		lTok = "INT"
-		l.Lit = "0"
-	}
-	if r.Lit == "true" {
-		rTok = "INT"
-		r.Lit = "1"
-	}
-	if r.Lit == "false" {
-		rTok = "INT"
-		r.Lit = "0"
 	}
 
 	if lTok == "INT" && rTok == "INT" {

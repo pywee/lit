@@ -4,7 +4,8 @@ const (
 
 	// baseFunctions
 	// 支持的内置函数: 通用处理函数
-	FUNCTION_PRINT = "print"
+	FUNCTION_PRINT   = "print"
+	FUNCTION_VARDUMP = "varDump"
 
 	// strFunctions
 	// 支持的内置函数: 字符串处理函数

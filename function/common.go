@@ -26,7 +26,7 @@ type functionInfo struct {
 	// List 形参信息定义
 	Args []*functionArgAttr
 	// FN 函数体
-	FN func(...*global.Structure) (*global.Structure, error)
+	FN func(string, ...*global.Structure) (*global.Structure, error)
 }
 
 type functionArgAttr struct {
@@ -84,3 +84,5 @@ func GetFunctionArgList(expr []*global.Structure) [][]*global.Structure {
 	list = append(list, arg)
 	return list
 }
+
+func BoolToInt(src *global.Structure) {}

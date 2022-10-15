@@ -16,7 +16,7 @@ var numberFunctions = []*functionInfo{
 		Args: []*functionArgAttr{
 			{Type: types.INTERFACE, Must: true},
 		},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			match, err := global.IsNumber(args[0].Lit)
 			if err != nil {
 				return nil, err
@@ -34,7 +34,7 @@ var numberFunctions = []*functionInfo{
 		Args: []*functionArgAttr{
 			{Type: types.INTERFACE, Must: true},
 		},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			match, err := global.IsInt(args[0].Lit)
 			if err != nil {
 				return nil, err
@@ -52,7 +52,7 @@ var numberFunctions = []*functionInfo{
 		Args: []*functionArgAttr{
 			{Type: types.INTERFACE, Must: true},
 		},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			match, err := global.IsFloat(args[0].Lit)
 			if err != nil {
 				return nil, err
