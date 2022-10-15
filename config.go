@@ -2,6 +2,9 @@ package goExpr
 
 import (
 	"strings"
+
+	"github.com/pywee/goExpr/global"
+	"github.com/pywee/goExpr/types"
 )
 
 var (
@@ -12,12 +15,6 @@ var (
 // publicVariable 自定义全局变量
 // publicVariable = make(map[string]*structure, 10)
 )
-
-type structure struct {
-	Position string
-	Tok      string
-	Lit      string
-}
 
 type CodeInfomation struct {
 	Name  string
@@ -31,18 +28,10 @@ type exprResult struct {
 	Value interface{}
 }
 
-func (s *structure) Val() string {
-	return s.Lit
-}
-
-func (s *structure) Type() string {
-	return s.Tok
-}
-
-func (r *Expression) Get(vName string) (*structure, error) {
+func (r *Expression) Get(vName string) (*global.Structure, error) {
 	ret, ok := r.publicVariable[vName]
 	if !ok {
-		return nil, ErrorNotFoundVariable
+		return nil, types.ErrorNotFoundVariable
 	}
 	// fmt.Printf("get variable by name: %s, value: %v\n", vName, ret)
 	return ret, nil
@@ -51,7 +40,7 @@ func (r *Expression) Get(vName string) (*structure, error) {
 func (r *Expression) GetVal(vName string) interface{} {
 	ret, ok := r.publicVariable[vName]
 	if !ok {
-		return ErrorNotFoundVariable
+		return types.ErrorNotFoundVariable
 	}
 	if len(ret.Lit) > 1 && (ret.Tok == "STRING" || ret.Tok == "CHAR") {
 		return formatString(ret.Lit)
@@ -61,7 +50,6 @@ func (r *Expression) GetVal(vName string) interface{} {
 
 func formatString(s string) string {
 	var (
-		lit  string
 		slen = len(s)
 	)
 
@@ -72,14 +60,14 @@ func formatString(s string) string {
 	}
 	return s
 
-	if s[0] == 39 && s[slen-1] == 39 { // 引号 '
-		// FIXME
-		lit = strings.TrimRight(s[1:], "'")
-	} else if s[0] == 34 && s[slen-1] == 34 { // 引号 "
-		lit = strings.TrimRight(s[1:], `"`)
-		lit = strings.TrimRight(lit, "\"")
-		lit = strings.Replace(lit, `\"`, `"`, -1)
-		lit = strings.Replace(lit, `\\`, `\`, -1)
-	}
-	return lit
+	// if s[0] == 39 && s[slen-1] == 39 { // 引号 '
+	// 	// FIXME
+	// 	lit = strings.TrimRight(s[1:], "'")
+	// } else if s[0] == 34 && s[slen-1] == 34 { // 引号 "
+	// 	lit = strings.TrimRight(s[1:], `"`)
+	// 	lit = strings.TrimRight(lit, "\"")
+	// 	lit = strings.Replace(lit, `\"`, `"`, -1)
+	// 	lit = strings.Replace(lit, `\\`, `\`, -1)
+	// }
+	// return lit
 }

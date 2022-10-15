@@ -9,19 +9,21 @@ import (
 	"strconv"
 	"strings"
 
+	fn "github.com/pywee/goExpr/function"
 	"github.com/pywee/goExpr/global"
+	"github.com/pywee/goExpr/types"
 )
 
 type Expression struct {
-	publicVariable map[string]*structure
+	publicVariable map[string]*global.Structure
 }
 
 func NewExpr(src []byte) (*Expression, error) {
 	var result = &Expression{
-		publicVariable: make(map[string]*structure, 10),
+		publicVariable: make(map[string]*global.Structure, 10),
 	}
 	var s scanner.Scanner
-	var list = make([]*structure, 0, 100)
+	var list = make([]*global.Structure, 0, 100)
 
 	fset := token.NewFileSet()
 	file := fset.AddFile("", fset.Base(), len(src))
@@ -65,7 +67,7 @@ func NewExpr(src []byte) (*Expression, error) {
 			lit = formatString(lit)
 		}
 
-		list = append(list, &structure{
+		list = append(list, &global.Structure{
 			Position: fset.Position(pos).String(),
 			Tok:      tokString,
 			Lit:      lit,
@@ -78,7 +80,7 @@ func NewExpr(src []byte) (*Expression, error) {
 }
 
 // parse 解析器主入口
-func (r *Expression) parse(expr []*structure, pos string) (*structure, error) {
+func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Structure, error) {
 	rLen := len(expr)
 	if rLen == 0 {
 		return nil, nil
@@ -87,12 +89,24 @@ func (r *Expression) parse(expr []*structure, pos string) (*structure, error) {
 		return expr[0], nil
 	}
 
+	// FIXME
+	// 临时有符号的整型和浮点型的处理逻辑
+	if rLen == 2 && expr[0].Tok == "-" {
+		// TODO
+		// 考虑弱类型支持 如 "-100" 和 -100 是否等义
+		if e1Tok := expr[1]; e1Tok.Tok == "INT" || e1Tok.Tok == "FLOAT" {
+			return &global.Structure{Tok: e1Tok.Tok, Lit: "-" + e1Tok.Lit}, nil
+		}
+	}
+
 	var (
 		startKey  int
 		funcK     int
 		foundFunc bool
-		list      []*structure
+		list      []*global.Structure
 	)
+
+	// output(expr, 1)
 
 	for k, v := range expr {
 		if !foundFunc && v.Tok == "IDENT" && k+1 < len(expr) && expr[k+1].Tok == "(" && global.IsVariableOrFunction(v.Lit) {
@@ -116,7 +130,7 @@ func (r *Expression) parse(expr []*structure, pos string) (*structure, error) {
 			if err != nil {
 				return nil, err
 			}
-			expr = append(expr[:startKey], append([]*structure{rv}, expr[k:]...)...)
+			expr = append(expr[:startKey], append([]*global.Structure{rv}, expr[k:]...)...)
 			list = nil
 		}
 	}
@@ -124,11 +138,11 @@ func (r *Expression) parse(expr []*structure, pos string) (*structure, error) {
 	if rLen >= 3 {
 		// 判断是否表达式为函数
 		// 如果表达式是 replace("1", "2", "", 1) 则可生效
-		// FIXME 如果表达式是 replace("1", "2", "", 1) + "xxxx" 则不生效
-		if isExprFunction(expr, rLen) {
+		// FIXME 如果表达式是 replace("1", "2", "", 1) + "xxxx" 则不生效 fixed
+		if fn.IsExprFunction(expr, rLen) {
 			funcName := expr[0]
 			if global.IsVariableOrFunction(funcName.Lit) {
-				fArgs, err := checkFunctionName(funcName.Lit)
+				fArgs, err := fn.CheckFunctionName(funcName.Lit)
 				if err != nil {
 					return nil, err
 				}
@@ -136,13 +150,14 @@ func (r *Expression) parse(expr []*structure, pos string) (*structure, error) {
 				// 函数内参数检查
 				// 获取传入执行函数的具体参数
 				// 并将它们的结果值递归解析出来
-				args := getFunctionArgList(expr[2 : rLen-1])
+				args := fn.GetFunctionArgList(expr[2 : rLen-1])
+
 				argsLen := len(args)
 				if fArgs.MustAmount > argsLen {
-					return nil, ErrorArgsNotEnough
+					return nil, types.ErrorArgsNotEnough
 				}
 				if fArgs.MaxAmount != -1 && fArgs.MaxAmount < argsLen {
-					return nil, ErrorTooManyArgs
+					return nil, types.ErrorTooManyArgs
 				}
 
 				// FIXME
@@ -150,7 +165,7 @@ func (r *Expression) parse(expr []*structure, pos string) (*structure, error) {
 				// 汇总解析成功之后的实参数据
 				// 传入回调函数进行实际执行
 				// 当前仅支持内置函数
-				var paramsList []*structure
+				var paramsList []*global.Structure
 				for k, varg := range args {
 					// FIXME
 					// 函数中的实参表达式 实参可以是函数、变量、算术表达式等等
@@ -160,12 +175,12 @@ func (r *Expression) parse(expr []*structure, pos string) (*structure, error) {
 					}
 
 					// 检查最终解析出来的参数值类型是否与函数要求的形参类型一致
-					if fa := fArgs.Args[k]; fa.Type != TYPE_INTERFACE && fa.Type != rv.Tok {
+					if fa := fArgs.Args[k]; fa.Type != fn.TYPE_INTERFACE && fa.Type != rv.Tok {
 						// TODO
 						// 参数[弱类型]支持
 						// 参数[提前在形参中设置默认值]支持
 						// fmt.Println(fa.Type, rv.Tok)
-						return nil, ErrorArgsNotSuitable
+						return nil, types.ErrorArgsNotSuitable
 					}
 
 					paramsList = append(paramsList, rv)
@@ -216,7 +231,7 @@ func (r *Expression) parse(expr []*structure, pos string) (*structure, error) {
 // 1+11|23-12;
 // 1+2+(3%10+(11*22+1.1-10)+41+(5+9)+10)+1+(2-(10*2%2));
 // 2+1/(20-1*(3+10)-1)%2^1;
-func (r *Expression) parseExpr(src []*structure, pos string) ([]*structure, error) {
+func (r *Expression) parseExpr(src []*global.Structure, pos string) ([]*global.Structure, error) {
 	v, err := r.findExprK(src, pos)
 	if err != nil {
 		return nil, err
@@ -224,13 +239,13 @@ func (r *Expression) parseExpr(src []*structure, pos string) ([]*structure, erro
 	return parsePlusReduceMulDivB(v, src[0].Position)
 }
 
-func (r *Expression) findExprK(expr []*structure, pos string) ([]*structure, error) {
+func (r *Expression) findExprK(expr []*global.Structure, pos string) ([]*global.Structure, error) {
 	exprLen := len(expr)
 
 	// 错误表达式处理
 	if exprLen > 1 {
 		if e0Tok := expr[0].Tok; (e0Tok == "FLOAT" || e0Tok == "INT") && expr[1].Tok == "IDENT" {
-			return nil, ErrorWrongSentence
+			return nil, types.ErrorWrongSentence
 		}
 	}
 
@@ -290,7 +305,7 @@ func (r *Expression) findExprK(expr []*structure, pos string) ([]*structure, err
 }
 
 // parsePlusReduceMulDivB 处理加减乘除
-func parsePlusReduceMulDivB(arr []*structure, pos string) ([]*structure, error) {
+func parsePlusReduceMulDivB(arr []*global.Structure, pos string) ([]*global.Structure, error) {
 	result, err := parsePlusReduceMulDiv([]string{"*", "/", "%"}, arr)
 	if err != nil {
 		return nil, err
@@ -307,18 +322,18 @@ func parsePlusReduceMulDivB(arr []*structure, pos string) ([]*structure, error) 
 	}
 
 	if len(result) != 1 {
-		return nil, ErrorWrongSentence
+		return nil, types.ErrorWrongSentence
 	}
 	return result, nil
 }
 
 // parsePlusReduceMulDiv 递归解析表达式 最内层
-func parsePlusReduceMulDiv(arr []string, expr []*structure) ([]*structure, error) {
+func parsePlusReduceMulDiv(arr []string, expr []*global.Structure) ([]*global.Structure, error) {
 	if len(expr) == 0 {
 		return expr, nil
 	}
 
-	var result []*structure
+	var result []*global.Structure
 	for k, v := range expr {
 		if inArray(v.Tok, arr) && k-1 > -1 && k+2 <= len(expr) {
 			r, err := findExprBetweenSymbool(expr[k-1], expr[k], expr[k+1])
@@ -326,11 +341,11 @@ func parsePlusReduceMulDiv(arr []string, expr []*structure) ([]*structure, error
 				return nil, err
 			}
 			if r.Type == "STRING" {
-				result = append([]*structure{{Tok: "STRING", Lit: r.Value.(string)}}, expr[k+2:]...)
+				result = append([]*global.Structure{{Tok: "STRING", Lit: r.Value.(string)}}, expr[k+2:]...)
 				return parsePlusReduceMulDiv(arr, result)
 			}
 
-			middle := &structure{}
+			middle := &global.Structure{}
 			if r.Type == "FLOAT" {
 				// FIXME
 				// 待观察是否对其他表达式有影响
@@ -360,7 +375,7 @@ func parsePlusReduceMulDiv(arr []string, expr []*structure) ([]*structure, error
 
 // findExprBetweenSymbool 查找某运算符数据
 // 如: 1+2-3 输出查找 + 号 则返回 1+2
-func findExprBetweenSymbool(l, m, r *structure) (*exprResult, error) {
+func findExprBetweenSymbool(l, m, r *global.Structure) (*exprResult, error) {
 	var (
 		exprTyp string
 		left    interface{}
@@ -398,7 +413,7 @@ func findExprBetweenSymbool(l, m, r *structure) (*exprResult, error) {
 			if mTok == "+" {
 				return &exprResult{Type: "STRING", Value: l.Lit + r.Lit}, nil
 			}
-			return nil, ErrorNonNumberic
+			return nil, types.ErrorNonNumberic
 		}
 	}
 
@@ -408,11 +423,11 @@ func findExprBetweenSymbool(l, m, r *structure) (*exprResult, error) {
 		lit := l.Lit
 		isFloat, err := global.IsFloat(lit)
 		if err != nil {
-			return nil, ErrorWrongSentence
+			return nil, types.ErrorWrongSentence
 		}
 		if isFloat {
 			if _, err = strconv.ParseFloat(lit, 64); err != nil {
-				return nil, ErrorWrongSentence
+				return nil, types.ErrorWrongSentence
 			}
 			lTok = "FLOAT"
 			l.Lit = lit
@@ -420,23 +435,23 @@ func findExprBetweenSymbool(l, m, r *structure) (*exprResult, error) {
 
 		isInt, err := global.IsInt(lit)
 		if err != nil {
-			return nil, ErrorWrongSentence
+			return nil, types.ErrorWrongSentence
 		}
 		if isInt {
 			if _, err = strconv.ParseInt(lit, 10, 64); err != nil {
-				return nil, ErrorWrongSentence
+				return nil, types.ErrorWrongSentence
 			}
 			lTok = "INT"
 			l.Lit = lit
 		}
 		if !isFloat && !isInt {
-			return nil, ErrorWrongSentence
+			return nil, types.ErrorWrongSentence
 		}
 	}
 	if rTok == "STRING" || rTok == "CHAR" {
 		_, err := strconv.ParseInt(r.Lit, 10, 64)
 		if err != nil {
-			return nil, ErrorWrongSentence
+			return nil, types.ErrorWrongSentence
 		}
 		rTok = "INT"
 	}
@@ -515,11 +530,11 @@ func findExprBetweenSymbool(l, m, r *structure) (*exprResult, error) {
 	if mTok == "&" && exprTyp == "INT" {
 		return &exprResult{Type: exprTyp, Tok: mTok, Value: left.(int64) & right.(int64)}, nil
 	}
-	return nil, ErrorWrongSentence
+	return nil, types.ErrorWrongSentence
 }
 
 // findStrInfrontSymbool 查找指定符号之前的数据
-func findStrInfrontSymbool(sym string, src []*structure) ([]*structure, int) {
+func findStrInfrontSymbool(sym string, src []*global.Structure) ([]*global.Structure, int) {
 	for k, v := range src {
 		if sym == v.Tok {
 			return src[:k], k
@@ -537,9 +552,18 @@ func inArray(sep string, arr []string) bool {
 	return false
 }
 
-func output(expr []*structure, k int) {
+func output(expr []*global.Structure, k int) {
 	for _, v := range expr {
 		fmt.Println(k, "output:", v.Tok, v.Lit)
+	}
+	println("")
+}
+
+func output2(expr [][]*global.Structure, k int) {
+	for _, x := range expr {
+		for _, v := range x {
+			fmt.Println(k, "output:", v.Tok, v.Lit)
+		}
 	}
 	println("")
 }
