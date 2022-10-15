@@ -7,8 +7,6 @@ import (
 	"github.com/pywee/goExpr/types"
 )
 
-func a() {}
-
 var (
 // functions 内部全局方法
 // functions = []string{"print", "printf", "sprintf"}

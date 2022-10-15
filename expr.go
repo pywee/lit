@@ -19,16 +19,15 @@ type Expression struct {
 }
 
 func NewExpr(src []byte) (*Expression, error) {
-	var result = &Expression{
-		publicVariable: make(map[string]*global.Structure, 10),
-	}
-	var s scanner.Scanner
-	var list = make([]*global.Structure, 0, 100)
+	var (
+		s      scanner.Scanner
+		fset   = token.NewFileSet()
+		result = &Expression{publicVariable: make(map[string]*global.Structure, 10)}
+		list   = make([]*global.Structure, 0, 100)
+	)
 
-	fset := token.NewFileSet()
 	file := fset.AddFile("", fset.Base(), len(src))
 	s.Init(file, src, nil, scanner.ScanComments)
-
 	for {
 		pos, tok, lit := s.Scan()
 		if tok == token.EOF {
@@ -44,9 +43,9 @@ func NewExpr(src []byte) (*Expression, error) {
 
 			// 递归解析表达式
 			posLine := strings.Split(fset.Position(pos).String(), ":")
-			rv, err := result.parse(list, "第"+posLine[0]+"行")
+			rv, err := result.parse(list, "第"+posLine[0]+"行, ")
 			if err != nil {
-				return nil, errors.New("第" + posLine[0] + "行" + err.Error())
+				return nil, errors.New("第" + posLine[0] + "行, " + err.Error())
 			}
 
 			// 变量赋值

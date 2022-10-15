@@ -5,6 +5,33 @@ import (
 	"github.com/pywee/goExpr/types"
 )
 
+// 内置函数列表
+var functions = make([]*functionInfo, 0, 100)
+
+func init() {
+	// 输入内置函数列表
+	fns := [][]*functionInfo{strFunctions, numberFunctions, baseFunctions}
+	for _, v := range fns {
+		functions = append(functions, v...)
+	}
+}
+
+const (
+	// 原解析后的类型
+	GO_TYPE_CHAR  = "CHAR"
+	GO_TYPE_IDENT = "IDENT"
+
+	// 支持的类型
+	TYPE_INTERFACE = "INTERFACE"
+	TYPE_STRING    = "STRING"
+	TYPE_INT       = "INT"
+	TYPE_FLOAT     = "FLOAT"
+	TYPE_BOOL      = "BOOL"
+	TYPE_FUNCTION  = "FUNC"
+	TYPE_ARRAY     = "ARRAY"
+	TYPE_OBJECT    = "OBJECT"
+)
+
 type functionInfo struct {
 	// FunctionName 名称
 	FunctionName string
@@ -33,7 +60,7 @@ func IsExprFunction(expr []*global.Structure, rlen int) bool {
 }
 
 func CheckFunctionName(name string) (*functionInfo, error) {
-	for _, v := range privateFunctions {
+	for _, v := range functions {
 		if v.FunctionName == name {
 			return v, nil
 		}

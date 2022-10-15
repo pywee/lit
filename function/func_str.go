@@ -7,26 +7,9 @@ import (
 	"github.com/pywee/goExpr/global"
 )
 
+// strFunctions
+// 支持的内置函数: 字符串处理函数
 const (
-	// 原解析后的类型
-	GO_TYPE_CHAR  = "CHAR"
-	GO_TYPE_IDENT = "IDENT"
-
-	// 支持的类型
-	TYPE_INTERFACE = "INTERFACE"
-	TYPE_STRING    = "STRING"
-	TYPE_INT       = "INT"
-	TYPE_FLOAT     = "FLOAT"
-	TYPE_BOOL      = "BOOL"
-	TYPE_FUNCTION  = "FUNC"
-	TYPE_ARRAY     = "ARRAY"
-	TYPE_OBJECT    = "OBJECT"
-
-	// 支持的内置函数
-	// 2022.10.15
-	FUNCTION_PRINT = "print"
-
-	// 字符串处理函数
 	FUNCTION_REPLACE   = "replace"
 	FUNCTION_TRIM      = "trim"
 	FUNCTION_LTRIM     = "ltrim"
@@ -35,87 +18,11 @@ const (
 	FUNCTION_PARSEINT  = "parseInt"
 	FUNCTION_SPLIT     = "split"
 	FUNCTION_MD5       = "md5"
-
-	FUNCTION_INT        = "int"
-	FUNCTION_FLOOR      = "floor"
-	FUNCTION_STRING     = "string"
-	FUNCTION_ISNUMBERIC = "isNumberic"
-	FUNCTION_ISINT      = "isInt"
-	FUNCTION_ISFLOAT    = "isFloat"
 )
 
-// privateFunctions 内置函数
-var privateFunctions = []*functionInfo{
-	{
-		FunctionName: FUNCTION_PRINT,
-		MustAmount:   1,
-		MaxAmount:    -1,
-		Args: []*functionArgAttr{
-			{Type: TYPE_INTERFACE, Must: true},
-			{Type: TYPE_INTERFACE, Must: true},
-		},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
-			for _, v := range args {
-				print(v.Lit, " ")
-			}
-			print("\n")
-			return nil, nil
-		},
-	},
-	{
-		FunctionName: FUNCTION_ISFLOAT,
-		MustAmount:   1,
-		MaxAmount:    1,
-		Args: []*functionArgAttr{
-			{Type: TYPE_INTERFACE, Must: true},
-		},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
-			match, err := global.IsFloat(args[0].Lit)
-			if err != nil {
-				return nil, err
-			}
-			if match {
-				return &global.Structure{Tok: TYPE_BOOL, Lit: "true"}, nil
-			}
-			return &global.Structure{Tok: TYPE_BOOL, Lit: "false"}, nil
-		},
-	},
-	{
-		FunctionName: FUNCTION_ISINT,
-		MustAmount:   1,
-		MaxAmount:    1,
-		Args: []*functionArgAttr{
-			{Type: TYPE_INTERFACE, Must: true},
-		},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
-			match, err := global.IsInt(args[0].Lit)
-			if err != nil {
-				return nil, err
-			}
-			if match {
-				return &global.Structure{Tok: TYPE_BOOL, Lit: "true"}, nil
-			}
-			return &global.Structure{Tok: TYPE_BOOL, Lit: "false"}, nil
-		},
-	},
-	{
-		FunctionName: FUNCTION_ISNUMBERIC,
-		MustAmount:   1,
-		MaxAmount:    1,
-		Args: []*functionArgAttr{
-			{Type: TYPE_INTERFACE, Must: true},
-		},
-		FN: func(args ...*global.Structure) (*global.Structure, error) {
-			match, err := global.IsNumber(args[0].Lit)
-			if err != nil {
-				return nil, err
-			}
-			if match {
-				return &global.Structure{Tok: TYPE_BOOL, Lit: "true"}, nil
-			}
-			return &global.Structure{Tok: TYPE_BOOL, Lit: "false"}, nil
-		},
-	},
+// strFunctions
+// 支持的内置函数: 字符串处理函数
+var strFunctions = []*functionInfo{
 	{
 		FunctionName: FUNCTION_REPLACE,
 		MustAmount:   1,
