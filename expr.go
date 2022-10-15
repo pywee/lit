@@ -84,17 +84,21 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 	if rLen == 0 {
 		return nil, nil
 	}
-	if rLen == 1 && expr[0].Tok != "IDENT" {
-		return expr[0], nil
+	e0 := expr[0]
+	if rLen == 1 && e0.Tok != "IDENT" {
+		return e0, nil
 	}
 
 	// FIXME
 	// 临时有符号的整型和浮点型的处理逻辑
-	if rLen == 2 && expr[0].Tok == "-" {
+	if rLen == 2 && (e0.Tok == "-" || e0.Tok == "+") {
 		// TODO
 		// 考虑弱类型支持 如 "-100" 和 -100 是否等义
-		if e1Tok := expr[1]; e1Tok.Tok == "INT" || e1Tok.Tok == "FLOAT" {
-			return &global.Structure{Tok: e1Tok.Tok, Lit: "-" + e1Tok.Lit}, nil
+		if e1 := expr[1]; e1.Tok == "INT" || e1.Tok == "FLOAT" {
+			if e0.Tok == "+" {
+				return &global.Structure{Tok: e1.Tok, Lit: e1.Lit}, nil
+			}
+			return &global.Structure{Tok: e1.Tok, Lit: e0.Tok + e1.Lit}, nil
 		}
 	}
 
@@ -104,8 +108,6 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		foundFunc bool
 		list      []*global.Structure
 	)
-
-	// output(expr, 1)
 
 	for k, v := range expr {
 		if !foundFunc && v.Tok == "IDENT" && k+1 < len(expr) && expr[k+1].Tok == "(" && global.IsVariableOrFunction(v.Lit) {
@@ -174,7 +176,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 					}
 
 					// 检查最终解析出来的参数值类型是否与函数要求的形参类型一致
-					if fa := fArgs.Args[k]; fa.Type != fn.TYPE_INTERFACE && fa.Type != rv.Tok {
+					if fa := fArgs.Args[k]; fa.Type != types.INTERFACE && fa.Type != rv.Tok {
 						// TODO
 						// 参数[弱类型]支持
 						// 参数[提前在形参中设置默认值]支持
@@ -190,33 +192,6 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 			}
 			return nil, nil
 		}
-
-		// 函数在底层为匿名函数
-		// example:
-		// print(isInt(1))
-		// 此时 isInt(1) 进入该逻辑
-		// replace(1,2,3,4)+1234 也进入了这个逻辑
-		// var fList []*structure
-		// if expr[0].Tok == "IDENT" && expr[1].Tok == "(" {
-		// 	for k, v := range expr {
-		// 		if global.InArrayString(v.Tok, []string{"+", "-", "*", "/", "^", "%", "|", "&"}) {
-		// 			output(fList)
-
-		// 			rv, err := r.parse(fList, pos)
-		// 			if err != nil {
-		// 				return nil, err
-		// 			}
-		// 			rv, err = r.parse(append([]*structure{rv}, expr[k:]...), pos)
-		// 			if err != nil {
-		// 				return nil, err
-		// 			}
-		// 			if rv != nil {
-		// 				return rv, nil
-		// 			}
-		// 		}
-		// 		fList = append(fList, v)
-		// 	}
-		// }
 	}
 
 	rv, err := r.parseExpr(expr, pos)
@@ -549,20 +524,4 @@ func inArray(sep string, arr []string) bool {
 		}
 	}
 	return false
-}
-
-func output(expr []*global.Structure, k int) {
-	for _, v := range expr {
-		fmt.Println(k, "output:", v.Tok, v.Lit)
-	}
-	println("")
-}
-
-func output2(expr [][]*global.Structure, k int) {
-	for _, x := range expr {
-		for _, v := range x {
-			fmt.Println(k, "output:", v.Tok, v.Lit)
-		}
-	}
-	println("")
 }

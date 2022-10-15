@@ -16,22 +16,6 @@ func init() {
 	}
 }
 
-const (
-	// 原解析后的类型
-	GO_TYPE_CHAR  = "CHAR"
-	GO_TYPE_IDENT = "IDENT"
-
-	// 支持的类型
-	TYPE_INTERFACE = "INTERFACE"
-	TYPE_STRING    = "STRING"
-	TYPE_INT       = "INT"
-	TYPE_FLOAT     = "FLOAT"
-	TYPE_BOOL      = "BOOL"
-	TYPE_FUNCTION  = "FUNC"
-	TYPE_ARRAY     = "ARRAY"
-	TYPE_OBJECT    = "OBJECT"
-)
-
 type functionInfo struct {
 	// FunctionName 名称
 	FunctionName string
@@ -54,6 +38,9 @@ type functionArgAttr struct {
 
 func IsExprFunction(expr []*global.Structure, rlen int) bool {
 	if rlen < 3 {
+		return false
+	}
+	if expr[0] == nil {
 		return false
 	}
 	return expr[0].Tok == "IDENT" && expr[1].Tok == "(" && expr[rlen-1].Tok == ")"

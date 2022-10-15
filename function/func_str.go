@@ -1,23 +1,13 @@
 package function
 
 import (
+	"crypto/md5"
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/pywee/goExpr/global"
-)
-
-// strFunctions
-// 支持的内置函数: 字符串处理函数
-const (
-	FUNCTION_REPLACE   = "replace"
-	FUNCTION_TRIM      = "trim"
-	FUNCTION_LTRIM     = "ltrim"
-	FUNCTION_RTRIM     = "rtrim"
-	FUNCTION_TRIMSPACE = "trimSpace"
-	FUNCTION_PARSEINT  = "parseInt"
-	FUNCTION_SPLIT     = "split"
-	FUNCTION_MD5       = "md5"
+	"github.com/pywee/goExpr/types"
 )
 
 // strFunctions
@@ -28,10 +18,10 @@ var strFunctions = []*functionInfo{
 		MustAmount:   1,
 		MaxAmount:    4,
 		Args: []*functionArgAttr{
-			{Type: TYPE_INTERFACE, Must: true},
-			{Type: TYPE_STRING, Must: true},
-			{Type: TYPE_STRING, Must: true},
-			{Type: TYPE_INT, Must: true},
+			{Type: types.INTERFACE, Must: true},
+			{Type: types.STRING, Must: true},
+			{Type: types.STRING, Must: true},
+			{Type: types.INT, Must: true},
 		},
 		FN: func(args ...*global.Structure) (*global.Structure, error) {
 			a0 := args[0].Lit
@@ -39,7 +29,7 @@ var strFunctions = []*functionInfo{
 			a2 := args[2].Lit
 			a3, _ := strconv.Atoi(args[3].Lit)
 			rx := strings.Replace(a0, a1, a2, a3)
-			return &global.Structure{Tok: TYPE_STRING, Lit: rx}, nil
+			return &global.Structure{Tok: types.STRING, Lit: rx}, nil
 		},
 	},
 	{
@@ -49,14 +39,14 @@ var strFunctions = []*functionInfo{
 		MustAmount:   1,
 		MaxAmount:    2,
 		Args: []*functionArgAttr{
-			{Type: TYPE_INTERFACE, Must: true},
-			{Type: TYPE_STRING, Must: false},
+			{Type: types.INTERFACE, Must: true},
+			{Type: types.STRING, Must: false},
 		},
 		FN: func(args ...*global.Structure) (*global.Structure, error) {
 			if len(args) > 1 {
-				return &global.Structure{Tok: TYPE_STRING, Lit: strings.Trim(args[0].Lit, args[1].Lit)}, nil
+				return &global.Structure{Tok: types.STRING, Lit: strings.Trim(args[0].Lit, args[1].Lit)}, nil
 			}
-			return &global.Structure{Tok: TYPE_STRING, Lit: strings.Trim(args[0].Lit, " ")}, nil
+			return &global.Structure{Tok: types.STRING, Lit: strings.Trim(args[0].Lit, " ")}, nil
 		},
 	},
 	{
@@ -66,14 +56,14 @@ var strFunctions = []*functionInfo{
 		MustAmount:   1,
 		MaxAmount:    2,
 		Args: []*functionArgAttr{
-			{Type: TYPE_INTERFACE, Must: true},
-			{Type: TYPE_STRING, Must: false},
+			{Type: types.INTERFACE, Must: true},
+			{Type: types.STRING, Must: false},
 		},
 		FN: func(args ...*global.Structure) (*global.Structure, error) {
 			if len(args) > 1 {
-				return &global.Structure{Tok: TYPE_STRING, Lit: strings.TrimLeft(args[0].Lit, args[1].Lit)}, nil
+				return &global.Structure{Tok: types.STRING, Lit: strings.TrimLeft(args[0].Lit, args[1].Lit)}, nil
 			}
-			return &global.Structure{Tok: TYPE_STRING, Lit: strings.TrimLeft(args[0].Lit, " ")}, nil
+			return &global.Structure{Tok: types.STRING, Lit: strings.TrimLeft(args[0].Lit, " ")}, nil
 		},
 	},
 	{
@@ -83,14 +73,14 @@ var strFunctions = []*functionInfo{
 		MustAmount:   1,
 		MaxAmount:    2,
 		Args: []*functionArgAttr{
-			{Type: TYPE_INTERFACE, Must: true},
-			{Type: TYPE_STRING, Must: false},
+			{Type: types.INTERFACE, Must: true},
+			{Type: types.STRING, Must: false},
 		},
 		FN: func(args ...*global.Structure) (*global.Structure, error) {
 			if len(args) > 1 {
-				return &global.Structure{Tok: TYPE_STRING, Lit: strings.TrimRight(args[0].Lit, args[1].Lit)}, nil
+				return &global.Structure{Tok: types.STRING, Lit: strings.TrimRight(args[0].Lit, args[1].Lit)}, nil
 			}
-			return &global.Structure{Tok: TYPE_STRING, Lit: strings.TrimRight(args[0].Lit, " ")}, nil
+			return &global.Structure{Tok: types.STRING, Lit: strings.TrimRight(args[0].Lit, " ")}, nil
 		},
 	},
 	{
@@ -98,9 +88,55 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_TRIMSPACE,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgAttr{{Type: TYPE_INTERFACE, Must: true}},
+		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
 		FN: func(args ...*global.Structure) (*global.Structure, error) {
-			return &global.Structure{Tok: TYPE_STRING, Lit: strings.TrimSpace(args[0].Lit)}, nil
+			return &global.Structure{Tok: types.STRING, Lit: strings.TrimSpace(args[0].Lit)}, nil
+		},
+	},
+	{
+		FunctionName: FUNCTION_LEN,
+		MustAmount:   1,
+		MaxAmount:    1,
+		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
+		FN: func(args ...*global.Structure) (*global.Structure, error) {
+			return &global.Structure{Tok: "INT", Lit: fmt.Sprintf("%d", len(args[0].Lit))}, nil
+		},
+	},
+	{
+		FunctionName: FUNCTION_UTF8LEN,
+		MustAmount:   1,
+		MaxAmount:    1,
+		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
+		FN: func(args ...*global.Structure) (*global.Structure, error) {
+			return &global.Structure{Tok: "INT", Lit: fmt.Sprintf("%d", strings.Count(args[0].Lit, "")-1)}, nil
+		},
+	},
+	{
+		FunctionName: FUNCTION_SUBSTR,
+		MustAmount:   3,
+		MaxAmount:    3,
+		Args: []*functionArgAttr{
+			{Type: types.INTERFACE, Must: true},
+			{Type: types.INT, Must: true},
+			{Type: types.INT, Must: true},
+		},
+		FN: func(args ...*global.Structure) (*global.Structure, error) {
+			print(strings.Count(args[0].Lit, "") - 1)
+			return nil, nil
+		},
+	},
+	{
+		FunctionName: FUNCTION_MD5,
+		MustAmount:   1,
+		MaxAmount:    1,
+		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
+		FN: func(args ...*global.Structure) (*global.Structure, error) {
+			return &global.Structure{
+				Tok: "STRING",
+				Lit: fmt.Sprintf("%x", md5.Sum([]byte(args[0].Lit))),
+			}, nil
 		},
 	},
 }
+
+// return &global.Structure{Tok: ""}, nil

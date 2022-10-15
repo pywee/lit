@@ -1,6 +1,9 @@
 package global
 
-import "regexp"
+import (
+	"fmt"
+	"regexp"
+)
 
 func IsNumber(s string) (bool, error) {
 	return regexp.MatchString(`^[0-9]+[.]{0,1}[0-9]*$`, s)
@@ -27,4 +30,20 @@ func InArrayString(str string, arr []string) bool {
 		}
 	}
 	return false
+}
+
+func Output(expr []*Structure, k int) {
+	for _, v := range expr {
+		fmt.Println(k, "output:", v)
+	}
+	println("")
+}
+
+func Output2(expr [][]*Structure, k int) {
+	for _, x := range expr {
+		for _, v := range x {
+			fmt.Println(k, "output:", v.Tok, v.Lit)
+		}
+	}
+	println("")
 }

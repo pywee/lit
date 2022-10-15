@@ -1,16 +1,8 @@
 package function
 
-import "github.com/pywee/goExpr/global"
-
-// numberFunctions
-// 支持的内置函数: 数字处理函数
-const (
-	FUNCTION_INT        = "int"
-	FUNCTION_FLOOR      = "floor"
-	FUNCTION_STRING     = "string"
-	FUNCTION_ISNUMBERIC = "isNumberic"
-	FUNCTION_ISINT      = "isInt"
-	FUNCTION_ISFLOAT    = "isFloat"
+import (
+	"github.com/pywee/goExpr/global"
+	"github.com/pywee/goExpr/types"
 )
 
 // numberFunctions
@@ -22,7 +14,7 @@ var numberFunctions = []*functionInfo{
 		MustAmount:   1,
 		MaxAmount:    1,
 		Args: []*functionArgAttr{
-			{Type: TYPE_INTERFACE, Must: true},
+			{Type: types.INTERFACE, Must: true},
 		},
 		FN: func(args ...*global.Structure) (*global.Structure, error) {
 			match, err := global.IsNumber(args[0].Lit)
@@ -30,9 +22,9 @@ var numberFunctions = []*functionInfo{
 				return nil, err
 			}
 			if match {
-				return &global.Structure{Tok: TYPE_BOOL, Lit: "true"}, nil
+				return &global.Structure{Tok: types.BOOL, Lit: "true"}, nil
 			}
-			return &global.Structure{Tok: TYPE_BOOL, Lit: "false"}, nil
+			return &global.Structure{Tok: types.BOOL, Lit: "false"}, nil
 		},
 	},
 	{
@@ -40,7 +32,7 @@ var numberFunctions = []*functionInfo{
 		MustAmount:   1,
 		MaxAmount:    1,
 		Args: []*functionArgAttr{
-			{Type: TYPE_INTERFACE, Must: true},
+			{Type: types.INTERFACE, Must: true},
 		},
 		FN: func(args ...*global.Structure) (*global.Structure, error) {
 			match, err := global.IsInt(args[0].Lit)
@@ -48,9 +40,9 @@ var numberFunctions = []*functionInfo{
 				return nil, err
 			}
 			if match {
-				return &global.Structure{Tok: TYPE_BOOL, Lit: "true"}, nil
+				return &global.Structure{Tok: types.BOOL, Lit: "true"}, nil
 			}
-			return &global.Structure{Tok: TYPE_BOOL, Lit: "false"}, nil
+			return &global.Structure{Tok: types.BOOL, Lit: "false"}, nil
 		},
 	},
 	{
@@ -58,7 +50,7 @@ var numberFunctions = []*functionInfo{
 		MustAmount:   1,
 		MaxAmount:    1,
 		Args: []*functionArgAttr{
-			{Type: TYPE_INTERFACE, Must: true},
+			{Type: types.INTERFACE, Must: true},
 		},
 		FN: func(args ...*global.Structure) (*global.Structure, error) {
 			match, err := global.IsFloat(args[0].Lit)
@@ -66,9 +58,9 @@ var numberFunctions = []*functionInfo{
 				return nil, err
 			}
 			if match {
-				return &global.Structure{Tok: TYPE_BOOL, Lit: "true"}, nil
+				return &global.Structure{Tok: types.BOOL, Lit: "true"}, nil
 			}
-			return &global.Structure{Tok: TYPE_BOOL, Lit: "false"}, nil
+			return &global.Structure{Tok: types.BOOL, Lit: "false"}, nil
 		},
 	},
 }
