@@ -18,9 +18,12 @@ func IsInt(s string) (bool, error) {
 }
 
 // IsVariableOrFunction 判断是否为标准变量和函数名称
-func IsVariableOrFunction(name string) bool {
-	match, _ := regexp.MatchString(`^[a-zA-Z_]{1}[a-zA-Z0-9_]{0,}$`, name)
-	return match
+func IsVariableOrFunction(expr *Structure) bool {
+	if expr.Tok == "IDENT" {
+		match, _ := regexp.MatchString(`^[a-zA-Z_]{1}[a-zA-Z0-9_]*$`, expr.Lit)
+		return match
+	}
+	return false
 }
 
 func InArrayString(str string, arr []string) bool {

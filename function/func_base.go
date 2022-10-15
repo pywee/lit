@@ -38,6 +38,7 @@ var baseFunctions = []*functionInfo{
 			{Type: types.INTERFACE, Must: true},
 		},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			print("varDump: ")
 			for _, v := range args {
 				if v != nil {
 					fmt.Print(v, " ")

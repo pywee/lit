@@ -110,17 +110,17 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 	)
 
 	for k, v := range expr {
-		if !foundFunc && v.Tok == "IDENT" && k+1 < len(expr) && expr[k+1].Tok == "(" && global.IsVariableOrFunction(v.Lit) {
+		if !foundFunc && k+1 < len(expr) && expr[k+1].Tok == "(" && global.IsVariableOrFunction(v) {
 			startKey = k
 			if xlen := len(list); xlen > 0 {
 				list = nil
 			}
+
 			if len(firstList) > 0 {
 				rv, err := r.parse(expr[k:], pos)
 				if err != nil {
 					return nil, err
 				}
-
 				expr = append(firstList, rv)
 				firstList = nil
 				break
@@ -153,8 +153,8 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		// 如果表达式是 replace("1", "2", "", 1) 则可生效
 		// FIXME 如果表达式是 replace("1", "2", "", 1) + "xxxx" 则不生效 fixed
 		if fn.IsExprFunction(expr, rLen) {
-			funcName := expr[0]
-			if global.IsVariableOrFunction(funcName.Lit) {
+			if global.IsVariableOrFunction(expr[0]) {
+				funcName := expr[0]
 				fArgs, err := fn.CheckFunctionName(funcName.Lit)
 				if err != nil {
 					return nil, err
@@ -211,6 +211,9 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 	// 所以这里还需要一次递归处理
 	// foundLastFuncExpr := false
 	for k, v := range expr {
+		if sLit := strings.ToLower(v.Lit); sLit == "true" || sLit == "false" {
+			v.Tok = "BOOL"
+		}
 		if v.Tok == "IDENT" && k+1 < len(expr) && expr[k+1].Tok == "(" {
 			rv, err := r.parse(expr, pos)
 			if err != nil {
@@ -218,6 +221,11 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 			}
 			expr = append(expr[:k], rv)
 		}
+	}
+
+	if len(expr) == 0 {
+		println("表达式可能有误！！！")
+		return nil, nil
 	}
 
 	rv, err := r.parseExpr(expr, pos)
@@ -236,11 +244,19 @@ func (r *Expression) parseExpr(expr []*global.Structure, pos string) ([]*global.
 	if err != nil {
 		return nil, err
 	}
-	return parsePlusReduceMulDivB(v, expr[0].Position)
+	return parsePlusReduceMulDivB(v, pos)
 }
 
 func (r *Expression) findExprK(expr []*global.Structure, pos string) ([]*global.Structure, error) {
 	exprLen := len(expr)
+
+	// 如果返回的是最终值 则不再需要进一步解析了
+	// 加快处理速度
+	if exprLen == 1 {
+		if e0 := expr[0]; global.InArrayString(e0.Tok, []string{"INT", "STRING", "FLOAT", "BOOL"}) {
+			return expr, nil
+		}
+	}
 
 	// 错误表达式处理
 	if exprLen > 1 {
@@ -249,37 +265,14 @@ func (r *Expression) findExprK(expr []*global.Structure, pos string) ([]*global.
 		}
 	}
 
-	// 如果返回的是最终值 则不再需要进一步解析了
-	// 加快处理速度
-	if exprLen == 1 {
-		e0 := expr[0]
-		if sLit := strings.ToLower(e0.Lit); sLit == "true" || sLit == "false" {
-			expr[0].Lit = sLit
-			return expr, nil
-		}
-		if global.InArrayString(e0.Tok, []string{"INT", "STRING", "FLOAT", "BOOL"}) {
-			return expr, nil
-		}
-	}
-
 	for k, v := range expr {
-		if v.Tok == "IDENT" {
-			if global.IsVariableOrFunction(v.Lit) {
-				ret, err := r.Get(v.Lit)
-				if err != nil {
-					return nil, err
-				}
-				expr[k] = ret
+		if global.IsVariableOrFunction(v) {
+			ret, err := r.Get(v.Lit)
+			if err != nil {
+				return nil, err
 			}
+			expr[k] = ret
 		}
-		// else if v.Tok == "BOOL" {
-		// 	print("...s")
-		// 	if b := strings.ToLower(v.Lit); b == "true" || b == "false" {
-		// 		v.Tok = "BOOL"
-		// 		v.Lit = strings.ToLower(v.Lit)
-		// 		expr[k] = v
-		// 	}
-		// }
 	}
 
 	var (
@@ -400,8 +393,7 @@ func findExprBetweenSymbool(l, m, r *global.Structure) (*exprResult, error) {
 		lTok = "INT"
 		l.Tok = "INT"
 		l.Lit = "1"
-	}
-	if l.Lit == "false" {
+	} else if l.Lit == "false" {
 		lTok = "INT"
 		l.Tok = "INT"
 		l.Lit = "0"
@@ -410,8 +402,7 @@ func findExprBetweenSymbool(l, m, r *global.Structure) (*exprResult, error) {
 		rTok = "INT"
 		r.Tok = "INT"
 		r.Lit = "1"
-	}
-	if r.Lit == "false" {
+	} else if r.Lit == "false" {
 		rTok = "INT"
 		r.Tok = "INT"
 		r.Lit = "0"
