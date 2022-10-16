@@ -109,7 +109,56 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		list      []*global.Structure
 	)
 
+	// FIXME 针对 && 符号的解析
+	// 优先处理括号
+
+	i := 0
 	for k, v := range expr {
+		if v.Tok == "(" {
+			i++
+		} else if v.Tok == ")" {
+			i--
+		}
+
+		if i != 0 {
+			continue
+		}
+
+		if i == 0 {
+			global.Output(expr)
+		}
+
+		return nil, n
+
+		if v.Tok == "&&" && len(expr) >= 3 && k > 0 {
+			// global.Output(expr[:k])
+			// fmt.Println(r.parse(expr[:k], pos))
+
+			rvLeft, err := r.parse(expr[:k], pos)
+			if err != nil {
+				return nil, err
+			}
+
+			if !fn.ChangeBool(rvLeft) {
+				rvLeft.Tok = "BOOL"
+				rvLeft.Lit = "false"
+				return rvLeft, nil
+			}
+
+			rvRight, err := r.parse(expr[k+1:], pos)
+			if err != nil {
+				return nil, err
+			}
+			if !fn.ChangeBool(rvRight) {
+				rvRight.Tok = "BOOL"
+				rvRight.Lit = "false"
+				return rvRight, nil
+			}
+
+			rvRight.Lit = "true"
+			return rvRight, nil
+		}
+
 		if !foundFunc && k+1 < len(expr) && expr[k+1].Tok == "(" && global.IsVariableOrFunction(v) {
 			startKey = k
 			if xlen := len(list); xlen > 0 {

@@ -86,3 +86,21 @@ func GetFunctionArgList(expr []*global.Structure) [][]*global.Structure {
 }
 
 func BoolToInt(src *global.Structure) {}
+
+// FIXME
+// ChangeBool 将当前的输入转换为布尔值
+func ChangeBool(src *global.Structure) bool {
+	if src.Tok == "STRING" {
+		return src.Lit != ""
+	}
+	if src.Tok == "INT" {
+		return src.Lit != "0"
+	}
+	if src.Tok == "FLOAT" {
+		return src.Lit != "0"
+	}
+	if src.Tok == "BOOL" {
+		return src.Lit != ""
+	}
+	return false
+}
