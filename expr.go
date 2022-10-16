@@ -43,6 +43,12 @@ func NewExpr(src []byte) (*Expression, error) {
 
 			// 递归解析表达式
 			posLine := strings.Split(fset.Position(pos).String(), ":")
+			for _, v := range list {
+				if sLit := strings.ToLower(v.Lit); sLit == "false" || sLit == "true" {
+					v.Tok = "BOOL"
+				}
+			}
+
 			rv, err := result.parse(list, "第"+posLine[0]+"行, ")
 			if err != nil {
 				return nil, errors.New("第" + posLine[0] + "行, " + err.Error())
@@ -94,7 +100,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 
 	i := 0
 	foundK := -1
-	kuoList := make([]*global.Structure, 0, 10)
+	kList := make([]*global.Structure, 0, 10)
 	for k, v := range expr {
 		if v.Tok == "(" {
 			if foundK == -1 {
@@ -106,15 +112,21 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 			i--
 		}
 		if foundK >= 0 {
-			kuoList = append(kuoList, v)
+			kList = append(kList, v)
 		}
 
 		// 括号 非函数
 		if foundK >= 0 && i == 0 {
 			if foundK == 0 || expr[foundK-1].Tok != "IDENT" {
-				global.Output(kuoList)
-				fmt.Println(r.parse(kuoList, pos))
-				return nil, nil
+				rv, err := r.parse(kList, pos)
+				if err != nil {
+					return nil, err
+				}
+				k1 := expr[k+1:]
+				expr = append(expr[:foundK], rv)
+				expr = append(expr, k1...)
+				foundK = -1
+				return r.parse(expr, pos)
 			}
 		}
 	}
