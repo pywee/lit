@@ -100,7 +100,7 @@ func ChangeBool(src *global.Structure) bool {
 		return src.Lit != "0"
 	}
 	if src.Tok == "BOOL" {
-		return src.Lit != ""
+		return src.Lit != "" && src.Lit != "false"
 	}
 	return false
 }

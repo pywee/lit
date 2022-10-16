@@ -83,9 +83,40 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 	if rLen == 0 {
 		return nil, nil
 	}
+
 	e0 := expr[0]
 	if rLen == 1 && e0.Tok != "IDENT" {
 		return e0, nil
+	}
+	if rLen > 1 && e0.Tok == "(" && expr[rLen-1].Tok == ")" {
+		return r.parse(expr[1:rLen-1], pos)
+	}
+
+	i := 0
+	foundK := -1
+	kuoList := make([]*global.Structure, 0, 10)
+	for k, v := range expr {
+		if v.Tok == "(" {
+			if foundK == -1 {
+				foundK = k
+			}
+			i++
+		}
+		if v.Tok == ")" {
+			i--
+		}
+		if foundK >= 0 {
+			kuoList = append(kuoList, v)
+		}
+
+		// 括号 非函数
+		if foundK >= 0 && i == 0 {
+			if foundK == 0 || expr[foundK-1].Tok != "IDENT" {
+				global.Output(kuoList)
+				fmt.Println(r.parse(kuoList, pos))
+				return nil, nil
+			}
+		}
 	}
 
 	// FIXME
@@ -111,29 +142,12 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 
 	// FIXME 针对 && 符号的解析
 	// 优先处理括号
+	// 1.针对已经声明的布尔值没有处理正确
+	// example false && 12345;
+	// 2.使用函数的时候 在带有 && 符号语句中没有解析出正确结果
 
-	i := 0
 	for k, v := range expr {
-		if v.Tok == "(" {
-			i++
-		} else if v.Tok == ")" {
-			i--
-		}
-
-		if i != 0 {
-			continue
-		}
-
-		if i == 0 {
-			global.Output(expr)
-		}
-
-		return nil, n
-
 		if v.Tok == "&&" && len(expr) >= 3 && k > 0 {
-			// global.Output(expr[:k])
-			// fmt.Println(r.parse(expr[:k], pos))
-
 			rvLeft, err := r.parse(expr[:k], pos)
 			if err != nil {
 				return nil, err
@@ -260,9 +274,6 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 	// 所以这里还需要一次递归处理
 	// foundLastFuncExpr := false
 	for k, v := range expr {
-		if sLit := strings.ToLower(v.Lit); sLit == "true" || sLit == "false" {
-			v.Tok = "BOOL"
-		}
 		if v.Tok == "IDENT" && k+1 < len(expr) && expr[k+1].Tok == "(" {
 			rv, err := r.parse(expr, pos)
 			if err != nil {
