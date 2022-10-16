@@ -35,6 +35,9 @@ var numberFunctions = []*functionInfo{
 			{Type: types.INTERFACE, Must: true},
 		},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			if len(args) == 0 {
+				return nil, nil
+			}
 			match, err := global.IsInt(args[0].Lit)
 			if err != nil {
 				return nil, err

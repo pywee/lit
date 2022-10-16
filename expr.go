@@ -85,6 +85,7 @@ func NewExpr(src []byte) (*Expression, error) {
 
 // parse 解析器主入口
 func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Structure, error) {
+	var err error
 	rLen := len(expr)
 	if rLen == 0 {
 		return nil, nil
@@ -98,6 +99,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		return r.parse(expr[1:rLen-1], pos)
 	}
 
+	// 只找括号不换函数
 	i := 0
 	foundK := -1
 	kList := make([]*global.Structure, 0, 10)
@@ -144,14 +146,6 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		}
 	}
 
-	var (
-		startKey  int
-		funcK     int
-		foundFunc bool
-		firstList []*global.Structure
-		list      []*global.Structure
-	)
-
 	// FIXME 针对 && 符号的解析
 	// 优先处理括号
 	// 1.针对已经声明的布尔值没有处理正确
@@ -170,7 +164,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 				rvLeft.Lit = "false"
 				return rvLeft, nil
 			}
-
+			rvLeft.Lit = "true"
 			rvRight, err := r.parse(expr[k+1:], pos)
 			if err != nil {
 				return nil, err
@@ -185,41 +179,28 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 			return rvRight, nil
 		}
 
-		if !foundFunc && k+1 < len(expr) && expr[k+1].Tok == "(" && global.IsVariableOrFunction(v) {
-			startKey = k
-			if xlen := len(list); xlen > 0 {
-				list = nil
-			}
-
-			if len(firstList) > 0 {
-				rv, err := r.parse(expr[k:], pos)
-				if err != nil {
-					return nil, err
-				}
-				expr = append(firstList, rv)
-				firstList = nil
-				break
-			}
-			foundFunc = true
-			list = append(list, v)
-		} else if foundFunc && v.Tok == "(" {
-			funcK++
-			list = append(list, v)
-		} else if foundFunc && v.Tok == ")" {
-			funcK--
-			list = append(list, v)
-		} else if foundFunc && funcK != 0 {
-			list = append(list, v)
-		} else if funcK == 0 && foundFunc && len(list) > 0 {
-			foundFunc = false
-			rv, err := r.parse(list, pos)
+		if v.Tok == "||" && len(expr) >= 3 && k > 0 {
+			rvLeft, err := r.parse(expr[:k], pos)
 			if err != nil {
 				return nil, err
 			}
-			expr = append(expr[:startKey], append([]*global.Structure{rv}, expr[k:]...)...)
-			list = nil
-		} else {
-			firstList = append(firstList, v)
+			rvLeft.Tok = "BOOL"
+			if fn.ChangeBool(rvLeft) {
+				rvLeft.Lit = "true"
+				return rvLeft, nil
+			}
+			rvLeft.Lit = "false"
+			rvRight, err := r.parse(expr[k+1:], pos)
+			if err != nil {
+				return nil, err
+			}
+			rvRight.Tok = "BOOL"
+			if fn.ChangeBool(rvRight) {
+				rvRight.Lit = "true"
+				return rvRight, nil
+			}
+			rvRight.Lit = "false"
+			return rvRight, nil
 		}
 	}
 
@@ -275,6 +256,47 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 				return fRet, err
 			}
 			return nil, nil
+		}
+	}
+
+	// 只找函数不找括号
+	count := 0
+	found := false
+	foundFNKey := -1
+	fns := []*global.Structure{}
+	for k, v := range expr {
+		if v.Tok == "(" {
+			if foundFNKey == -1 && k > 0 && expr[k-1].Tok == "IDENT" {
+				foundFNKey = k
+				fns = append(fns, expr[k-1])
+			}
+			found = true
+			count++
+		} else if v.Tok == ")" {
+			fns = append(fns, v)
+			count--
+		}
+		if count > 0 {
+			fns = append(fns, v)
+		}
+		if count == 0 && found {
+			if foundFNKey != -1 {
+				rv, err := r.parse(fns, pos)
+				if err != nil {
+					return nil, err
+				}
+				right := []*global.Structure{}
+				if k+1 < len(expr) {
+					right = expr[k+1:]
+				}
+				if foundFNKey > 1 {
+					expr = append(expr[:foundFNKey-1], rv)
+				} else {
+					expr = []*global.Structure{rv}
+				}
+				expr = append(expr, right...)
+				return r.parse(expr, pos)
+			}
 		}
 	}
 
@@ -633,4 +655,43 @@ func inArray(sep string, arr []string) bool {
 		}
 	}
 	return false
+}
+
+func (r *Expression) FindFunction(expr []*global.Structure, pos string) ([]*global.Structure, error) {
+	count := 0
+	found := false
+	foundFNKey := -1
+	fns := []*global.Structure{}
+	for k, v := range expr {
+		if v.Tok == "(" {
+			if foundFNKey == -1 && k > 0 && expr[k-1].Tok == "IDENT" {
+				foundFNKey = k
+				fns = append(fns, expr[k-1])
+			}
+			found = true
+			count++
+		} else if v.Tok == ")" {
+			fns = append(fns, v)
+			count--
+		}
+		if count > 0 {
+			fns = append(fns, v)
+		}
+		if count == 0 && found {
+			if foundFNKey != -1 {
+				rv, err := r.parse(fns, pos)
+				if err != nil {
+					return nil, err
+				}
+				if foundFNKey > 1 {
+					expr = append(expr[:foundFNKey-1], rv)
+				}
+				if k+1 < len(expr) {
+					expr = append(expr, expr[k+1:]...)
+				}
+			}
+			break
+		}
+	}
+	return expr, nil
 }
