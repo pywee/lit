@@ -30,6 +30,7 @@ const (
 	FUNCTION_FLOOR      = "floor"
 	FUNCTION_STRING     = "string"
 	FUNCTION_ISNUMBERIC = "isNumberic"
+	FUNCTION_ISBOOL     = "isBool"
 	FUNCTION_ISINT      = "isInt"
 	FUNCTION_ISFLOAT    = "isFloat"
 )
