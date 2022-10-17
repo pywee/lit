@@ -99,7 +99,7 @@ func main() {
     src := []byte(`
         a = true - 1;
         b = isInt(1);   // 函数用于检查当前输出是否为整型
-        c = isFloat(1); // 函数用于检查当前输出是否为整型
+        c = isFloat(1); // 函数用于检查当前输出是否为浮点
         print(a);
         print(b);
         print(c);
