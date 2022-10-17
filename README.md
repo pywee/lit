@@ -155,7 +155,7 @@ func main() {
 ---
 
 
-**五、"并且" 与 "或者" 符号处理 (仍有bug, 修复中...)**
+**五、"并且" 与 "或者" 符号处理**
 ```golang
     // 执行如下句子，将会输出
     // varDump: &{ BOOL true}
@@ -164,8 +164,6 @@ func main() {
         varDump(a);
     `)
     _, err := goExpr.NewExpr(src)
-
-    // 关于这一特性的处理仍然存在 bug ，目前仍在修复中...
 
 ```
 
