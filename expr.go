@@ -161,6 +161,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string, foundAndOr bool
 		}
 	}
 
+	// 函数判断
 	if rLen >= 3 {
 		// 判断是否表达式为函数
 		// 如果表达式是 replace("1", "2", "", 1) 则可生效
@@ -294,8 +295,15 @@ func (r *Expression) parseAndOr(expr []*global.Structure, pos string, foundAndOr
 	// 1.针对已经声明的布尔值没有处理正确
 	// example false && 12345;
 	// 2.使用函数的时候 在带有 && 符号语句中没有解析出正确结果
+	foundK := false
 	for k, v := range expr {
+		if v.Tok == "(" {
+			foundK = true
+		}
 		if v.Tok == "&&" && len(expr) >= 3 && k > 0 {
+			if foundK {
+				return nil, nil
+			}
 			rvLeft, err := r.parse(expr[:k], pos, foundAndOr)
 			if err != nil {
 				return nil, err
