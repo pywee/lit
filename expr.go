@@ -43,13 +43,17 @@ func NewExpr(src []byte) (*Expression, error) {
 
 			// 递归解析表达式
 			posLine := strings.Split(fset.Position(pos).String(), ":")
+			foundAndOr := false
 			for _, v := range list {
 				if sLit := strings.ToLower(v.Lit); sLit == "false" || sLit == "true" {
 					v.Tok = "BOOL"
 				}
+				if v.Tok == "||" || v.Tok == "&&" {
+					foundAndOr = true
+				}
 			}
 
-			rv, err := result.parse(list, "第"+posLine[0]+"行, ")
+			rv, err := result.parse(list, "第"+posLine[0]+"行, ", foundAndOr)
 			if err != nil {
 				return nil, errors.New("第" + posLine[0] + "行, " + err.Error())
 			}
@@ -84,7 +88,7 @@ func NewExpr(src []byte) (*Expression, error) {
 }
 
 // parse 解析器主入口
-func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Structure, error) {
+func (r *Expression) parse(expr []*global.Structure, pos string, foundAndOr bool) (*global.Structure, error) {
 	var err error
 	rLen := len(expr)
 	if rLen == 0 {
@@ -96,7 +100,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		return e0, nil
 	}
 	if rLen > 1 && e0.Tok == "(" && expr[rLen-1].Tok == ")" {
-		return r.parse(expr[1:rLen-1], pos)
+		return r.parse(expr[1:rLen-1], pos, foundAndOr)
 	}
 
 	// 只找括号不换函数
@@ -120,15 +124,16 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		// 括号 非函数
 		if foundK >= 0 && i == 0 {
 			if foundK == 0 || expr[foundK-1].Tok != "IDENT" {
-				rv, err := r.parse(kList, pos)
+				rv, err := r.parse(kList, pos, foundAndOr)
 				if err != nil {
 					return nil, err
 				}
+
 				k1 := expr[k+1:]
 				expr = append(expr[:foundK], rv)
 				expr = append(expr, k1...)
 				foundK = -1
-				return r.parse(expr, pos)
+				return r.parse(expr, pos, foundAndOr)
 			}
 		}
 	}
@@ -146,61 +151,13 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		}
 	}
 
-	// FIXME 针对 && 符号的解析
-	// 优先处理括号
-	// 1.针对已经声明的布尔值没有处理正确
-	// example false && 12345;
-	// 2.使用函数的时候 在带有 && 符号语句中没有解析出正确结果
-
-	for k, v := range expr {
-		if v.Tok == "&&" && len(expr) >= 3 && k > 0 {
-			rvLeft, err := r.parse(expr[:k], pos)
-			if err != nil {
-				return nil, err
-			}
-
-			if !fn.ChangeBool(rvLeft) {
-				rvLeft.Tok = "BOOL"
-				rvLeft.Lit = "false"
-				return rvLeft, nil
-			}
-			rvLeft.Lit = "true"
-			rvRight, err := r.parse(expr[k+1:], pos)
-			if err != nil {
-				return nil, err
-			}
-			if !fn.ChangeBool(rvRight) {
-				rvRight.Tok = "BOOL"
-				rvRight.Lit = "false"
-				return rvRight, nil
-			}
-
-			rvRight.Lit = "true"
-			return rvRight, nil
+	if foundAndOr {
+		rvAfter, err := r.parseAndOr(expr, pos, foundAndOr)
+		if err != nil {
+			return nil, err
 		}
-
-		if v.Tok == "||" && len(expr) >= 3 && k > 0 {
-			rvLeft, err := r.parse(expr[:k], pos)
-			if err != nil {
-				return nil, err
-			}
-			rvLeft.Tok = "BOOL"
-			if fn.ChangeBool(rvLeft) {
-				rvLeft.Lit = "true"
-				return rvLeft, nil
-			}
-			rvLeft.Lit = "false"
-			rvRight, err := r.parse(expr[k+1:], pos)
-			if err != nil {
-				return nil, err
-			}
-			rvRight.Tok = "BOOL"
-			if fn.ChangeBool(rvRight) {
-				rvRight.Lit = "true"
-				return rvRight, nil
-			}
-			rvRight.Lit = "false"
-			return rvRight, nil
+		if rvAfter != nil {
+			return rvAfter, nil
 		}
 	}
 
@@ -237,7 +194,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 				for k, varg := range args {
 					// FIXME
 					// 函数中的实参表达式 实参可以是函数、变量、算术表达式等等
-					rv, err := r.parse(varg, pos)
+					rv, err := r.parse(varg, pos, foundAndOr)
 					if err != nil {
 						return nil, err
 					}
@@ -273,7 +230,6 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 			found = true
 			count++
 		} else if v.Tok == ")" {
-			fns = append(fns, v)
 			count--
 		}
 		if count > 0 {
@@ -281,7 +237,9 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		}
 		if count == 0 && found {
 			if foundFNKey != -1 {
-				rv, err := r.parse(fns, pos)
+				// 补全最后一个括号
+				fns = append(fns, v)
+				rv, err := r.parse(fns, pos, foundAndOr)
 				if err != nil {
 					return nil, err
 				}
@@ -295,7 +253,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 					expr = []*global.Structure{rv}
 				}
 				expr = append(expr, right...)
-				return r.parse(expr, pos)
+				return r.parse(expr, pos, foundAndOr)
 			}
 		}
 	}
@@ -309,7 +267,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 	// foundLastFuncExpr := false
 	for k, v := range expr {
 		if v.Tok == "IDENT" && k+1 < len(expr) && expr[k+1].Tok == "(" {
-			rv, err := r.parse(expr, pos)
+			rv, err := r.parse(expr, pos, foundAndOr)
 			if err != nil {
 				return nil, err
 			}
@@ -328,6 +286,53 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		return nil, err
 	}
 	return rv[0], nil
+}
+
+func (r *Expression) parseAndOr(expr []*global.Structure, pos string, foundAndOr bool) (*global.Structure, error) {
+	// FIXME 针对 && 符号的解析
+	// 优先处理括号
+	// 1.针对已经声明的布尔值没有处理正确
+	// example false && 12345;
+	// 2.使用函数的时候 在带有 && 符号语句中没有解析出正确结果
+	for k, v := range expr {
+		if v.Tok == "&&" && len(expr) >= 3 && k > 0 {
+			rvLeft, err := r.parse(expr[:k], pos, foundAndOr)
+			if err != nil {
+				return nil, err
+			}
+			if fn.ChangeBool(rvLeft).IsBoolFalse() {
+				return rvLeft, nil
+			}
+
+			rvRight, err := r.parse(expr[k+1:], pos, foundAndOr)
+			if err != nil {
+				return nil, err
+			}
+			if fn.ChangeBool(rvRight).IsBoolFalse() {
+				return rvRight, nil
+			}
+			return rvRight, nil
+		}
+
+		if v.Tok == "||" && len(expr) >= 3 && k > 0 {
+			rvLeft, err := r.parse(expr[:k], pos, foundAndOr)
+			if err != nil {
+				return nil, err
+			}
+			if fn.ChangeBool(rvLeft).IsBoolTrue() {
+				return rvLeft, nil
+			}
+			rvRight, err := r.parse(expr[k+1:], pos, foundAndOr)
+			if err != nil {
+				return nil, err
+			}
+			if fn.ChangeBool(rvRight).IsBoolTrue() {
+				return rvRight, nil
+			}
+			return rvRight, nil
+		}
+	}
+	return nil, nil
 }
 
 // parseExpr 解析算术表达式入口
@@ -657,7 +662,7 @@ func inArray(sep string, arr []string) bool {
 	return false
 }
 
-func (r *Expression) FindFunction(expr []*global.Structure, pos string) ([]*global.Structure, error) {
+func (r *Expression) FindFunction(expr []*global.Structure, pos string, foundAndOr bool) ([]*global.Structure, error) {
 	count := 0
 	found := false
 	foundFNKey := -1
@@ -679,7 +684,7 @@ func (r *Expression) FindFunction(expr []*global.Structure, pos string) ([]*glob
 		}
 		if count == 0 && found {
 			if foundFNKey != -1 {
-				rv, err := r.parse(fns, pos)
+				rv, err := r.parse(fns, pos, foundAndOr)
 				if err != nil {
 					return nil, err
 				}

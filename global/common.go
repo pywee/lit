@@ -40,9 +40,10 @@ func Output(expr interface{}) {
 		for _, v := range expr.([]*Structure) {
 			fmt.Println("output:", v)
 		}
-	}
-	if fmt.Sprintf("%T", expr) == "*global.Structure" {
+	} else if fmt.Sprintf("%T", expr) == "*global.Structure" {
 		fmt.Println("rv output:", expr)
+	} else {
+		fmt.Println(expr)
 	}
 	println("")
 }

@@ -6,6 +6,14 @@ type Structure struct {
 	Lit      string
 }
 
+func (s *Structure) IsBoolTrue() bool {
+	return s.Lit == "true"
+}
+
+func (s *Structure) IsBoolFalse() bool {
+	return s.Lit == "false"
+}
+
 func (s *Structure) Val() string {
 	return s.Lit
 }
