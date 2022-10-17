@@ -35,9 +35,15 @@ func InArrayString(str string, arr []string) bool {
 	return false
 }
 
-func Output(expr []*Structure) {
-	for _, v := range expr {
-		fmt.Println("output:", v)
+func Output(expr interface{}) {
+	if fmt.Sprintf("%T", expr) == "[]*global.Structure" {
+		for _, v := range expr.([]*Structure) {
+			fmt.Println("output:", v)
+		}
+	} else if fmt.Sprintf("%T", expr) == "*global.Structure" {
+		fmt.Println("rv output:", expr)
+	} else {
+		fmt.Println(expr)
 	}
 	println("")
 }

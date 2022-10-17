@@ -1,128 +1,204 @@
-# goExpr
+# Lit 轻量级解释型弱类型语言 (迭代中...)
 
-Scientific computing in golang.
 
-本代码实现了在 Golang 里面直接引用后可以对算术表达式的文本进行解释，科学地计算出结果。包括加、减、乘、除、与、或、非。
+goExpr 是一个轻量级解释型语言的锥形，目前仍在持续开发中。它基于 Golang 开发，还没有<b>正式的名字</b>，暂且叫作 <b>Lit</b> 好了。原本我只打算用于实现对文本中包含的算术表达式进行计算，后来逐步地扩充了更多的特性。
 
-对于需要进行解释型动态开发的需求可以使用本代码包。
+目前我已经实现了一些编程语言必须具备的基础功能，尤其是比较重要的算术表达式、弱类型转换、内置函数、变量声明等。仍然需要进一步完善。<u>因此你还不能直接将其用于日常开发中。</u>
 
-### 使用方法
+我对 Lit (goExpr) 的定位是一个解释型弱类型语言，希望它能用于日常的 Web 开发，这是我的目标。至于能否顺利完成，还需要很长时间才能下定论。
+
+关于目前已实现的特性，请看如下文档，我将定期更新：
+
+当前文档更新日期是 2022.10.17
+
+---
+
+#### 使用方法
 
 
 ```
 go get github.com/pywee/goExpr
 ```
 
-示例：
 
+
+**一、支持变量声明**
 ```golang
 import "github.com/pywee/goExpr"
 
 func main() {
+    // 执行以下句子，最终会输出
+    // 579
+    src := []byte(`
+        a = 123;
+        b = a + 456;
+        print(b);
+    `)
+    _, err := goExpr.NewExpr(src)
+}
 
-    // Golang 语言原生计算 
-    println((2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11))) / 10 * 2)
-    println(12/333+31+(5/10)-6|100)
-    // output 
+```
+
+---
+
+**二、算术表达式的计算。算术符号的优先级保持与 Go 语言相同。请看示例：**
+
+```golang
+    // 不同的语言符号优先级是不完全一样的，Lit 的算术符号优先级保持与 Golang 一致
+    // 首先我们执行 Go 语言原生函数进行数学表达式计算
+    // 以下句子最终会输出 
     // +1.600000e+001
     // 125
+    println((2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11))) / 10 * 2)
+    println(12/333+31+(5/10)-6|100)
 
-
-    // 使用 goExpr 计算文本中的数据
+    // 使用 Lit 计算文本中的数据
     // 表达式文本
+    // 执行下面的句子 最终会输出
+    // 16
+    // 125
     exprs := []byte(`
-        a = (2 + 100^2-(10*1.1-22+(22|11)))/10*2;
-        b = a+11203-(11*10&2/16);
-        c = 12/333+31+(5/10)-6|100;
+        a = (2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11))) / 10 * 2;
+        b = 12 / 333 + 31 + (5 / 10) - 6 | 100;
+        print(a);
+        print(b);
     `)
+    _, err = goExpr.NewExpr(exprs)
 
-    exec, err := goExpr.NewExpr(exprs)
-    valueA := exec.Get("a")
-    valueB := goExpr.Get("b")
-    valueC := goExpr.Get("c")
-    println(valueA)
-    println(valueB)
-    println(valueC)
+    // *** 同样的表达式放在 PHP 中，会输出 -24 ***
 
-    // output
-    // &{ FLOAT 16} <nil>
-    // &{ FLOAT 11219} <nil>
-    // &{ INT 125} <nil>
-}
 ```
+
 ---
 
-**支持简单的变量操作**
-```golang
-    src := []byte(`
-        a = 123;
-        b = a + 456
-    `)
-    exec, err := goExpr.NewExpr(src)
-    fmt.Println(expr.Get("b"))
+**三、当前已支持部分常用内置函数(测试阶段)，更多的内置函数我将在接下来继续完成**
 
-    // output
-    // &{ INT 579} <nil>
+```golang
+
+    // 下面的句子调用了两个函数 
+    // isInt(arg) 用来检查 arg 是否为整型 
+    // replace(arg1, arg2, arg3, arg4) 用来做字符串替换
+
+    // 执行下面语句 最终会输出
+    // varDump: &{ STRING hello word} 
+     exprs := []byte(`
+        a = replace("hello word111", "1", "", 2-isInt((1+(1 + isInt(123+(1+2)))-1)+2)-2);
+        varDump(a);
+    `)
+    _, err = goExpr.NewExpr(exprs)
+
 ```
----
 
-**支持针对字符串类型的整型或浮点型参与算术运算**
-
+**四、弱类型转换，弱类型的这一特性我将它设计为与 PHP 一样**
 ```golang
-    // 浮点型字符串+整型
-    // 最终输出结果的底层类型将变为浮点型
-    // example:
+    // 当布尔值参与运算时，底层会将 true 转为 1, false 转为 0
+    // 执行下面句子 将输出
+    // 0
+    // true
+    // true
     src := []byte(`
-        a = 123;
-        b = a + 456.1 + (11-2*(30-1))
+        a = true - 1;
+        b = isInt(1);   // 函数用于检查当前输出是否为整型
+        c = isFloat(1); // 函数用于检查当前输出是否为整型
+        print(a);
+        print(b);
+        print(c);
     `)
-    exec, err := goExpr.NewExpr(src)
-    fmt.Println(expr.Get("a"))
-    // output
-    // &{ FLOAT 532.1} <nil>
+    _, err := goExpr.NewExpr(src)
 
-    --------------------------------------
+    ---------------------------------------------------
+
+    // 与其他弱类型语言一样
+    // 字符串数字与整型相操作，在 Lit 的底层会将字符串数字转换为整型
+    // 执行下面句子 将输出
+    // 0
+    src := []byte(`
+        a = "1" - 1;
+        print(a);
+    `)
+    _, err := goExpr.NewExpr(src)
+
+    ---------------------------------------------------
+
+    // 字符串与字符串相加时 将进行字符串的拼接
+    // 执行以下句子，将会输出
+    // abcdef
+    src := []byte(`
+        a = "abc" + "def";
+        print(a);
+    `)
+    _, err := goExpr.NewExpr(src)
+
+    ---------------------------------------------------
+
+    // 但如果当两个字符串都为数字时 对他们进行相加 则会被底层转换为数字
+    // 执行如下句子，将会输出
+    // 579
+     src := []byte(`
+        a = "123" + "456";
+        print(a);
+    `)
+    _, err := goExpr.NewExpr(src)
+
+    ---------------------------------------------------
 
     // 其他字符串+整型将会报错
-    // example
-    src := []byte(`a = "abcwwww1230"+0.01`)
-    exec, err := goExpr.NewExpr(src)
-    fmt.Println(expr.GetVal("a"))
-    // output 
-    // found error (code 1002), notice: xx:xx wrong sentence
-
+    // 执行如下句子，将会报错
+    src := []byte(`
+    	a = "abcwwww1230"+0.01;
+    	print(a);
+    `)
+    _, err := goExpr.NewExpr(src)
 ```
 
-**布尔值类型参与算术运算时将被底层转为整型**
-```golang
-    // 布尔值参与运算时 底层会将 true 转为 1, false 转为 0
-    // true = 1
-    // false = 2
-    src := []byte(`a = true - 1`)
-    exec, err := goExpr.NewExpr(src)
-    fmt.Println(expr.GetVal("a"))
-    // output
-    // 0
-```
 
 ---
 
-#### 请注意，goExpr 优先参考了 Golang 的算术符号优先级进行数据计算。
-**每个语言对算术符号的优先级处理都有一定区别，如，针对以下表达式进行计算时：**
+
+**五、"并且" 与 "或者" 符号处理 (仍有bug, 修复中...)**
+```golang
+    // 执行如下句子，将会输出
+    // varDump: &{ BOOL true}
+    src := []byte(`
+        a = isInt(1) && 72+(11-2) || 1-false;
+        varDump(a);
+    `)
+    _, err := goExpr.NewExpr(src)
+
+    // 关于这一特性的处理仍然存在 bug ，目前仍在修复中...
+
+```
+
+
+---
+
+
+
+**请注意，Lit 的算术符号优先级向 Golang 看齐。每个语言对算术符号的优先级处理都有一定区别，如，针对以下表达式进行计算时：**
 
 ``` golang
 // 2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11)) / 10 * 2
-// php 输出 -104
-// node.js 输出 -104
-// golang 输出 96
-// goExpr 输出 96
+// PHP 输出 -104
+// Node.js 输出 -104
+// Golang 输出 96
+// Lit (goExpr) 输出 96
 ```
 
 ---
 
-##### goExpr 算术符号优先级
-第一级  ``` () ```
+##### Lit 算术符号优先级
+第一级  ``` () && || ```
 
 第二级  ``` * / % ```
 
-第三级  ``` + - | & ^ ```
+第三级 ```| &``` 
+
+第四级  ``` + - ^ ```
+
+---
+
+
+
+
+##### 后期我将实现更多特性，敬请期待...
+
