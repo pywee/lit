@@ -10,7 +10,7 @@ import (
 var numberFunctions = []*functionInfo{
 	{
 		// 检查当前输入的值是否为数字（包括整型和浮点型型）
-		FunctionName: FUNCTION_ISNUMBERIC,
+		FunctionName: FUNCTION_ISNUMERIC,
 		MustAmount:   1,
 		MaxAmount:    1,
 		Args: []*functionArgAttr{

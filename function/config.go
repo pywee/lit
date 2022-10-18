@@ -26,11 +26,11 @@ const (
 
 	// numberFunctions
 	// 支持的内置函数: 数字处理函数
-	FUNCTION_INT        = "int"
-	FUNCTION_FLOOR      = "floor"
-	FUNCTION_STRING     = "string"
-	FUNCTION_ISNUMBERIC = "isNumberic"
-	FUNCTION_ISBOOL     = "isBool"
-	FUNCTION_ISINT      = "isInt"
-	FUNCTION_ISFLOAT    = "isFloat"
+	FUNCTION_INT       = "int"
+	FUNCTION_FLOOR     = "floor"
+	FUNCTION_STRING    = "string"
+	FUNCTION_ISNUMERIC = "isNumeric"
+	FUNCTION_ISBOOL    = "isBool"
+	FUNCTION_ISINT     = "isInt"
+	FUNCTION_ISFLOAT   = "isFloat"
 )
