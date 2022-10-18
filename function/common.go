@@ -99,13 +99,14 @@ func ChangeBool(src *global.Structure) *global.Structure {
 		return src
 	}
 
-	src.Lit = "false"
 	if src.Tok == "STRING" && src.Lit != "" {
 		src.Lit = "true"
 	} else if src.Tok == "INT" && src.Lit != "0" {
 		src.Lit = "true"
 	} else if src.Tok == "FLOAT" && src.Lit != "0" {
 		src.Lit = "true"
+	} else {
+		src.Lit = "false"
 	}
 	src.Tok = "BOOL"
 	return src

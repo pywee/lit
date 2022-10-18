@@ -311,15 +311,12 @@ func (r *Expression) parseAndOr(expr []*global.Structure, pos string, foundAndOr
 			if fn.ChangeBool(rvLeft).IsBoolFalse() {
 				return rvLeft, nil
 			}
-
 			rvRight, err := r.parse(expr[k+1:], pos, foundAndOr)
 			if err != nil {
 				return nil, err
 			}
-			if fn.ChangeBool(rvRight).IsBoolFalse() {
-				return rvRight, nil
-			}
-			return rvRight, nil
+
+			return fn.ChangeBool(rvRight), nil
 		}
 
 		if v.Tok == "||" && len(expr) >= 3 && k > 0 {
@@ -334,10 +331,7 @@ func (r *Expression) parseAndOr(expr []*global.Structure, pos string, foundAndOr
 			if err != nil {
 				return nil, err
 			}
-			if fn.ChangeBool(rvRight).IsBoolTrue() {
-				return rvRight, nil
-			}
-			return rvRight, nil
+			return fn.ChangeBool(rvRight), nil
 		}
 	}
 	return nil, nil

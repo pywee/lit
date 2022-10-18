@@ -6,7 +6,7 @@ import (
 )
 
 func IsNumber(s string) (bool, error) {
-	return regexp.MatchString(`^[0-9]+[.]{0,1}[0-9]*$`, s)
+	return regexp.MatchString(`^[-0-9]+[.]{0,1}[0-9]*$`, s)
 }
 
 func IsFloat(s string) (bool, error) {
@@ -14,7 +14,7 @@ func IsFloat(s string) (bool, error) {
 }
 
 func IsInt(s string) (bool, error) {
-	return regexp.MatchString(`^[0-9]+$`, s)
+	return regexp.MatchString(`^[-0-9]+$`, s)
 }
 
 // IsVariableOrFunction 判断是否为标准变量和函数名称
@@ -41,7 +41,7 @@ func Output(expr interface{}) {
 			fmt.Println("output:", v)
 		}
 	} else if fmt.Sprintf("%T", expr) == "*global.Structure" {
-		fmt.Println("rv output:", expr)
+		fmt.Println("result value output:", expr)
 	} else {
 		fmt.Println(expr)
 	}

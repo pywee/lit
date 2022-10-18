@@ -48,4 +48,21 @@ var baseFunctions = []*functionInfo{
 			return nil, nil
 		},
 	},
+	{
+		FunctionName: FUNCTION_ISBOOL,
+		MustAmount:   1,
+		MaxAmount:    1,
+		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			if args[0].Tok == "BOOL" {
+				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+			}
+			return &global.Structure{Tok: "BOOL", Lit: "false"}, nil
+
+			// if s := args[0]; s.Tok == "BOOL" && (s.Lit == "true" || s.Lit == "false") {
+			// 	return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+			// }
+			// return &global.Structure{Tok: "BOOL", Lit: "false"}, nil
+		},
+	},
 }
