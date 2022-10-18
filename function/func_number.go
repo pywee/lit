@@ -31,9 +31,7 @@ var numberFunctions = []*functionInfo{
 		FunctionName: FUNCTION_ISINT,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args: []*functionArgAttr{
-			{Type: types.INTERFACE, Must: true},
-		},
+		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			if len(args) == 0 {
 				return nil, nil
@@ -52,9 +50,7 @@ var numberFunctions = []*functionInfo{
 		FunctionName: FUNCTION_ISFLOAT,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args: []*functionArgAttr{
-			{Type: types.INTERFACE, Must: true},
-		},
+		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			match, err := global.IsFloat(args[0].Lit)
 			if err != nil {

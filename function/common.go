@@ -61,9 +61,11 @@ func GetFunctionArgList(expr []*global.Structure) [][]*global.Structure {
 		return [][]*global.Structure{}
 	}
 
-	var list = make([][]*global.Structure, 0, 3)
-	var arg = make([]*global.Structure, 0, 5)
-	var seenK int8
+	var (
+		seenK int8
+		list  = make([][]*global.Structure, 0, 3)
+		arg   = make([]*global.Structure, 0, 5)
+	)
 	for _, v := range expr {
 		if v.Tok == "(" {
 			seenK++
@@ -91,15 +93,14 @@ func BoolToInt(src *global.Structure) {}
 // ChangeBool 将当前的输入转换为布尔值
 func ChangeBool(src *global.Structure) *global.Structure {
 	if src.Tok == "BOOL" {
+		src.Lit = "false"
 		if src.Lit != "" && src.Lit != "false" {
 			src.Lit = "true"
-		} else {
-			src.Lit = "false"
 		}
 		return src
 	}
 
-	if src.Tok == "STRING" && src.Lit != "" {
+	if src.Tok == "STRING" && src.Lit != "" && src.Lit != "0" {
 		src.Lit = "true"
 	} else if src.Tok == "INT" && src.Lit != "0" {
 		src.Lit = "true"

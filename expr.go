@@ -151,6 +151,9 @@ func (r *Expression) parse(expr []*global.Structure, pos string, foundAndOr bool
 		}
 	}
 
+	// FIXME
+	// 针对有 && 和 || 符号的表达式才进入这个逻辑
+	// 后期可以进一步优化
 	if foundAndOr {
 		rvAfter, err := r.parseAndOr(expr, pos, foundAndOr)
 		if err != nil {
@@ -289,6 +292,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string, foundAndOr bool
 	return rv[0], nil
 }
 
+// parseAndOr
 func (r *Expression) parseAndOr(expr []*global.Structure, pos string, foundAndOr bool) (*global.Structure, error) {
 	// FIXME 针对 && 符号的解析
 	// 优先处理括号
@@ -315,7 +319,6 @@ func (r *Expression) parseAndOr(expr []*global.Structure, pos string, foundAndOr
 			if err != nil {
 				return nil, err
 			}
-
 			return fn.ChangeBool(rvRight), nil
 		}
 
