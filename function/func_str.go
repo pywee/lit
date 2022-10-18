@@ -15,7 +15,7 @@ import (
 var strFunctions = []*functionInfo{
 	{
 		FunctionName: FUNCTION_REPLACE,
-		MustAmount:   1,
+		MustAmount:   4,
 		MaxAmount:    4,
 		Args: []*functionArgAttr{
 			{Type: types.INTERFACE, Must: true},
@@ -137,6 +137,85 @@ var strFunctions = []*functionInfo{
 			}, nil
 		},
 	},
+	{
+		FunctionName: FUNCTION_CONTAINS,
+		MustAmount:   2,
+		MaxAmount:    2,
+		Args: []*functionArgAttr{
+			{Type: types.STRING, Must: true},
+			{Type: types.STRING, Must: true},
+		},
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			return &global.Structure{
+				Tok: "BOOL",
+				Lit: fmt.Sprintf("%v", strings.Contains(args[0].Lit, args[1].Lit)),
+			}, nil
+		},
+	},
+	{
+		FunctionName: FUNCTION_INDEX,
+		MustAmount:   2,
+		MaxAmount:    2,
+		Args: []*functionArgAttr{
+			{Type: types.STRING, Must: true},
+			{Type: types.STRING, Must: true},
+		},
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			return &global.Structure{
+				Tok: "INT",
+				Lit: fmt.Sprintf("%d", strings.Index(args[0].Lit, args[1].Lit)),
+			}, nil
+		},
+	},
+	{
+		FunctionName: FUNCTION_LASTINDEX,
+		MustAmount:   2,
+		MaxAmount:    2,
+		Args: []*functionArgAttr{
+			{Type: types.STRING, Must: true},
+			{Type: types.STRING, Must: true},
+		},
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			return &global.Structure{
+				Tok: "INT",
+				Lit: fmt.Sprintf("%d", strings.LastIndex(args[0].Lit, args[1].Lit)),
+			}, nil
+		},
+	},
+	{
+		FunctionName: FUNCTION_TOLOWER,
+		MustAmount:   1,
+		MaxAmount:    1,
+		Args:         []*functionArgAttr{{Type: types.STRING, Must: true}},
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			return &global.Structure{
+				Tok: "STRING",
+				Lit: strings.ToLower(args[0].Lit),
+			}, nil
+		},
+	},
+	{
+		FunctionName: FUNCTION_TOUPPER,
+		MustAmount:   1,
+		MaxAmount:    1,
+		Args:         []*functionArgAttr{{Type: types.STRING, Must: true}},
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			return &global.Structure{
+				Tok: "STRING",
+				Lit: strings.ToUpper(args[0].Lit),
+			}, nil
+		},
+	},
+	{
+		FunctionName: FUNCTION_TOTITLE,
+		MustAmount:   1,
+		MaxAmount:    1,
+		Args:         []*functionArgAttr{{Type: types.STRING, Must: true}},
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			return &global.Structure{
+				Tok: "STRING",
+				Lit: strings.ToTitle(args[0].Lit),
+			}, nil
+		},
+	},
 }
-
-// return &global.Structure{Tok: ""}, nil
