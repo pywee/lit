@@ -32,7 +32,7 @@ func main() {
     src := []byte(`
         a = 123;
         b = a + 456;
-        print(b);
+        Print(b);
     `)
     _, err := goExpr.NewExpr(src)
 }
@@ -60,8 +60,8 @@ func main() {
     exprs := []byte(`
         a = (2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11))) / 10 * 2;
         b = 12 / 333 + 31 + (5 / 10) - 6 | 100;
-        print(a);
-        print(b);
+        Print(a);
+        Print(b);
     `)
     _, err = goExpr.NewExpr(exprs)
 
@@ -76,14 +76,14 @@ func main() {
 ```golang
 
     // 下面的句子调用了两个函数 
-    // isInt(arg) 用来检查 arg 是否为整型 
-    // replace(arg1, arg2, arg3, arg4) 用来做字符串替换
+    // IsInt(arg) 用来检查 arg 是否为整型 
+    // Replace(arg1, arg2, arg3, arg4) 用来做字符串替换
 
     // 执行下面语句 最终会输出
-    // varDump: &{ STRING hello word} 
+    // VarDump: &{ STRING hello word} 
      exprs := []byte(`
-        a = replace("hello word111", "1", "", 2-isInt((1+(1 + isInt(123+(1+2)))-1)+2)-2);
-        varDump(a);
+        a = Replace("hello word111", "1", "", 2-IsInt((1+(1 + IsInt(123+(1+2)))-1)+2)-2);
+        VarDump(a);
     `)
     _, err = goExpr.NewExpr(exprs)
 
@@ -98,11 +98,11 @@ func main() {
     // true
     src := []byte(`
         a = true - 1;
-        b = isInt(1);   // 函数用于检查当前输出是否为整型
-        c = isFloat(1); // 函数用于检查当前输出是否为浮点
-        print(a);
-        print(b);
-        print(c);
+        b = IsInt(1);   // 函数用于检查当前输出是否为整型
+        c = IsFloat(1); // 函数用于检查当前输出是否为浮点
+        Print(a);
+        Print(b);
+        Print(c);
     `)
     _, err := goExpr.NewExpr(src)
 
@@ -114,7 +114,7 @@ func main() {
     // 0
     src := []byte(`
         a = "1" - 1;
-        print(a);
+        Print(a);
     `)
     _, err := goExpr.NewExpr(src)
 
@@ -125,7 +125,7 @@ func main() {
     // abcdef
     src := []byte(`
         a = "abc" + "def";
-        print(a);
+        Print(a);
     `)
     _, err := goExpr.NewExpr(src)
 
@@ -136,7 +136,7 @@ func main() {
     // 579
      src := []byte(`
         a = "123" + "456";
-        print(a);
+        Print(a);
     `)
     _, err := goExpr.NewExpr(src)
 
@@ -146,7 +146,7 @@ func main() {
     // 执行如下句子，将会报错
     src := []byte(`
     	a = "abcwwww1230"+0.01;
-    	print(a);
+    	Print(a);
     `)
     _, err := goExpr.NewExpr(src)
 ```
@@ -158,10 +158,10 @@ func main() {
 **五、"并且" 与 "或者" 符号处理**
 ```golang
     // 执行如下句子，将会输出
-    // varDump: &{ BOOL true}
+    // BOOL true
     src := []byte(`
-        a = isInt(1) && 72+(11-2) || 1-false;
-        varDump(a);
+        a = IsInt(1) && 72+(11-2) || 1-false;
+        VarDump(a);
     `)
     _, err := goExpr.NewExpr(src)
 
