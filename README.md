@@ -9,7 +9,7 @@ goExpr Lit 是一个轻量级解释型语言的锥形，目前仍在持续开发
 
 关于目前已实现的特性，请看如下文档，我将定期更新：
 
-当前文档更新日期是 2022.10.17
+当前文档更新日期是 2022.10.19
 
 ---
 
@@ -184,7 +184,7 @@ func main() {
 
 ---
 
-##### Lit 算术符号优先级
+**Lit 算术符号优先级**
 第一级  ``` () && || ```
 
 第二级  ``` * / % ```
@@ -195,8 +195,40 @@ func main() {
 
 ---
 
+**当前支持的内置函数有如下，更多函数将会在逐步补充**
+```golang
+    // 通用处理函数
+    Print
+    VarDump
+
+    // 字符串处理函数
+    // 函数的命名基本参考了 Go 语言
+    // 除了个别函数有差别，如 
+    // UTF8Len 用于检测字符串字数的函数
+    // IsNumeric 用于判断当前输入是否为数字
+    Trim
+    TrimLeft
+    TrimRight
+    TrimSpace
+    Len
+    UTF8Len
+    MD5
+    Replace
+    Contains
+    Index
+    LastIndex
+    ToLower
+    ToUpper
+    ToTitle
+    Repeat
+
+    // 其他函数
+    IsNumeric
+    IsBool
+    IsInt
+    IsFloat
+```
 
 
-
-##### 后期我将实现更多特性，敬请期待...
+##### 后期将会实现更多特性，敬请期待...
 
