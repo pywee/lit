@@ -99,14 +99,17 @@ func (r *Expression) parse(expr []*global.Structure, pos string, foundAndOr bool
 	if rLen == 1 && e0.Tok != "IDENT" {
 		return e0, nil
 	}
-	if rLen > 1 && e0.Tok == "(" && expr[rLen-1].Tok == ")" {
-		return r.parse(expr[1:rLen-1], pos, foundAndOr)
-	}
+
+	// FIXME
+	// if rLen > 1 && e0.Tok == "(" && expr[rLen-1].Tok == ")" {
+	// 	return r.parse(expr[1:rLen-1], pos, foundAndOr)
+	// }
 
 	// 只找括号不换函数
 	i := 0
 	foundK := -1
 	kList := make([]*global.Structure, 0, 10)
+
 	for k, v := range expr {
 		if v.Tok == "(" {
 			if foundK == -1 {
@@ -124,8 +127,15 @@ func (r *Expression) parse(expr []*global.Structure, pos string, foundAndOr bool
 		// 括号 非函数
 		if foundK >= 0 && i == 0 {
 			if foundK == 0 || expr[foundK-1].Tok != "IDENT" {
-				rv, err := r.parse(kList, pos, foundAndOr)
-				if err != nil {
+				// Fixed
+				// VarDump((1)+(2)) 此时会进入死循环 因为每次都取到 (1）
+				var rv *global.Structure
+				if kLen := len(kList); kLen > 1 && kList[0].Tok == "(" && kList[kLen-1].Tok == ")" {
+					rv, err = r.parse(kList[1:kLen-1], pos, foundAndOr)
+					if err != nil {
+						return nil, err
+					}
+				} else if rv, err = r.parse(kList, pos, foundAndOr); err != nil {
 					return nil, err
 				}
 
@@ -135,6 +145,18 @@ func (r *Expression) parse(expr []*global.Structure, pos string, foundAndOr bool
 				foundK = -1
 				return r.parse(expr, pos, foundAndOr)
 			}
+
+			// 在括号的结尾发现函数
+			// if kLen := len(kList); kLen > 1 && kList[0].Tok == "(" && kList[kLen-1].Tok == ")" {
+			// rv, err := r.parse(kList[1:kLen-1], pos, foundAndOr)
+			// if err != nil {
+			// 	return nil, err
+			// }
+
+			// p := []*global.Structure{expr[foundK-1], {Tok: "("}}
+			// p = append(p, rv, &global.Structure{Tok: ")"})
+			// global.Output(p)
+			// }
 		}
 	}
 
