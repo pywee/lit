@@ -35,21 +35,24 @@ func InArrayString(str string, arr []string) bool {
 	return false
 }
 
-func Output(expr interface{}) {
+func Output(expr interface{}, x ...interface{}) {
 	if fmt.Sprintf("%T", expr) == "[][]*global.Structure" {
 		for _, v := range expr.([][]*Structure) {
 			for _, vv := range v {
-				fmt.Println("output:", vv)
+				fmt.Println("output from [][]arr:", vv)
 			}
 		}
 	} else if fmt.Sprintf("%T", expr) == "[]*global.Structure" {
 		for _, v := range expr.([]*Structure) {
-			fmt.Println("output:", v)
+			fmt.Println("output from []arr:", v)
 		}
 	} else if fmt.Sprintf("%T", expr) == "*global.Structure" {
 		fmt.Println("result value output:", expr)
 	} else {
 		fmt.Println(expr)
+	}
+	if len(x) > 0 {
+		fmt.Println(" ", x)
 	}
 	println("")
 }

@@ -91,24 +91,29 @@ func BoolToInt(src *global.Structure) {}
 
 // FIXME
 // ChangeBool 将当前的输入转换为布尔值
-func ChangeBool(src *global.Structure) *global.Structure {
+func ChangeBool(src *global.Structure) (*global.Structure, bool) {
+	var returnBool bool
 	if src.Tok == "BOOL" {
-		src.Lit = "false"
 		if src.Lit != "" && src.Lit != "false" {
 			src.Lit = "true"
+			return src, true
 		}
-		return src
+		src.Lit = "false"
+		return src, returnBool
 	}
 
 	if src.Tok == "STRING" && src.Lit != "" && src.Lit != "0" {
 		src.Lit = "true"
+		returnBool = true
 	} else if src.Tok == "INT" && src.Lit != "0" {
 		src.Lit = "true"
+		returnBool = true
 	} else if src.Tok == "FLOAT" && src.Lit != "0" {
 		src.Lit = "true"
+		returnBool = true
 	} else {
 		src.Lit = "false"
 	}
 	src.Tok = "BOOL"
-	return src
+	return src, returnBool
 }
