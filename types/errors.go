@@ -21,6 +21,12 @@ var (
 	ErrorNonNumberic = errors.New("a non-numeric value encountered has found")
 	// ErrorFuncArgsAmountNotOK 函数参数不数量不符
 	ErrorFuncArgsAmountNotOK = errors.New("函数参数不数量不符")
+	// ErrorIdentType 源类型错误，当前类型不能转换为整型
+	ErrorIdentType = errors.New("源类型错误，当前类型不能转换为整型")
+	// ErrorStringIntCompared 不能将非数字类的字符串用于比较运算
+	ErrorStringIntCompared = errors.New("不能将非数字类的字符串用于比较运算")
+	// ErrorNotAllowToCompare 无法将这两种类型进行比较
+	ErrorNotAllowToCompare = errors.New("无法将这两种类型进行比较")
 )
 
 func WithError(pos, err string) error {

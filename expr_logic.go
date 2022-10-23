@@ -15,13 +15,13 @@ func (r *Expression) parseAnd(expr []*global.Structure, k int, pos string) (*glo
 	}
 	// if rv.Tok != "IDENT" {
 	// }
-	if _, ok := fn.ChangeBool(rv); !ok {
+	if _, ok := fn.ChangeToBool(rv); !ok {
 		return rv, nil
 	}
 	if rv, err = r.parse(expr[k+1:], pos); err != nil {
 		return nil, err
 	}
-	fn.ChangeBool(rv)
+	fn.ChangeToBool(rv)
 	return rv, nil
 }
 
@@ -33,13 +33,13 @@ func (r *Expression) parseOr(expr []*global.Structure, k int, pos string) (*glob
 	if rv, err = r.parse(expr[:k], pos); err != nil {
 		return nil, err
 	}
-	if _, ok := fn.ChangeBool(rv); ok {
+	if _, ok := fn.ChangeToBool(rv); ok {
 		return rv, nil
 	}
 	if rv, err = r.parse(expr[k+1:], pos); err != nil {
 		return nil, err
 	}
-	fn.ChangeBool(rv)
+	fn.ChangeToBool(rv)
 	return rv, nil
 }
 

@@ -93,11 +93,13 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 	}
 
 	var (
+		err        error
 		foundKuo   bool
 		count      int
 		firstKey   int = -1
 		firstIdent *global.Structure
 	)
+
 	for k, v := range expr {
 		if v.Tok == "||" && firstKey == -1 {
 			return r.parseOr(expr, k, pos)
@@ -143,11 +145,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 			}
 
 			// 发现中间表达式为函数执行调用
-			var (
-				err    error
-				middle *global.Structure
-			)
-
+			var middle *global.Structure
 			if global.IsVariableOrFunction(firstIdent) {
 				if middle, err = r.execFunc(firstIdent, expr[firstKey+1:k], pos); err != nil {
 					return nil, err
@@ -161,6 +159,18 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 			expr = append(expr, end...)
 
 			return r.parse(expr, pos)
+		}
+	}
+
+	// 比较运算符处理
+	// 如果有 则进入该逻辑
+	if rLen = len(expr); rLen > 1 {
+		var rv *global.Structure
+		if rv, err = r.parseCompare(expr, pos); err != nil {
+			return nil, err
+		}
+		if rv != nil {
+			return rv, nil
 		}
 	}
 
