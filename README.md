@@ -28,11 +28,10 @@ import "github.com/pywee/goExpr"
 
 func main() {
     // 执行以下句子，最终会输出
-    // 579
     src := []byte(`
         a = 123;
         b = a + 456;
-        Print(b);
+        Print(b); // 579
     `)
     _, err := goExpr.NewExpr(src)
 }
@@ -55,13 +54,11 @@ func main() {
     // 使用 Lit 计算文本中的数据
     // 表达式文本
     // 执行下面的句子 最终会输出
-    // 16
-    // 125
     exprs := []byte(`
         a = (2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11))) / 10 * 2;
         b = 12 / 333 + 31 + (5 / 10) - 6 | 100;
-        Print(a);
-        Print(b);
+        Print(a); // 16
+        Print(b); // 125
     `)
     _, err = goExpr.NewExpr(exprs)
 
@@ -80,73 +77,78 @@ func main() {
     // Replace(arg1, arg2, arg3, arg4) 用来做字符串替换
 
     // 执行下面语句 最终会输出
-    // VarDump: &{ STRING hello word} 
      exprs := []byte(`
         a = Replace("hello word111", "1", "", 2-IsInt((1+(1 + IsInt(123+(1+2)))-1)+2)-2);
-        VarDump(a);
+        VarDump(a); // STRING hello word
     `)
     _, err = goExpr.NewExpr(exprs)
 
 ```
-
-**四、弱类型转换，弱类型的这一特性我将它设计为与 PHP 一样**
+---
+**四、弱类型转换，弱类型的这一特性我将它设计为与 PHP 基本一样**
 ```golang
     // 当布尔值参与运算时，底层会将 true 转为 1, false 转为 0
     // 执行下面句子 将输出
-    // 0
-    // true
-    // true
     src := []byte(`
         a = true - 1;
-        b = IsInt(1);   // 函数用于检查当前输出是否为整型
-        c = IsFloat(1); // 函数用于检查当前输出是否为浮点
-        Print(a);
-        Print(b);
-        Print(c);
+        b = IsInt(1);
+        c = IsFloat(1);
+        d = false == 0.0;
+        e = "false" == 0.0;
+        Print(a); // 0
+        Print(b); // true
+        Print(c); // true
+        Print(d); // true
+        Print(e); // true
     `)
     _, err := goExpr.NewExpr(src)
 
-    ---------------------------------------------------
 
     // 与其他弱类型语言一样
     // 字符串数字与整型相操作，在 Lit 的底层会将字符串数字转换为整型
     // 执行下面句子 将输出
-    // 0
     src := []byte(`
         a = "1" - 1;
-        Print(a);
+        b =  0.0 >= false+1 || (1<=21 && 1==1);
+        Print(a); // 0
+        Print(b); // true
     `)
     _, err := goExpr.NewExpr(src)
 
-    ---------------------------------------------------
+
+    // 与其他弱类型语言一样
+    // 字符串数字与整型相操作，在 Lit 的底层会将字符串数字转换为整型
+    // 执行下面句子 将输出
+    src := []byte(`
+        a = "1" - 1;
+        Print(a); // 0
+    `)
+    _, err := goExpr.NewExpr(src)
+
 
     // 字符串与字符串相加时 将进行字符串的拼接
     // 执行以下句子，将会输出
-    // abcdef
     src := []byte(`
         a = "abc" + "def";
-        Print(a);
+        Print(a); // abcdef
     `)
     _, err := goExpr.NewExpr(src)
 
-    ---------------------------------------------------
 
     // 但如果当两个字符串都为数字时 对他们进行相加 则会被底层转换为数字
     // 执行如下句子，将会输出
-    // 579
      src := []byte(`
         a = "123" + "456";
-        Print(a);
+        Print(a); // 579
     `)
     _, err := goExpr.NewExpr(src)
 
-    ---------------------------------------------------
 
     // 其他字符串+整型将会报错
-    // 执行如下句子，将会报错
+    // 执行如下句子
     src := []byte(`
     	a = "abcwwww1230"+0.01;
-    	Print(a);
+    	Print(a); // 报错
     `)
     _, err := goExpr.NewExpr(src)
 ```
@@ -158,10 +160,9 @@ func main() {
 **五、"并且" 与 "或者" 符号处理**
 ```golang
     // 执行如下句子，将会输出
-    // BOOL true
     src := []byte(`
         a = IsInt(1) && 72+(11-2) || 1-false;
-        VarDump(a);
+        VarDump(a); // BOOL true
     `)
     _, err := goExpr.NewExpr(src)
 
@@ -169,9 +170,6 @@ func main() {
 
 
 ---
-
-
-
 **请注意，Lit 的算术符号优先级向 Golang 看齐。每个语言对算术符号的优先级处理都有一定区别，如，针对以下表达式进行计算时：**
 
 ``` golang
@@ -187,11 +185,13 @@ func main() {
 **Lit 算术符号优先级**
 第一级  ``` () && || ```
 
-第二级  ``` * / % ```
+第一级  ``` > < >= <= == != ===```
 
-第三级 ```| &``` 
+第三级  ``` * / % ```
 
-第四级  ``` + - ^ ```
+第四级 ```| &``` 
+
+第五级  ``` + - ^ ```
 
 ---
 
