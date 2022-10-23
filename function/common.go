@@ -90,25 +90,74 @@ func GetFunctionArgList(expr []*global.Structure) [][]*global.Structure {
 func BoolToInt(src *global.Structure) {}
 
 // FIXME
-// ChangeBool 将当前的输入转换为布尔值
-func ChangeBool(src *global.Structure) *global.Structure {
+// ChangeToBool 将当前的输入转换为布尔值
+func ChangeToBool(src *global.Structure) (*global.Structure, bool) {
+	var returnBool bool
 	if src.Tok == "BOOL" {
-		src.Lit = "false"
 		if src.Lit != "" && src.Lit != "false" {
 			src.Lit = "true"
+			return src, true
 		}
-		return src
+		src.Lit = "false"
+		return src, returnBool
 	}
 
 	if src.Tok == "STRING" && src.Lit != "" && src.Lit != "0" {
 		src.Lit = "true"
+		returnBool = true
 	} else if src.Tok == "INT" && src.Lit != "0" {
 		src.Lit = "true"
+		returnBool = true
 	} else if src.Tok == "FLOAT" && src.Lit != "0" {
 		src.Lit = "true"
+		returnBool = true
 	} else {
 		src.Lit = "false"
 	}
 	src.Tok = "BOOL"
-	return src
+	return src, returnBool
+}
+
+// ChangeBoolToInt 将布尔值转换为整型
+func ChangeBoolToInt(src *global.Structure) error {
+	src.Tok = "INT"
+	if src.Lit == "false" {
+		src.Lit = "0"
+		return nil
+	}
+	if src.Lit == "true" {
+		src.Lit = "1"
+		return nil
+	}
+	return types.ErrorIdentType
+}
+
+// ChangeTokTypeStringToTypeIntOrFloat 将字符串数字标记为整型
+func ChangeTokTypeStringToTypeIntOrFloat(src *global.Structure) error {
+	var (
+		ok  bool
+		err error
+	)
+
+	if src.Lit == "" && src.Tok == "STRING" {
+		src.Tok = "INT"
+		src.Lit = "0"
+		return nil
+	}
+
+	if ok, err = global.IsInt(src.Lit); err != nil {
+		return err
+	}
+	if ok {
+		src.Tok = "INT"
+		return nil
+	}
+	if ok, err = global.IsFloat(src.Lit); err != nil {
+		return err
+	}
+	if ok {
+		src.Tok = "FLOAT"
+		return nil
+	}
+	return types.ErrorStringIntCompared
 }

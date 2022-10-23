@@ -19,7 +19,7 @@ func IsInt(s string) (bool, error) {
 
 // IsVariableOrFunction 判断是否为标准变量和函数名称
 func IsVariableOrFunction(expr *Structure) bool {
-	if expr.Tok == "IDENT" {
+	if expr != nil && expr.Tok == "IDENT" {
 		match, _ := regexp.MatchString(`^[a-zA-Z_]{1}[a-zA-Z0-9_]*$`, expr.Lit)
 		return match
 	}
@@ -35,15 +35,24 @@ func InArrayString(str string, arr []string) bool {
 	return false
 }
 
-func Output(expr interface{}) {
-	if fmt.Sprintf("%T", expr) == "[]*global.Structure" {
+func Output(expr interface{}, x ...interface{}) {
+	if fmt.Sprintf("%T", expr) == "[][]*global.Structure" {
+		for _, v := range expr.([][]*Structure) {
+			for _, vv := range v {
+				fmt.Println("output from [][]arr:", vv)
+			}
+		}
+	} else if fmt.Sprintf("%T", expr) == "[]*global.Structure" {
 		for _, v := range expr.([]*Structure) {
-			fmt.Println("output:", v)
+			fmt.Println("output from []arr:", v)
 		}
 	} else if fmt.Sprintf("%T", expr) == "*global.Structure" {
 		fmt.Println("result value output:", expr)
 	} else {
 		fmt.Println(expr)
+	}
+	if len(x) > 0 {
+		fmt.Println(" ", x)
 	}
 	println("")
 }
