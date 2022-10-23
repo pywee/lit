@@ -43,7 +43,7 @@ func NewExpr(src []byte) (*Expression, error) {
 			// 递归解析表达式
 			posLine := strings.Split(fset.Position(pos).String(), ":")
 			for _, v := range list {
-				if sLit := strings.ToLower(v.Lit); sLit == "false" || sLit == "true" {
+				if sLit := strings.ToLower(v.Lit); v.Tok != "STRING" && (sLit == "false" || sLit == "true") {
 					v.Tok = "BOOL"
 				}
 			}
