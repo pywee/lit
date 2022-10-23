@@ -139,12 +139,18 @@ func ChangeTokTypeStringToTypeIntOrFloat(src *global.Structure) error {
 		err error
 	)
 
-	if src.Lit == "" && src.Tok == "STRING" {
-		src.Tok = "INT"
-		src.Lit = "0"
-		return nil
+	if src.Tok == "STRING" {
+		if src.Lit == "" || src.Lit == "false" {
+			src.Tok = "INT"
+			src.Lit = "0"
+			return nil
+		}
+		if src.Lit == "true" {
+			src.Tok = "INT"
+			src.Lit = "1"
+			return nil
+		}
 	}
-
 	if ok, err = global.IsInt(src.Lit); err != nil {
 		return err
 	}

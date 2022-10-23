@@ -62,7 +62,6 @@ func (r *Expression) parseCompare(expr []*global.Structure, pos string) (*global
 // compareEqual 比较符: ==
 func compareEqual(left, right *global.Structure) bool {
 	var (
-		err  error
 		lTok = left.Tok
 		rTok = right.Tok
 		lLit = left.Lit
@@ -82,30 +81,8 @@ func compareEqual(left, right *global.Structure) bool {
 		return lLit == rLit
 	}
 
-	if left.Tok == "STRING" {
-		if err = fn.ChangeTokTypeStringToTypeIntOrFloat(left); err != nil {
-			return false
-		}
-	}
-	if right.Tok == "STRING" {
-		if err = fn.ChangeTokTypeStringToTypeIntOrFloat(right); err != nil {
-			return false
-		}
-	}
-	if left.Tok == "INT" && right.Tok == "FLOAT" {
-		left.Tok = "FLOAT"
-	} else if left.Tok == "FLOAT" && right.Tok == "INT" {
-		right.Tok = "FLOAT"
-	}
-
-	var (
-		l interface{}
-		r interface{}
-	)
-	if l, err = formatValueTypeToCompare(left); err != nil {
-		return false
-	}
-	if r, err = formatValueTypeToCompare(right); err != nil {
+	l, r, err := changeTypeToCompare(left, right)
+	if err != nil {
 		return false
 	}
 
@@ -116,7 +93,6 @@ func compareEqual(left, right *global.Structure) bool {
 // compareNotEqual 比较符: !=
 func compareNotEqual(left, right *global.Structure) bool {
 	var (
-		err  error
 		lTok = left.Tok
 		rTok = right.Tok
 		lLit = left.Lit
@@ -136,30 +112,8 @@ func compareNotEqual(left, right *global.Structure) bool {
 		return lLit != rLit
 	}
 
-	if left.Tok == "STRING" {
-		if err = fn.ChangeTokTypeStringToTypeIntOrFloat(left); err != nil {
-			return false
-		}
-	}
-	if right.Tok == "STRING" {
-		if err = fn.ChangeTokTypeStringToTypeIntOrFloat(right); err != nil {
-			return false
-		}
-	}
-	if left.Tok == "INT" && right.Tok == "FLOAT" {
-		left.Tok = "FLOAT"
-	} else if left.Tok == "FLOAT" && right.Tok == "INT" {
-		right.Tok = "FLOAT"
-	}
-
-	var (
-		l interface{}
-		r interface{}
-	)
-	if l, err = formatValueTypeToCompare(left); err != nil {
-		return false
-	}
-	if r, err = formatValueTypeToCompare(right); err != nil {
+	l, r, err := changeTypeToCompare(left, right)
+	if err != nil {
 		return false
 	}
 
@@ -170,7 +124,7 @@ func compareNotEqual(left, right *global.Structure) bool {
 // compareGreaterLessEqual
 // 比较符: > < >= <=
 func compareGreaterLessEqual(syn string, left, right *global.Structure) (bool, error) {
-	l, r, err := _compares(left, right)
+	l, r, err := changeTypeToCompare(left, right)
 	if err != nil {
 		return false, err
 	}
@@ -208,17 +162,27 @@ func compareGreaterLessEqual(syn string, left, right *global.Structure) (bool, e
 	return ok, nil
 }
 
-// _compares 针对 > < >= <= 做统一处理
+// changeTypeToCompare 针对 > < >= <= 做统一处理
 // 处理逻辑是一样的
-func _compares(left, right *global.Structure) (interface{}, interface{}, error) {
+func changeTypeToCompare(left, right *global.Structure) (interface{}, interface{}, error) {
 	var err error
+
 	if left.Tok == "STRING" {
 		if err = fn.ChangeTokTypeStringToTypeIntOrFloat(left); err != nil {
 			return nil, nil, err
 		}
+	} else if left.Tok == "BOOL" {
+		if err = fn.ChangeBoolToInt(left); err != nil {
+			return nil, nil, err
+		}
 	}
+
 	if right.Tok == "STRING" {
 		if err = fn.ChangeTokTypeStringToTypeIntOrFloat(right); err != nil {
+			return nil, nil, err
+		}
+	} else if right.Tok == "BOOL" {
+		if err = fn.ChangeBoolToInt(right); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -227,14 +191,6 @@ func _compares(left, right *global.Structure) (interface{}, interface{}, error) 
 		left.Tok = "FLOAT"
 	} else if left.Tok == "FLOAT" && right.Tok == "INT" {
 		right.Tok = "FLOAT"
-	} else if left.Tok == "BOOL" {
-		if err = fn.ChangeBoolToInt(left); err != nil {
-			return nil, nil, err
-		}
-	} else if right.Tok == "BOOL" {
-		if err = fn.ChangeBoolToInt(right); err != nil {
-			return nil, nil, err
-		}
 	}
 
 	var (
@@ -247,7 +203,6 @@ func _compares(left, right *global.Structure) (interface{}, interface{}, error) 
 	if r, err = formatValueTypeToCompare(right); err != nil {
 		return nil, nil, err
 	}
-
 	return l, r, nil
 }
 
