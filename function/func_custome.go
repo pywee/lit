@@ -22,41 +22,48 @@ func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) err
 		if !global.IsVariableOrFunction(expr[1]) {
 			return types.ErrorFunctionNameIrregular
 		}
-		argsDefinitions, err := getFunctionArgsDefinitions(expr, pos)
-		if err != nil {
-			return err
-		}
 
-		funcDefinition := &functionInfo{
-			FunctionName: funcName,
-			MustAmount:   4,
-			MaxAmount:    4,
-			Args:         argsDefinitions,
-		}
+		// argsDefinitions, err := getFunctionArgsDefinitions(expr, pos)
+		// if err != nil {
+		// 	return err
+		// }
 
-		global.Output(funcDefinition)
+		// funcDefinition := &functionInfo{
+		// 	FunctionName: expr[1].Lit,
+		// 	MustAmount:   argsDefinitions.needArgsAmount,
+		// 	MaxAmount:    argsDefinitions.maxArgsAmount,
+		// 	Args:         argsDefinitions.list,
+		// }
+
+		global.Output(expr)
 	}
 
 	return nil
 }
 
+type functionArgsInfo struct {
+	// needArgsAmount 解析后得到必传参数的数量
+	needArgsAmount int
+	// maxArgsAmount 解析后得最大可传参数的数量
+	maxArgsAmount int
+	// list 解析后的函数形参定义数据
+	list []*functionArgs
+}
+
 // getFunctionArgsDefinitions 获取函数内的参数定义信息
-func getFunctionArgsDefinitions(expr []*global.Structure, pos string) ([]*functionArgs, error) {
+func getFunctionArgsDefinitions(expr []*global.Structure, pos string) (*functionArgsInfo, error) {
 	var (
 		err error
+		// functionArgsInfo 解析后的函数形参定义数据
+		argsInfo = new(functionArgsInfo)
 		// argDefinition 解析后的函数形参定义数据
 		argDefinition *functionArgs
-		// argDefinitionList 解析后的函数形参定义数据
-		argDefinitionList = make([]*functionArgs, 0, 5)
 		// 检查当前函数是否为类方法
 		foundBracket = 0
 		// arg 收集到的函数 expr 形式
 		arg = make([]*global.Structure, 0, 5)
-		// needArgsAmount 解析后得到必传参数的数量
-		needArgsAmount = 0
-		// maxArgsAmount 解析后得最大可传参数的数量
-		maxArgsAmount = 0
 	)
+
 	for _, v := range expr {
 		if v.Tok == "(" {
 			foundBracket++
@@ -67,20 +74,25 @@ func getFunctionArgsDefinitions(expr []*global.Structure, pos string) ([]*functi
 		if v.Tok == ")" {
 			foundBracket--
 		}
+
+		// 参数定义位置结束
+		if v.Tok == "{" {
+			break
+		}
+
 		if foundBracket > 0 {
 			if foundBracket == 1 && v.Tok == "," {
 				// 形参数据
 				// a, a = 1, b = false
-				aLen := len(arg)
-				if aLen > 0 {
+				if aLen := len(arg); aLen > 0 {
 					if argDefinition, err = checkArguments(arg, aLen); err != nil {
 						return nil, err
 					}
 					if argDefinition.Must {
-						needArgsAmount++
+						argsInfo.needArgsAmount++
 					}
-					maxArgsAmount++
-					argDefinitionList = append(argDefinitionList, argDefinition)
+					argsInfo.maxArgsAmount++
+					argsInfo.list = append(argsInfo.list, argDefinition)
 					arg = nil
 					continue
 				}
@@ -93,11 +105,15 @@ func getFunctionArgsDefinitions(expr []*global.Structure, pos string) ([]*functi
 		if argDefinition, err = checkArguments(arg, aLen); err != nil {
 			return nil, err
 		}
+		if argDefinition != nil {
+			if argDefinition.Must {
+				argsInfo.needArgsAmount++
+			}
+			argsInfo.maxArgsAmount++
+			argsInfo.list = append(argsInfo.list, argDefinition)
+		}
 	}
-	if argDefinition != nil {
-		argDefinitionList = append(argDefinitionList, argDefinition)
-	}
-	return argDefinitionList, nil
+	return argsInfo, nil
 }
 
 // checkArguments 检查定义的函数的形参定义信息并返回合法数据
