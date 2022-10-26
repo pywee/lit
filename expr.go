@@ -9,9 +9,13 @@ import (
 	"strconv"
 	"strings"
 
+	fn "github.com/pywee/goExpr/function"
 	"github.com/pywee/goExpr/global"
 	"github.com/pywee/goExpr/types"
 )
+
+// cfn 代码体内的自定义函数
+var cfn *fn.CustomFunctions
 
 type Expression struct {
 	publicVariable map[string]*global.Structure
@@ -25,12 +29,41 @@ func NewExpr(src []byte) (*Expression, error) {
 		list   = make([]*global.Structure, 0, 100)
 	)
 
+	cfn = fn.NewCustomFunctions()
 	file := fset.AddFile("", fset.Base(), len(src))
+	funcList := make([]*global.Structure, 0, 10)
 	s.Init(file, src, nil, scanner.ScanComments)
+
+	// 发现自定义函数时 保存其形式文本
+	foundCustomeFunc := false
 	for {
 		pos, tok, lit := s.Scan()
 		if tok == token.EOF {
 			break
+		}
+
+		posString := fset.Position(pos).String()
+		if tok.String() == "func" {
+			foundCustomeFunc = true
+		}
+		if foundCustomeFunc {
+			funcList = append(funcList, &global.Structure{
+				Position: fset.Position(pos).String(),
+				Tok:      tok.String(),
+				Lit:      lit,
+			})
+
+			if tok.String() == ";" && lit == "\n" {
+				foundCustomeFunc = false
+				posLine := strings.Split(posString, ":")
+				if len(funcList) < 7 {
+					return nil, errors.New("第" + posLine[0] + "行, " + types.ErrorFunctionIlligle.Error())
+				}
+				if err := cfn.ParseCutFunc(funcList, posString); err != nil {
+					return nil, errors.New("第" + posLine[0] + "行, " + err.Error())
+				}
+			}
+			continue
 		}
 
 		if tok.String() == ";" {
@@ -41,7 +74,7 @@ func NewExpr(src []byte) (*Expression, error) {
 			}
 
 			// 递归解析表达式
-			posLine := strings.Split(fset.Position(pos).String(), ":")
+			posLine := strings.Split(posString, ":")
 			for _, v := range list {
 				if sLit := strings.ToLower(v.Lit); v.Tok != "STRING" && (sLit == "false" || sLit == "true") {
 					v.Tok = "BOOL"
@@ -52,7 +85,7 @@ func NewExpr(src []byte) (*Expression, error) {
 			if err != nil {
 				return nil, errors.New("第" + posLine[0] + "行, " + err.Error())
 			}
-			global.Output(rv)
+			// global.Output(rv)
 
 			// 变量赋值
 			if vName != "" {
@@ -72,7 +105,7 @@ func NewExpr(src []byte) (*Expression, error) {
 		}
 
 		list = append(list, &global.Structure{
-			Position: fset.Position(pos).String(),
+			Position: posString,
 			Tok:      tokString,
 			Lit:      lit,
 		})
@@ -89,6 +122,14 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 		return nil, nil
 	}
 	if rLen == 1 {
+		rv := expr[0]
+		if rv != nil && rv.Tok == "IDENT" && global.IsVariableOrFunction(rv) {
+			var ok bool
+			if rv, ok = r.publicVariable[rv.Lit]; !ok {
+				return nil, types.ErrorNotFoundVariable
+			}
+			return rv, nil
+		}
 		return expr[0], nil
 	}
 
@@ -147,8 +188,14 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 			// 发现中间表达式为函数执行调用
 			var middle *global.Structure
 			if global.IsVariableOrFunction(firstIdent) {
-				if middle, err = r.execFunc(firstIdent, expr[firstKey+1:k], pos); err != nil {
-					return nil, err
+				// 查找是否有内置函数
+				funcName := firstIdent.Lit
+				if getFunc := fn.CheckFunctionName(funcName); getFunc != nil {
+					if middle, err = r.execFunc(funcName, expr[firstKey+1:k], pos); err != nil {
+						return nil, err
+					}
+				} else if fnExpr := cfn.GetCustomeFunc(funcName); fnExpr != nil {
+					// global.Output(fnExpr)
 				}
 			} else if middle, err = r.parse(expr[firstKey+1:k], pos); err != nil {
 				return nil, err
@@ -159,6 +206,17 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 			expr = append(expr, end...)
 
 			return r.parse(expr, pos)
+		}
+	}
+
+	// 进入这里的已经是最小粒度了 --------
+	for k, v := range expr {
+		if v.Tok == "IDENT" && global.IsVariableOrFunction(v) {
+			value, ok := r.publicVariable[v.Lit]
+			if !ok {
+				return nil, types.ErrorNotFoundVariable
+			}
+			expr[k] = value
 		}
 	}
 
