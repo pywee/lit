@@ -1,11 +1,11 @@
-package goExpr
+package lit
 
 import (
 	"strconv"
 
-	fn "github.com/pywee/goExpr/function"
-	"github.com/pywee/goExpr/global"
-	"github.com/pywee/goExpr/types"
+	fn "github.com/pywee/lit/function"
+	"github.com/pywee/lit/global"
+	"github.com/pywee/lit/types"
 )
 
 // parseCompare 比较运算

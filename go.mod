@@ -1,3 +1,3 @@
-module github.com/pywee/goExpr
+module github.com/pywee/lit
 
 go 1.17

@@ -1,8 +1,8 @@
 package function
 
 import (
-	"github.com/pywee/goExpr/global"
-	"github.com/pywee/goExpr/types"
+	"github.com/pywee/lit/global"
+	"github.com/pywee/lit/types"
 )
 
 // 内置函数列表

@@ -1,11 +1,11 @@
 # Lit 轻量级解释型弱类型语言 (迭代中...)
 
 
-goExpr Lit 是一个轻量级解释型语言的锥形，目前仍在持续开发中。它基于 Golang 开发，还没有<b>正式的名字</b>，暂且叫作 <b>Lit</b> 好了。原本我只打算用于实现对文本中包含的算术表达式进行计算，后来逐步地扩充了更多的特性。索性将它定位为一个解释型编程语言好了。
+Lit 是一个轻量级解释型语言的锥形，目前仍在持续开发中。它基于 Golang 开发，还没有<b>正式的名字</b>，暂且叫作 <b>Lit</b> 好了。原本我只打算用于实现对文本中包含的算术表达式进行计算，后来逐步地扩充了更多的特性。索性将它定位为一个解释型编程语言好了。
 
 目前我已经实现了一些编程语言必须具备的基础功能，尤其是比较重要的算术表达式、弱类型转换、内置函数、变量声明等。仍然需要进一步完善。<u>因此你还不能直接将其用于日常开发中。</u>
 
-我对 Lit (goExpr) 的定位是一个解释型弱类型语言，希望它能用于日常的 Web 开发，这是我的目标。至于能否顺利完成，还需要很长时间才能下定论。
+我对 Lit (lit) 的定位是一个解释型弱类型语言，希望它能用于日常的 Web 开发，这是我的目标。至于能否顺利完成，还需要很长时间才能下定论。
 
 关于目前已实现的特性，请看如下文档，我将定期更新：
 
@@ -17,14 +17,14 @@ goExpr Lit 是一个轻量级解释型语言的锥形，目前仍在持续开发
 
 
 ```
-go get github.com/pywee/goExpr
+go get github.com/pywee/lit
 ```
 
 
 
 **一、支持变量声明**
 ```golang
-import "github.com/pywee/goExpr"
+import "github.com/pywee/lit"
 
 func main() {
     // 执行以下句子，最终会输出
@@ -33,7 +33,7 @@ func main() {
         b = a + 456;
         Print(b); // 579
     `)
-    _, err := goExpr.NewExpr(src)
+    _, err := lit.NewExpr(src)
 }
 
 ```
@@ -60,7 +60,7 @@ func main() {
         Print(a); // 16
         Print(b); // 125
     `)
-    _, err = goExpr.NewExpr(exprs)
+    _, err = lit.NewExpr(exprs)
 
     // *** 同样的表达式放在 PHP 中，会输出 -24 ***
 
@@ -81,7 +81,7 @@ func main() {
         a = Replace("hello word111", "1", "", 2-IsInt((1+(1 + IsInt(123+(1+2)))-1)+2)-2);
         VarDump(a); // STRING hello word
     `)
-    _, err = goExpr.NewExpr(exprs)
+    _, err = lit.NewExpr(exprs)
 
 ```
 ---
@@ -101,7 +101,7 @@ func main() {
         Print(d); // true
         Print(e); // true
     `)
-    _, err := goExpr.NewExpr(src)
+    _, err := lit.NewExpr(src)
 
 
     // 与其他弱类型语言一样
@@ -113,7 +113,7 @@ func main() {
         Print(a); // 0
         Print(b); // true
     `)
-    _, err := goExpr.NewExpr(src)
+    _, err := lit.NewExpr(src)
 
 
     // 与其他弱类型语言一样
@@ -123,7 +123,7 @@ func main() {
         a = "1" - 1;
         Print(a); // 0
     `)
-    _, err := goExpr.NewExpr(src)
+    _, err := lit.NewExpr(src)
 
 
     // 字符串与字符串相加时 将进行字符串的拼接
@@ -132,7 +132,7 @@ func main() {
         a = "abc" + "def";
         Print(a); // abcdef
     `)
-    _, err := goExpr.NewExpr(src)
+    _, err := lit.NewExpr(src)
 
 
     // 但如果当两个字符串都为数字时 对他们进行相加 则会被底层转换为数字
@@ -141,7 +141,7 @@ func main() {
         a = "123" + "456";
         Print(a); // 579
     `)
-    _, err := goExpr.NewExpr(src)
+    _, err := lit.NewExpr(src)
 
 
     // 其他字符串+整型将会报错
@@ -150,7 +150,7 @@ func main() {
     	a = "abcwwww1230"+0.01;
     	Print(a); // 报错
     `)
-    _, err := goExpr.NewExpr(src)
+    _, err := lit.NewExpr(src)
 ```
 
 
@@ -164,7 +164,7 @@ func main() {
         a = IsInt(1) && 72+(11-2) || 1-false;
         VarDump(a); // BOOL true
     `)
-    _, err := goExpr.NewExpr(src)
+    _, err := lit.NewExpr(src)
 
 ```
 
@@ -177,7 +177,7 @@ func main() {
 // PHP 输出 -104
 // Node.js 输出 -104
 // Golang 输出 96
-// Lit (goExpr) 输出 96
+// Lit (lit) 输出 96
 ```
 
 ---

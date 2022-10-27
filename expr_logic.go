@@ -1,8 +1,8 @@
-package goExpr
+package lit
 
 import (
-	fn "github.com/pywee/goExpr/function"
-	"github.com/pywee/goExpr/global"
+	fn "github.com/pywee/lit/function"
+	"github.com/pywee/lit/global"
 )
 
 func (r *Expression) parseAnd(expr []*global.Structure, k int, pos string) (*global.Structure, error) {

@@ -1,9 +1,9 @@
-package goExpr
+package lit
 
 import (
-	fn "github.com/pywee/goExpr/function"
-	"github.com/pywee/goExpr/global"
-	"github.com/pywee/goExpr/types"
+	fn "github.com/pywee/lit/function"
+	"github.com/pywee/lit/global"
+	"github.com/pywee/lit/types"
 )
 
 func (r *Expression) execFunc(firstIdent *global.Structure, expr []*global.Structure, pos string) (*global.Structure, error) {
