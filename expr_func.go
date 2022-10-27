@@ -6,7 +6,7 @@ import (
 	"github.com/pywee/lit/types"
 )
 
-func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos string) (*global.Structure, error) {
+func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos string, innerVariable map[string]*global.Structure) (*global.Structure, error) {
 	fArgs := fn.CheckFunctionName(funcName)
 	if fArgs == nil {
 		return nil, types.ErrorNotFoundFunction
@@ -33,7 +33,8 @@ func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos str
 	for k, varg := range args {
 		// FIXME
 		// 函数中的实参表达式 实参可以是函数、变量、算术表达式等等
-		rv, err := r.parse(varg, pos)
+		// global.Output(varg)
+		rv, err := r.parse(varg, pos, innerVariable)
 		if err != nil {
 			return nil, err
 		}
@@ -59,15 +60,85 @@ func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos str
 
 // execCustomFunc 解析并执行自定义函数
 func (r *Expression) execCustomFunc(expr []*global.Structure, pos string) error {
-	var exprSingular = make([]*global.Structure, 0, 3)
+	var (
+		exprSingular  = make([]*global.Structure, 0, 3)
+		innerVariable = make(map[string]*global.Structure)
+	)
 	for _, v := range expr {
 		if v.Tok == ";" {
+			cfnParsed := parseExprInnerFunc(exprSingular)
+			if cfnParsed == nil {
+				return types.ErrorWrongSentence
+			}
+
+			// 变量赋值
+			if cfnParsed.typ == varStatemented {
+				rv, err := r.parse(cfnParsed.varExpr, pos, nil)
+				if err != nil {
+					return err
+				}
+				innerVariable[cfnParsed.vName] = rv
+			} else if cfnParsed.typ == funcImplemented {
+				_, err := r.parse(cfnParsed.varExpr, pos, innerVariable)
+				if err != nil {
+					return err
+				}
+			}
+
 			// global.Output(exprSingular)
-			r.parse(exprSingular, pos)
 			exprSingular = nil
 			continue
 		}
 		exprSingular = append(exprSingular, v)
 	}
+	return nil
+}
+
+const (
+	// varStatemented 变量声明或者赋值
+	varStatemented = 1
+	// funcImplemented 函数调用
+	funcImplemented = 2
+)
+
+type innerFuncExpr struct {
+	// typ 类型 1-表示变量赋值 2-函数调用
+	typ int8
+	// vName 变量名称 如果有的话
+	vName string
+	// tok 变量操作符 有可能是赋值时用的 = 或者是i++之类
+	tok string
+	// varExpr 表达式
+	varExpr []*global.Structure
+	// varParsed 表达式 varExpr 解析后的最终值
+	// varParsed *global.Structure
+}
+
+func parseExprInnerFunc(expr []*global.Structure) *innerFuncExpr {
+	sLen := len(expr)
+	if sLen > 2 {
+		expr0 := expr[0]
+		expr1 := expr[1]
+
+		// 变量声明或者境外赋值
+		if expr1.Tok == "=" && expr[0].Tok == "IDENT" {
+			return &innerFuncExpr{
+				typ:     varStatemented,
+				vName:   expr0.Lit,
+				tok:     expr1.Tok,
+				varExpr: expr[2:],
+			}
+		}
+
+		// 函数调用
+		if sLen >= 3 && expr0.Tok == "IDENT" && global.IsVariableOrFunction(expr0) && expr[sLen-1].Tok == ")" {
+			return &innerFuncExpr{
+				typ:     funcImplemented,
+				vName:   expr0.Lit,
+				varExpr: expr,
+			}
+		}
+	}
+
 	return nil
 }

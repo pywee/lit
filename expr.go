@@ -83,7 +83,7 @@ func NewExpr(src []byte) (*Expression, error) {
 				}
 			}
 
-			rv, err := result.parse(list, "第"+posLine[0]+"行, ")
+			rv, err := result.parse(list, "第"+posLine[0]+"行, ", nil)
 			if err != nil {
 				return nil, errors.New("第" + posLine[0] + "行, " + err.Error())
 			}
@@ -118,7 +118,7 @@ func NewExpr(src []byte) (*Expression, error) {
 	return result, nil
 }
 
-func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Structure, error) {
+func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable map[string]*global.Structure) (*global.Structure, error) {
 	rLen := len(expr)
 	if rLen == 0 {
 		return nil, nil
@@ -193,13 +193,14 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 				// 查找是否有内置函数
 				funcName := firstIdent.Lit
 				if getFunc := fn.CheckFunctionName(funcName); getFunc != nil {
-					if middle, err = r.execFunc(funcName, expr[firstKey+1:k], pos); err != nil {
+					// global.Output(expr[firstKey+1 : k])
+					if middle, err = r.execFunc(funcName, expr[firstKey+1:k], pos, innerVariable); err != nil {
 						return nil, err
 					}
 				} else if fnExpr := cfn.GetCustomeFunc(funcName); fnExpr != nil {
 					_ = r.execCustomFunc(fnExpr, pos)
 				}
-			} else if middle, err = r.parse(expr[firstKey+1:k], pos); err != nil {
+			} else if middle, err = r.parse(expr[firstKey+1:k], pos, innerVariable); err != nil {
 				return nil, err
 			}
 
@@ -207,18 +208,27 @@ func (r *Expression) parse(expr []*global.Structure, pos string) (*global.Struct
 			expr = append(first, middle)
 			expr = append(expr, end...)
 
-			return r.parse(expr, pos)
+			return r.parse(expr, pos, innerVariable)
 		}
 	}
 
 	// 进入这里的已经是最小粒度了 --------
+	// 变量值寻找
 	for k, v := range expr {
 		if v.Tok == "IDENT" && global.IsVariableOrFunction(v) {
-			value, ok := r.publicVariable[v.Lit]
-			if !ok {
-				return nil, types.ErrorNotFoundVariable
+			var (
+				exists bool
+				value  *global.Structure
+			)
+			if value, exists = innerVariable[v.Lit]; exists {
+				expr[k] = value
+				continue
 			}
-			expr[k] = value
+			if value, exists = r.publicVariable[v.Lit]; exists {
+				expr[k] = value
+				continue
+			}
+			return nil, types.ErrorNotFoundVariable
 		}
 	}
 
