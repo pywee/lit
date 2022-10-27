@@ -27,6 +27,12 @@ var (
 	ErrorStringIntCompared = errors.New("不能将非数字类的字符串用于比较运算")
 	// ErrorNotAllowToCompare 无法将这两种类型进行比较
 	ErrorNotAllowToCompare = errors.New("无法将这两种类型进行比较")
+	// ErrorFunctionIlligle 函数定义语法错误
+	ErrorFunctionIlligle = errors.New("函数定义语法错误")
+	// ErrorFunctionNameIrregular 函数名称不符合规范
+	ErrorFunctionNameIrregular = errors.New("函数名称不符合规范")
+	// ErrorFunctionArgsIrregular 函数参数定义不符合规范
+	ErrorFunctionArgsIrregular = errors.New("函数参数定义不符合规范")
 )
 
 func WithError(pos, err string) error {
