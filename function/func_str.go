@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pywee/goExpr/global"
-	"github.com/pywee/goExpr/types"
+	"github.com/pywee/lit/global"
+	"github.com/pywee/lit/types"
 )
 
 // strFunctions
@@ -17,7 +17,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_REPLACE,
 		MustAmount:   4,
 		MaxAmount:    4,
-		Args: []*functionArgAttr{
+		Args: []*functionArgs{
 			{Type: types.INTERFACE, Must: true},
 			{Type: types.STRING, Must: true},
 			{Type: types.STRING, Must: true},
@@ -38,7 +38,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_TRIM,
 		MustAmount:   1,
 		MaxAmount:    2,
-		Args: []*functionArgAttr{
+		Args: []*functionArgs{
 			{Type: types.INTERFACE, Must: true},
 			{Type: types.STRING, Must: false},
 		},
@@ -55,7 +55,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_LTRIM,
 		MustAmount:   1,
 		MaxAmount:    2,
-		Args: []*functionArgAttr{
+		Args: []*functionArgs{
 			{Type: types.INTERFACE, Must: true},
 			{Type: types.STRING, Must: false},
 		},
@@ -72,7 +72,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_RTRIM,
 		MustAmount:   1,
 		MaxAmount:    2,
-		Args: []*functionArgAttr{
+		Args: []*functionArgs{
 			{Type: types.INTERFACE, Must: true},
 			{Type: types.STRING, Must: false},
 		},
@@ -88,7 +88,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_TRIMSPACE,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
+		Args:         []*functionArgs{{Type: types.INTERFACE, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{Tok: types.STRING, Lit: strings.TrimSpace(args[0].Lit)}, nil
 		},
@@ -97,7 +97,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_LEN,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
+		Args:         []*functionArgs{{Type: types.INTERFACE, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{Tok: "INT", Lit: fmt.Sprintf("%d", len(args[0].Lit))}, nil
 		},
@@ -106,7 +106,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_UTF8LEN,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
+		Args:         []*functionArgs{{Type: types.INTERFACE, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{Tok: "INT", Lit: fmt.Sprintf("%d", strings.Count(args[0].Lit, "")-1)}, nil
 		},
@@ -115,7 +115,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_SUBSTR,
 		MustAmount:   3,
 		MaxAmount:    3,
-		Args: []*functionArgAttr{
+		Args: []*functionArgs{
 			{Type: types.INTERFACE, Must: true},
 			{Type: types.INT, Must: true},
 			{Type: types.INT, Must: true},
@@ -129,7 +129,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_MD5,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
+		Args:         []*functionArgs{{Type: types.INTERFACE, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{
 				Tok: "STRING",
@@ -141,7 +141,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_CONTAINS,
 		MustAmount:   2,
 		MaxAmount:    2,
-		Args: []*functionArgAttr{
+		Args: []*functionArgs{
 			{Type: types.STRING, Must: true},
 			{Type: types.STRING, Must: true},
 		},
@@ -156,7 +156,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_INDEX,
 		MustAmount:   2,
 		MaxAmount:    2,
-		Args: []*functionArgAttr{
+		Args: []*functionArgs{
 			{Type: types.STRING, Must: true},
 			{Type: types.STRING, Must: true},
 		},
@@ -171,7 +171,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_LASTINDEX,
 		MustAmount:   2,
 		MaxAmount:    2,
-		Args: []*functionArgAttr{
+		Args: []*functionArgs{
 			{Type: types.STRING, Must: true},
 			{Type: types.STRING, Must: true},
 		},
@@ -186,7 +186,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_TOLOWER,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgAttr{{Type: types.STRING, Must: true}},
+		Args:         []*functionArgs{{Type: types.STRING, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{
 				Tok: "STRING",
@@ -198,7 +198,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_TOUPPER,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgAttr{{Type: types.STRING, Must: true}},
+		Args:         []*functionArgs{{Type: types.STRING, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{
 				Tok: "STRING",
@@ -210,7 +210,7 @@ var strFunctions = []*functionInfo{
 		FunctionName: FUNCTION_TOTITLE,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgAttr{{Type: types.STRING, Must: true}},
+		Args:         []*functionArgs{{Type: types.STRING, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{
 				Tok: "STRING",

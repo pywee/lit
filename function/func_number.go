@@ -1,8 +1,8 @@
 package function
 
 import (
-	"github.com/pywee/goExpr/global"
-	"github.com/pywee/goExpr/types"
+	"github.com/pywee/lit/global"
+	"github.com/pywee/lit/types"
 )
 
 // numberFunctions
@@ -13,7 +13,7 @@ var numberFunctions = []*functionInfo{
 		FunctionName: FUNCTION_ISNUMERIC,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args: []*functionArgAttr{
+		Args: []*functionArgs{
 			{Type: types.INTERFACE, Must: true},
 		},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
@@ -31,7 +31,7 @@ var numberFunctions = []*functionInfo{
 		FunctionName: FUNCTION_ISINT,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
+		Args:         []*functionArgs{{Type: types.INTERFACE, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			if len(args) == 0 {
 				return nil, nil
@@ -50,7 +50,7 @@ var numberFunctions = []*functionInfo{
 		FunctionName: FUNCTION_ISFLOAT,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
+		Args:         []*functionArgs{{Type: types.INTERFACE, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			match, err := global.IsFloat(args[0].Lit)
 			if err != nil {

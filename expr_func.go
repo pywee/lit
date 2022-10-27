@@ -1,15 +1,15 @@
-package goExpr
+package lit
 
 import (
-	fn "github.com/pywee/goExpr/function"
-	"github.com/pywee/goExpr/global"
-	"github.com/pywee/goExpr/types"
+	fn "github.com/pywee/lit/function"
+	"github.com/pywee/lit/global"
+	"github.com/pywee/lit/types"
 )
 
-func (r *Expression) execFunc(firstIdent *global.Structure, expr []*global.Structure, pos string) (*global.Structure, error) {
-	fArgs, err := fn.CheckFunctionName(firstIdent.Lit)
-	if err != nil {
-		return nil, err
+func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos string) (*global.Structure, error) {
+	fArgs := fn.CheckFunctionName(funcName)
+	if fArgs == nil {
+		return nil, types.ErrorNotFoundFunction
 	}
 
 	// 函数内参数检查
@@ -38,13 +38,15 @@ func (r *Expression) execFunc(firstIdent *global.Structure, expr []*global.Struc
 			return nil, err
 		}
 
-		// 检查最终解析出来的参数值类型是否与函数要求的形参类型一致
-		if fa := fArgs.Args[k]; fa.Type != types.INTERFACE && fa.Type != rv.Tok {
-			// TODO
-			// 参数[弱类型]支持
-			// 参数[提前在形参中设置默认值]支持
-			// fmt.Println(fa.Type, rv.Tok)
-			return nil, types.ErrorArgsNotSuitable
+		if fArgs.MaxAmount != -1 {
+			// 检查最终解析出来的参数值类型是否与函数要求的形参类型一致
+			if fa := fArgs.Args[k]; fa.Type != types.INTERFACE && fa.Type != rv.Tok {
+				// TODO
+				// 参数[弱类型]支持
+				// 参数[提前在形参中设置默认值]支持
+				// fmt.Println(fa.Type, rv.Tok)
+				return nil, types.ErrorArgsNotSuitable
+			}
 		}
 		paramsList = append(paramsList, rv)
 	}
@@ -53,4 +55,19 @@ func (r *Expression) execFunc(firstIdent *global.Structure, expr []*global.Struc
 		return nil, err
 	}
 	return fRet, err
+}
+
+// execCustomFunc 解析并执行自定义函数
+func (r *Expression) execCustomFunc(expr []*global.Structure, pos string) error {
+	var exprSingular = make([]*global.Structure, 0, 3)
+	for _, v := range expr {
+		if v.Tok == ";" {
+			// global.Output(exprSingular)
+			r.parse(exprSingular, pos)
+			exprSingular = nil
+			continue
+		}
+		exprSingular = append(exprSingular, v)
+	}
+	return nil
 }

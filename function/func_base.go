@@ -3,8 +3,8 @@ package function
 import (
 	"fmt"
 
-	"github.com/pywee/goExpr/global"
-	"github.com/pywee/goExpr/types"
+	"github.com/pywee/lit/global"
+	"github.com/pywee/lit/types"
 )
 
 // baseFunctions
@@ -15,7 +15,7 @@ var baseFunctions = []*functionInfo{
 		FunctionName: FUNCTION_PRINT,
 		MustAmount:   1,
 		MaxAmount:    -1,
-		Args: []*functionArgAttr{
+		Args: []*functionArgs{
 			{Type: types.INTERFACE, Must: true},
 			{Type: types.INTERFACE, Must: true},
 		},
@@ -34,7 +34,7 @@ var baseFunctions = []*functionInfo{
 		FunctionName: FUNCTION_VARDUMP,
 		MustAmount:   1,
 		MaxAmount:    -1,
-		Args: []*functionArgAttr{
+		Args: []*functionArgs{
 			{Type: types.INTERFACE, Must: true},
 		},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
@@ -51,7 +51,7 @@ var baseFunctions = []*functionInfo{
 		FunctionName: FUNCTION_ISBOOL,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgAttr{{Type: types.INTERFACE, Must: true}},
+		Args:         []*functionArgs{{Type: types.INTERFACE, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			if args[0].Tok == "BOOL" {
 				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
