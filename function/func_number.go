@@ -7,7 +7,7 @@ import (
 
 // numberFunctions
 // 支持的内置函数: 数字处理函数
-var numberFunctions = []*functionInfo{
+var numberFunctions = []*FunctionInfo{
 	{
 		// 检查当前输入的值是否为数字（包括整型和浮点型型）
 		FunctionName: FUNCTION_ISNUMERIC,

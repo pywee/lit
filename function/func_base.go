@@ -9,7 +9,7 @@ import (
 
 // baseFunctions
 // 支持的内置函数: 通用处理函数
-var baseFunctions = []*functionInfo{
+var baseFunctions = []*FunctionInfo{
 	{
 		// print
 		FunctionName: FUNCTION_PRINT,

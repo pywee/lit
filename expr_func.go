@@ -58,28 +58,43 @@ func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos str
 	return fRet, err
 }
 
-// execCustomFunc 解析并执行自定义函数
-func (r *Expression) execCustomFunc(expr []*global.Structure, pos string) error {
+// execCustomFunc 执行自定义函数
+// 当自定义的函数被调用时才会调用此方法
+// realArgValues 为函数被调用时得到的实参
+func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string) error {
 	var (
-		exprSingular  = make([]*global.Structure, 0, 3)
+		// exprSingular 函数体内的每一句表达式
+		exprSingular = make([]*global.Structure, 0, 3)
+		// innerVariable 函数体内的变量声明
 		innerVariable = make(map[string]*global.Structure)
 	)
-	for _, v := range expr {
+
+	// 函数体代码解析
+	for _, v := range fni.CustFN {
 		if v.Tok == ";" {
-			cfnParsed := parseExprInnerFunc(exprSingular)
-			if cfnParsed == nil {
+			// 获得当前代码行的类型
+			cfnInnerLineParsed := parseExprInnerFunc(exprSingular)
+			if cfnInnerLineParsed == nil {
 				return types.ErrorWrongSentence
 			}
 
 			// 变量赋值
-			if cfnParsed.typ == varStatemented {
-				rv, err := r.parse(cfnParsed.varExpr, pos, nil)
+			if cfnInnerLineParsed.typ == varStatemented {
+				rv, err := r.parse(cfnInnerLineParsed.varExpr, pos, innerVariable)
 				if err != nil {
 					return err
 				}
-				innerVariable[cfnParsed.vName] = rv
-			} else if cfnParsed.typ == funcImplemented {
-				_, err := r.parse(cfnParsed.varExpr, pos, innerVariable)
+				innerVariable[cfnInnerLineParsed.vName] = rv
+			} else if cfnInnerLineParsed.typ == funcImplemented {
+				// 对比函数形参和实参
+				// global.Output(realArgValues)
+				// for k := range fni.Args {
+				// 	global.Output(realArgValues[k])
+				// }
+
+				global.Output(cfnInnerLineParsed.varExpr)
+
+				_, err := r.parse(cfnInnerLineParsed.varExpr, pos, innerVariable)
 				if err != nil {
 					return err
 				}
@@ -114,6 +129,7 @@ type innerFuncExpr struct {
 	// varParsed *global.Structure
 }
 
+// parseExprInnerFunc 解析当前函数体内的某一行代码
 func parseExprInnerFunc(expr []*global.Structure) *innerFuncExpr {
 	sLen := len(expr)
 	if sLen > 2 {

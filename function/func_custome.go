@@ -6,17 +6,17 @@ import (
 )
 
 type CustomFunctions struct {
-	cusFunctions map[string][]*global.Structure
+	cusFunctions map[string]*FunctionInfo
 }
 
 func NewCustomFunctions() *CustomFunctions {
 	return &CustomFunctions{
-		cusFunctions: make(map[string][]*global.Structure, 0),
+		cusFunctions: make(map[string]*FunctionInfo, 0),
 	}
 }
 
 // ParseCutFunc 解析函数数据
-func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*functionInfo, error) {
+func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*FunctionInfo, error) {
 	// 判断是否为类方法或普通函数
 	funcName := expr[1].Tok
 	// 普通函数处理
@@ -33,7 +33,7 @@ func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*f
 		return nil, err
 	}
 
-	return &functionInfo{
+	return &FunctionInfo{
 		FunctionName: expr[1].Lit,
 		CustFN:       argsDefinitions.fnBody,
 		MustAmount:   argsDefinitions.needArgsAmount,
@@ -170,11 +170,11 @@ func checkArguments(arg []*global.Structure, argLen int) (*functionArgs, error) 
 	return nil, nil
 }
 
-func (f *CustomFunctions) AddFunc(structName, funcName string, expr []*global.Structure) {
-	f.cusFunctions[funcName] = expr
+func (f *CustomFunctions) AddFunc(structName string, fni *FunctionInfo) {
+	f.cusFunctions[fni.FunctionName] = fni
 }
 
-func (f *CustomFunctions) GetCustomeFunc(name string) []*global.Structure {
+func (f *CustomFunctions) GetCustomeFunc(name string) *FunctionInfo {
 	if v, ok := f.cusFunctions[name]; ok {
 		return v
 	}
