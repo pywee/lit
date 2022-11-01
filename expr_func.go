@@ -87,12 +87,31 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 				innerVariable[cfnInnerLineParsed.vName] = rv
 			} else if cfnInnerLineParsed.typ == funcImplemented {
 				// 对比函数形参和实参
-				// global.Output(realArgValues)
-				// for k := range fni.Args {
-				// 	global.Output(realArgValues[k])
-				// }
+				realArgList := fn.GetFunctionArgList(realArgValues)
+				rLen := len(realArgList)
+				for k, nArg := range fni.Args {
+					var thisArg = make([]*global.Structure, 0, 3)
+					if k+1 > rLen {
+						if nArg.Must {
+							return types.ErrorArgsNotEnough
+						}
+						thisArg = []*global.Structure{
+							{Tok: nArg.Type, Lit: nArg.Value},
+						}
+					} else {
+						thisArg = realArgList[k]
+					}
 
-				global.Output(cfnInnerLineParsed.varExpr)
+					// 解析传入的实参 因为实参可能也是函数
+					realArgValueParsed, err := r.parse(thisArg, pos, innerVariable)
+					if err != nil {
+						return err
+					}
+					nArg.Value = realArgValueParsed.Lit
+					innerVariable[nArg.Name] = realArgValueParsed
+				}
+
+				// global.Output(cfnInnerLineParsed.varExpr)
 
 				_, err := r.parse(cfnInnerLineParsed.varExpr, pos, innerVariable)
 				if err != nil {
