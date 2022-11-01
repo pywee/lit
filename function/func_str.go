@@ -12,7 +12,7 @@ import (
 
 // strFunctions
 // 支持的内置函数: 字符串处理函数
-var strFunctions = []*functionInfo{
+var strFunctions = []*FunctionInfo{
 	{
 		FunctionName: FUNCTION_REPLACE,
 		MustAmount:   4,

@@ -26,7 +26,7 @@ func NewExpr(src []byte) (*Expression, error) {
 		s      scanner.Scanner
 		fset   = token.NewFileSet()
 		result = &Expression{publicVariable: make(map[string]*global.Structure, 10)}
-		list   = make([]*global.Structure, 0, 100)
+		list   = make([]*global.Structure, 0, 50)
 	)
 
 	cfn = fn.NewCustomFunctions()
@@ -43,10 +43,16 @@ func NewExpr(src []byte) (*Expression, error) {
 		}
 
 		posString := fset.Position(pos).String()
+		posLine := strings.Split(posString, ":")[0]
 		if tok.String() == "func" {
 			foundCustomeFunc = true
 		}
 		if foundCustomeFunc {
+			stok := tok.String()
+			if stok == "CHAR" || stok == "STRING" {
+				lit = formatString(lit)
+			}
+
 			funcList = append(funcList, &global.Structure{
 				Position: fset.Position(pos).String(),
 				Tok:      tok.String(),
@@ -55,15 +61,14 @@ func NewExpr(src []byte) (*Expression, error) {
 
 			if tok.String() == ";" && lit == "\n" {
 				foundCustomeFunc = false
-				posLine := strings.Split(posString, ":")
 				if len(funcList) < 7 {
-					return nil, errors.New("第" + posLine[0] + "行, " + types.ErrorFunctionIlligle.Error())
+					return nil, errors.New("第" + posLine + "行, " + types.ErrorFunctionIlligle.Error())
 				}
 				funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
 				if err != nil {
-					return nil, errors.New("第" + posLine[0] + "行, " + err.Error())
+					return nil, errors.New("第" + posLine + "行, " + err.Error())
 				}
-				cfn.AddFunc("", funcsParsed.FunctionName, funcsParsed.CustFN)
+				cfn.AddFunc("", funcsParsed)
 			}
 			continue
 		}
@@ -76,16 +81,15 @@ func NewExpr(src []byte) (*Expression, error) {
 			}
 
 			// 递归解析表达式
-			posLine := strings.Split(posString, ":")
 			for _, v := range list {
 				if sLit := strings.ToLower(v.Lit); v.Tok != "STRING" && (sLit == "false" || sLit == "true") {
 					v.Tok = "BOOL"
 				}
 			}
 
-			rv, err := result.parse(list, "第"+posLine[0]+"行, ", nil)
+			rv, err := result.parse(list, "第"+posLine+"行, ", nil)
 			if err != nil {
-				return nil, errors.New("第" + posLine[0] + "行, " + err.Error())
+				return nil, errors.New("第" + posLine + "行, " + err.Error())
 			}
 			// global.Output(rv)
 
@@ -126,10 +130,15 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 	if rLen == 1 {
 		rv := expr[0]
 		if rv != nil && rv.Tok == "IDENT" && global.IsVariableOrFunction(rv) {
-			var ok bool
-			if rv, ok = r.publicVariable[rv.Lit]; !ok {
+			// 先寻找作用域变量 再找全局变量
+			if innerRv, ok := innerVariable[rv.Lit]; ok {
+				rv = innerRv
+			} else if pubRv, ok := r.publicVariable[rv.Lit]; ok {
+				rv = pubRv
+			} else {
 				return nil, types.ErrorNotFoundVariable
 			}
+
 			return rv, nil
 		}
 		return expr[0], nil
@@ -197,8 +206,16 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 					if middle, err = r.execFunc(funcName, expr[firstKey+1:k], pos, innerVariable); err != nil {
 						return nil, err
 					}
-				} else if fnExpr := cfn.GetCustomeFunc(funcName); fnExpr != nil {
-					_ = r.execCustomFunc(fnExpr, pos)
+					// GetCustomeFunc 获取定义的函数及其形参
+					// expr[firstKey+1 : k] 为实参
+				} else if fni := cfn.GetCustomeFunc(funcName); fni != nil {
+					// 函数体为空 未写任何代码
+					// global.Output(expr[firstKey+1 : k])
+					// TODO & FIXME 执行自定义函数
+					err = r.execCustomFunc(fni, expr[firstKey+1:k], pos)
+					if err != nil {
+						return nil, err
+					}
 				}
 			} else if middle, err = r.parse(expr[firstKey+1:k], pos, innerVariable); err != nil {
 				return nil, err
@@ -213,13 +230,13 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 	}
 
 	// 进入这里的已经是最小粒度了 --------
-	// 变量值寻找
+	// 寻找变量值
+	var (
+		exists bool
+		value  *global.Structure
+	)
 	for k, v := range expr {
 		if v.Tok == "IDENT" && global.IsVariableOrFunction(v) {
-			var (
-				exists bool
-				value  *global.Structure
-			)
 			if value, exists = innerVariable[v.Lit]; exists {
 				expr[k] = value
 				continue
@@ -243,6 +260,8 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 			return rv, nil
 		}
 	}
+
+	// global.Output(expr)
 
 	// 最小粒度进入到算术表达式中计算
 	rv, err := r.parseExpr(expr, pos)
@@ -432,7 +451,7 @@ func findExprBetweenSymbool(l, m, r *global.Structure) (*exprResult, error) {
 	}
 
 	// 字符串拼接及弱类型处理的算术计算
-	if lTok == "STRING" && rTok == "STRING" {
+	if (lTok == "STRING" || lTok == "INTERFACE") && (rTok == "STRING" || rTok == "INTERFACE") {
 		// 弱类型处理 如果左右两边都是字符串数字则允许进行算术计算
 		isLeftNumeric, err := global.IsNumber(l.Lit)
 		if err != nil {
@@ -491,6 +510,7 @@ func findExprBetweenSymbool(l, m, r *global.Structure) (*exprResult, error) {
 			l.Lit = lit
 		}
 		if !isFloat && !isInt {
+			print(10)
 			return nil, types.ErrorWrongSentence
 		}
 	}

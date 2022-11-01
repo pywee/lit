@@ -6,17 +6,17 @@ import (
 )
 
 // 内置函数列表
-var functions = make([]*functionInfo, 0, 100)
+var functions = make([]*FunctionInfo, 0, 100)
 
 func init() {
 	// 输入内置函数列表
-	fns := [][]*functionInfo{strFunctions, numberFunctions, baseFunctions}
+	fns := [][]*FunctionInfo{strFunctions, numberFunctions, baseFunctions}
 	for _, v := range fns {
 		functions = append(functions, v...)
 	}
 }
 
-type functionInfo struct {
+type FunctionInfo struct {
 	// StructName 所属的结构体名称
 	StructName string
 	// FunctionName 名称
@@ -54,7 +54,7 @@ func IsExprFunction(expr []*global.Structure, rlen int) bool {
 	return expr[0].Tok == "IDENT" && expr[1].Tok == "(" && expr[rlen-1].Tok == ")"
 }
 
-func CheckFunctionName(name string) *functionInfo {
+func CheckFunctionName(name string) *FunctionInfo {
 	for _, v := range functions {
 		if v.FunctionName == name {
 			return v
