@@ -28,17 +28,19 @@ func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*F
 		return nil, types.ErrorFunctionNameIrregular
 	}
 
-	argsDefinitions, err := getFunctionArgs(expr, pos)
+	// 解析自定义函数 得到其参数及函数体
+	// 此时函数体数据并未解析 只在被调用时解析
+	ret, err := getFunctionArgs(expr, pos)
 	if err != nil {
 		return nil, err
 	}
 
 	return &FunctionInfo{
 		FunctionName: expr[1].Lit,
-		CustFN:       argsDefinitions.fnBody,
-		MustAmount:   argsDefinitions.needArgsAmount,
-		MaxAmount:    argsDefinitions.maxArgsAmount,
-		Args:         argsDefinitions.list,
+		CustFN:       ret.fnBody,
+		MustAmount:   ret.needArgsAmount,
+		MaxAmount:    ret.maxArgsAmount,
+		Args:         ret.list,
 	}, nil
 }
 
@@ -148,22 +150,29 @@ func getFunctionArgs(expr []*global.Structure, pos string) (*functionArgsInfo, e
 
 // checkArguments 检查定义的函数的形参定义信息并返回合法数据
 func checkArguments(arg []*global.Structure, argLen int) (*functionArgs, error) {
+	// example
+	// func(a)
 	if argLen == 1 {
-		return &functionArgs{Type: types.INTERFACE, Must: true, Name: arg[0].Lit}, nil
+		arg0 := arg[0]
+		return &functionArgs{Type: arg0.Tok, Must: true, Name: arg0.Lit}, nil
 	}
+
+	// example
+	// func(a = 1)
 	if argLen == 3 {
-		arg1 := arg[1]
-		if arg1.Tok != "=" {
+		if arg[1].Tok != "=" {
 			return nil, types.ErrorFunctionArgsIrregular
 		}
+
 		arg2 := arg[2]
 		return &functionArgs{
-			Type:  types.INTERFACE,
-			Must:  false,
-			Name:  arg[0].Lit,
+			Type:  arg2.Tok,
 			Value: arg2.Lit,
+			Name:  arg[0].Lit,
+			Must:  false,
 		}, nil
 	}
+
 	if argLen > 0 {
 		return nil, types.ErrorFunctionArgsIrregular
 	}

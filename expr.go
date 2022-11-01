@@ -261,7 +261,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 		}
 	}
 
-	global.Output(expr)
+	// global.Output(expr)
 
 	// 最小粒度进入到算术表达式中计算
 	rv, err := r.parseExpr(expr, pos)
