@@ -43,7 +43,7 @@ func NewExpr(src []byte) (*Expression, error) {
 		}
 
 		posString := fset.Position(pos).String()
-		posLine := strings.Split(posString, ":")[0]
+		posLine := "第" + strings.Split(posString, ":")[0] + "行, "
 		if tok.String() == "func" {
 			foundCustomeFunc = true
 		}
@@ -52,21 +52,25 @@ func NewExpr(src []byte) (*Expression, error) {
 			if stok == "CHAR" || stok == "STRING" {
 				lit = formatString(lit)
 			}
+			if sLit := strings.ToLower(lit); stok != "STRING" && (sLit == "false" || sLit == "true") {
+				lit = sLit
+				stok = "BOOL"
+			}
 
 			funcList = append(funcList, &global.Structure{
 				Position: fset.Position(pos).String(),
-				Tok:      tok.String(),
+				Tok:      stok,
 				Lit:      lit,
 			})
 
 			if tok.String() == ";" && lit == "\n" {
 				foundCustomeFunc = false
 				if len(funcList) < 7 {
-					return nil, errors.New("第" + posLine + "行, " + types.ErrorFunctionIlligle.Error())
+					return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
 				}
 				funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
 				if err != nil {
-					return nil, errors.New("第" + posLine + "行, " + err.Error())
+					return nil, errors.New(posLine + err.Error())
 				}
 				cfn.AddFunc("", funcsParsed)
 			}
@@ -87,9 +91,9 @@ func NewExpr(src []byte) (*Expression, error) {
 				}
 			}
 
-			rv, err := result.parse(list, "第"+posLine+"行, ", nil)
+			rv, err := result.parse(list, posLine, nil)
 			if err != nil {
-				return nil, errors.New("第" + posLine + "行, " + err.Error())
+				return nil, errors.New(posLine + err.Error())
 			}
 			// global.Output(rv)
 
@@ -138,7 +142,6 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 			} else {
 				return nil, types.ErrorNotFoundVariable
 			}
-
 			return rv, nil
 		}
 		return expr[0], nil
