@@ -213,35 +213,35 @@ func main() {
 **当前支持的内置函数有如下，更多函数将会在逐步补充**
 ```golang
     // 通用处理函数
-    Print
-    VarDump
+    print
+    varDump
 
     // 字符串处理函数
     // 函数的命名基本参考了 Go 语言
     // 除了个别函数有差别，如 
-    // UTF8Len 用于检测字符串字数的函数
-    // IsNumeric 用于判断当前输入是否为数字
-    Trim
-    TrimLeft
-    TrimRight
-    TrimSpace
-    Len
-    UTF8Len
-    MD5
-    Replace
-    Contains
-    Index
-    LastIndex
-    ToLower
-    ToUpper
-    ToTitle
-    Repeat
+    // utf8Len 用于检测字符串字数的函数
+    // isNumeric 用于判断当前输入是否为数字
+    trim
+    trimLeft
+    trimRight
+    trimSpace
+    len
+    utf8Len
+    md5
+    replace
+    contains
+    index
+    lastIndex
+    toLower
+    toUpper
+    toTitle
+    repeat
 
     // 其他函数
-    IsNumeric
-    IsBool
-    IsInt
-    IsFloat
+    isNumeric
+    isBool
+    isInt
+    isFloat
 ```
 
 
