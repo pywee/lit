@@ -31,7 +31,7 @@ func main() {
     src := []byte(`
         a = 123;
         b = a + 456;
-        Print(b); // 579
+        print(b); // 579
     `)
     _, err := lit.NewExpr(src)
 }
@@ -57,8 +57,8 @@ func main() {
     exprs := []byte(`
         a = (2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11))) / 10 * 2;
         b = 12 / 333 + 31 + (5 / 10) - 6 | 100;
-        Print(a); // 16
-        Print(b); // 125
+        print(a); // 16
+        print(b); // 125
     `)
     _, err = lit.NewExpr(exprs)
 
@@ -78,8 +78,8 @@ func main() {
 
     // 执行下面语句 最终会输出
      exprs := []byte(`
-        a = Replace("hello word111", "1", "", 2-IsInt((1+(1 + IsInt(123+(1+2)))-1)+2)-2);
-        VarDump(a); // STRING hello word
+        a = replace("hello word111", "1", "", 2-isInt((1+(1 + isInt(123+(1+2)))-1)+2)-2);
+        varDump(a); // STRING hello word
     `)
     _, err = lit.NewExpr(exprs)
 
@@ -91,15 +91,15 @@ func main() {
     // 执行下面句子 将输出
     src := []byte(`
         a = true - 1;
-        b = IsInt(1);
-        c = IsFloat(1);
+        b = isInt(1);
+        c = isFloat(1);
         d = false == 0.0;
         e = "false" == 0.0;
-        Print(a); // 0
-        Print(b); // true
-        Print(c); // true
-        Print(d); // true
-        Print(e); // true
+        print(a); // 0
+        print(b); // true
+        print(c); // true
+        print(d); // true
+        print(e); // true
     `)
     _, err := lit.NewExpr(src)
 
@@ -110,8 +110,8 @@ func main() {
     src := []byte(`
         a = "1" - 1;
         b =  0.0 >= false+1 || (1<=21 && 1==1);
-        Print(a); // 0
-        Print(b); // true
+        print(a); // 0
+        print(b); // true
     `)
     _, err := lit.NewExpr(src)
 
@@ -121,7 +121,7 @@ func main() {
     // 执行下面句子 将输出
     src := []byte(`
         a = "1" - 1;
-        Print(a); // 0
+        print(a); // 0
     `)
     _, err := lit.NewExpr(src)
 
@@ -130,7 +130,7 @@ func main() {
     // 执行以下句子，将会输出
     src := []byte(`
         a = "abc" + "def";
-        Print(a); // abcdef
+        print(a); // abcdef
     `)
     _, err := lit.NewExpr(src)
 
@@ -139,7 +139,7 @@ func main() {
     // 执行如下句子，将会输出
      src := []byte(`
         a = "123" + "456";
-        Print(a); // 579
+        print(a); // 579
     `)
     _, err := lit.NewExpr(src)
 
@@ -148,7 +148,7 @@ func main() {
     // 执行如下句子
     src := []byte(`
     	a = "abcwwww1230"+0.01;
-    	Print(a); // 报错
+    	print(a); // 报错
     `)
     _, err := lit.NewExpr(src)
 ```
@@ -159,8 +159,8 @@ func main() {
 ```golang
     // 执行如下句子，将会输出
     src := []byte(`
-        a = IsInt(1) && 72+(11-2) || 1-false;
-        VarDump(a); // BOOL true
+        a = isInt(1) && 72+(11-2) || 1-false;
+        varDump(a); // BOOL true
     `)
     _, err := lit.NewExpr(src)
 
@@ -191,7 +191,7 @@ func main() {
 // PHP 输出 -104
 // Node.js 输出 -104
 // Golang 输出 96
-// Lit (lit) 输出 96
+// Lit 输出 96
 ```
 
 ---
