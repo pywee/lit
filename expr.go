@@ -95,8 +95,6 @@ func NewExpr(src []byte) (*Expression, error) {
 			if err != nil {
 				return nil, errors.New(posLine + err.Error())
 			}
-			// global.Output(rv)
-
 			// 变量赋值
 			if vName != "" {
 				// fmt.Printf("set %s to %v\n", vName, rv)
@@ -113,16 +111,13 @@ func NewExpr(src []byte) (*Expression, error) {
 		if tokString == "STRING" {
 			lit = formatString(lit)
 		}
-
 		list = append(list, &global.Structure{
 			Position: posString,
 			Tok:      tokString,
 			Lit:      lit,
 		})
-
 		// fmt.Printf("[ %s ]\t[ %s ]\t [ %s ] \n", fset.Position(pos).String(), tok, lit)
 	}
-
 	return result, nil
 }
 
@@ -157,10 +152,10 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 
 	for k, v := range expr {
 		if v.Tok == "||" && firstKey == -1 {
-			return r.parseOr(expr, k, pos)
+			return r.parseOr(expr, k, pos, innerVariable)
 		}
 		if v.Tok == "&&" && firstKey == -1 {
-			return r.parseAnd(expr, k, pos)
+			return r.parseAnd(expr, k, pos, innerVariable)
 		}
 
 		if v.Tok == "(" {
@@ -202,8 +197,17 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 			// 发现中间表达式为函数执行调用
 			var middle *global.Structure
 			if global.IsVariableOrFunction(firstIdent) {
-				// 查找是否有内置函数
 				funcName := firstIdent.Lit
+
+				// 此判断在前面则可实现对内置函数的重写
+				if fni := cfn.GetCustomeFunc(funcName); fni != nil {
+					// 函数体为空 未写任何代码
+					// global.Output(expr[firstKey+1 : k])
+					// TODO & FIXME 执行自定义函数
+					return r.execCustomFunc(fni, expr[firstKey+1:k], pos)
+				}
+
+				// 查找是否有内置函数
 				if getFunc := fn.CheckFunctionName(funcName); getFunc != nil {
 					// global.Output(expr[firstKey+1 : k])
 					if middle, err = r.execFunc(funcName, expr[firstKey+1:k], pos, innerVariable); err != nil {
@@ -211,14 +215,6 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 					}
 					// GetCustomeFunc 获取定义的函数及其形参
 					// expr[firstKey+1 : k] 为实参
-				} else if fni := cfn.GetCustomeFunc(funcName); fni != nil {
-					// 函数体为空 未写任何代码
-					// global.Output(expr[firstKey+1 : k])
-					// TODO & FIXME 执行自定义函数
-					err = r.execCustomFunc(fni, expr[firstKey+1:k], pos)
-					if err != nil {
-						return nil, err
-					}
 				}
 			} else if middle, err = r.parse(expr[firstKey+1:k], pos, innerVariable); err != nil {
 				return nil, err

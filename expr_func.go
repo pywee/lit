@@ -1,11 +1,14 @@
 package lit
 
 import (
+	"strings"
+
 	fn "github.com/pywee/lit/function"
 	"github.com/pywee/lit/global"
 	"github.com/pywee/lit/types"
 )
 
+// execFunc 执行内置函数
 func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos string, innerVariable map[string]*global.Structure) (*global.Structure, error) {
 	fArgs := fn.CheckFunctionName(funcName)
 	if fArgs == nil {
@@ -61,10 +64,10 @@ func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos str
 // execCustomFunc 执行自定义函数
 // 当自定义的函数被调用时才会调用此方法
 // realArgValues 为函数被调用时得到的实参
-func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string) error {
+func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string) (*global.Structure, error) {
 	var (
-		// exprSingular 函数体内的每一句表达式
-		exprSingular = make([]*global.Structure, 0, 3)
+		// exprSingularLine 函数体内的每一句表达式
+		exprSingularLine = make([]*global.Structure, 0, 3)
 		// innerVariable 函数体内的变量声明
 		innerVariable = make(map[string]*global.Structure)
 	)
@@ -73,59 +76,67 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 	for _, v := range fni.CustFN {
 		if v.Tok == ";" {
 			// 获得当前代码行的类型
-			cfnInnerLineParsed := parseExprInnerFunc(exprSingular)
+			cfnInnerLineParsed := parseExprInnerFunc(exprSingularLine)
 			if cfnInnerLineParsed == nil {
-				return types.ErrorWrongSentence
+				return nil, types.ErrorWrongSentence
+			}
+
+			// 函数体内 return 语句
+			if cfnInnerLineParsed.typ == returnIdent {
+				if err := r.setInnerVal(fni, realArgValues, pos, innerVariable); err != nil {
+					return nil, err
+				}
+				return r.parse(cfnInnerLineParsed.varExpr, pos, innerVariable)
 			}
 
 			// 变量赋值
 			if cfnInnerLineParsed.typ == varStatemented {
 				rv, err := r.parse(cfnInnerLineParsed.varExpr, pos, innerVariable)
 				if err != nil {
-					return err
+					return nil, err
 				}
 				innerVariable[cfnInnerLineParsed.vName] = rv
 			} else if cfnInnerLineParsed.typ == funcImplemented {
+
 				// 对比函数形参和实参
-				realArgList := fn.GetFunctionArgList(realArgValues)
-				rLen := len(realArgList)
-				for k, nArg := range fni.Args {
-					var thisArg = make([]*global.Structure, 0, 3)
-					if k+1 > rLen {
-						if nArg.Must {
-							return types.ErrorArgsNotEnough
-						}
-						thisArg = []*global.Structure{
-							{Tok: nArg.Type, Lit: nArg.Value},
-						}
-					} else {
-						thisArg = realArgList[k]
-					}
+				// realArgList := fn.GetFunctionArgList(realArgValues)
+				// rLen := len(realArgList)
+				// for k, nArg := range fni.Args {
+				// 	var thisArg = make([]*global.Structure, 0, 3)
+				// 	if k+1 > rLen {
+				// 		if nArg.Must {
+				// 			return nil, types.ErrorArgsNotEnough
+				// 		}
+				// 		thisArg = []*global.Structure{
+				// 			{Tok: nArg.Type, Lit: nArg.Value},
+				// 		}
+				// 	} else {
+				// 		thisArg = realArgList[k]
+				// 	}
 
-					// 解析传入的实参 因为实参可能也是函数
-					realArgValueParsed, err := r.parse(thisArg, pos, innerVariable)
-					if err != nil {
-						return err
-					}
-					nArg.Value = realArgValueParsed.Lit
-					innerVariable[nArg.Name] = realArgValueParsed
+				// 	// 解析传入的实参 因为实参可能也是函数
+				// 	realArgValueParsed, err := r.parse(thisArg, pos, innerVariable)
+				// 	if err != nil {
+				// 		return nil, err
+				// 	}
+				// 	nArg.Value = realArgValueParsed.Lit
+				// 	innerVariable[nArg.Name] = realArgValueParsed
+				// }
+
+				var err error
+				if err = r.setInnerVal(fni, realArgValues, pos, innerVariable); err != nil {
+					return nil, err
 				}
-
-				// global.Output(cfnInnerLineParsed.varExpr)
-
-				_, err := r.parse(cfnInnerLineParsed.varExpr, pos, innerVariable)
-				if err != nil {
-					return err
+				if _, err = r.parse(cfnInnerLineParsed.varExpr, pos, innerVariable); err != nil {
+					return nil, err
 				}
 			}
-
-			// global.Output(exprSingular)
-			exprSingular = nil
+			exprSingularLine = nil
 			continue
 		}
-		exprSingular = append(exprSingular, v)
+		exprSingularLine = append(exprSingularLine, v)
 	}
-	return nil
+	return &global.Structure{Tok: "INT", Lit: "1"}, nil
 }
 
 const (
@@ -133,10 +144,12 @@ const (
 	varStatemented = 1
 	// funcImplemented 函数调用
 	funcImplemented = 2
+	// returnIdent return 语句
+	returnIdent = 3
 )
 
 type innerFuncExpr struct {
-	// typ 类型 1-表示变量赋值 2-函数调用
+	// typ 类型 1-表示变量赋值 2-函数调用 3-return句子
 	typ int8
 	// vName 变量名称 如果有的话
 	vName string
@@ -151,29 +164,72 @@ type innerFuncExpr struct {
 // parseExprInnerFunc 解析当前函数体内的某一行代码
 func parseExprInnerFunc(expr []*global.Structure) *innerFuncExpr {
 	sLen := len(expr)
-	if sLen > 2 {
-		expr0 := expr[0]
-		expr1 := expr[1]
+	if sLen < 2 {
+		return nil
+	}
 
-		// 变量声明或者境外赋值
-		if expr1.Tok == "=" && expr[0].Tok == "IDENT" {
-			return &innerFuncExpr{
-				typ:     varStatemented,
-				vName:   expr0.Lit,
-				tok:     expr1.Tok,
-				varExpr: expr[2:],
-			}
-		}
-
-		// 函数调用
-		if sLen >= 3 && expr0.Tok == "IDENT" && global.IsVariableOrFunction(expr0) && expr[sLen-1].Tok == ")" {
-			return &innerFuncExpr{
-				typ:     funcImplemented,
-				vName:   expr0.Lit,
-				varExpr: expr,
-			}
+	expr0 := expr[0]
+	expr1 := expr[1]
+	if strings.ToLower(expr0.Lit) == "return" {
+		return &innerFuncExpr{
+			typ:     returnIdent,
+			vName:   "return",
+			tok:     "return",
+			varExpr: expr[1:],
 		}
 	}
 
+	// sLen > 2
+	// 变量声明或者境外赋值
+	if expr1.Tok == "=" && expr[0].Tok == "IDENT" {
+		return &innerFuncExpr{
+			typ:     varStatemented,
+			vName:   expr0.Lit,
+			tok:     expr1.Tok,
+			varExpr: expr[2:],
+		}
+	}
+
+	// 函数调用
+	if sLen >= 3 && expr0.Tok == "IDENT" && global.IsVariableOrFunction(expr0) && expr[sLen-1].Tok == ")" {
+		return &innerFuncExpr{
+			typ:     funcImplemented,
+			vName:   expr0.Lit,
+			varExpr: expr,
+		}
+	}
+
+	return nil
+}
+
+// setInnerVal 解析函数体内的变量声明句子
+// for example:
+// a = 1;
+// b = abc();
+// c = a + b;
+// return a+b+c
+func (r *Expression) setInnerVal(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string, innerVariable map[string]*global.Structure) error {
+	// 对比函数形参和实参
+	realArgList := fn.GetFunctionArgList(realArgValues)
+	rLen := len(realArgList)
+	for k, nArg := range fni.Args {
+		var thisArg = make([]*global.Structure, 0, 3)
+		if k+1 > rLen {
+			if nArg.Must {
+				return types.ErrorArgsNotEnough
+			}
+			thisArg = []*global.Structure{{Tok: nArg.Type, Lit: nArg.Value}}
+		} else {
+			thisArg = realArgList[k]
+		}
+
+		// 解析传入的实参 因为实参可能也是函数
+		realArgValueParsed, err := r.parse(thisArg, pos, innerVariable)
+		if err != nil {
+			return err
+		}
+		nArg.Value = realArgValueParsed.Lit
+		innerVariable[nArg.Name] = realArgValueParsed
+	}
 	return nil
 }
