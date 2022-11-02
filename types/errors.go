@@ -33,6 +33,8 @@ var (
 	ErrorFunctionNameIrregular = errors.New("函数名称不符合规范")
 	// ErrorFunctionArgsIrregular 函数参数定义不符合规范
 	ErrorFunctionArgsIrregular = errors.New("函数参数定义不符合规范")
+	// ErrorIfOutsideOfFunctionBody if 条件语句必须在函数体内声明
+	ErrorIfOutsideOfFunctionBody = errors.New("if 条件语句必须在函数体内声明")
 )
 
 func WithError(pos, err string) error {

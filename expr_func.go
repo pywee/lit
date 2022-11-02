@@ -75,12 +75,12 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 	// 以下场景需要在维护上下文 innerVarInFuncParams 局部变量
 	/**
 	func a(x) {
-		return x;
+		return x+1;
 	}
 	func b(arg) {
-		return a(arg);
+		return a(arg+2);
 	}
-	print(b(1)+2);
+	print(b(3)+4);
 	**/
 
 	for k, v := range innerVarInFuncParams {
@@ -148,8 +148,6 @@ type innerFuncExpr struct {
 	tok string
 	// varExpr 表达式
 	varExpr []*global.Structure
-	// varParsed 表达式 varExpr 解析后的最终值
-	// varParsed *global.Structure
 }
 
 // parseExprInnerFunc 解析当前函数体内的某一行代码
