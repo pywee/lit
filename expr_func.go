@@ -93,8 +93,41 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 		return nil, err
 	}
 
+	var (
+		// foundIF 发现if语句标记
+		foundIF bool
+		// 标记括号
+		ifIDK int8
+		// ifList if语句体
+		ifList = make([]*global.Structure, 0, 10)
+	)
+
 	// 函数体代码解析
-	for _, v := range fni.CustFN {
+	for k, v := range fni.CustFN {
+		// TODO
+		// 此处拦截 if 语句
+		if v.Tok == "if" && !foundIF {
+			foundIF = true
+		}
+		if foundIF {
+			ifList = append(ifList, v)
+			if v.Tok == "{" {
+				ifIDK++
+			} else if v.Tok == "}" {
+				ifIDK--
+				if ifIDK == 0 {
+					k1 := k + 1
+					if k1 < len(fni.CustFN) && fni.CustFN[k1].Tok != "else" {
+						foundIF = false
+					}
+				}
+			}
+			continue
+		}
+
+		// 前面一层if语句
+		// global.Output(ifList)
+
 		if v.Tok == ";" {
 			// 获得当前代码行的类型
 			innertLineParsed := parseExprInnerFunc(exprSingularLine)
@@ -126,6 +159,9 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 		}
 		exprSingularLine = append(exprSingularLine, v)
 	}
+
+	// 最后一层if语句
+	// global.Output(ifList)
 
 	return nil, nil
 }
