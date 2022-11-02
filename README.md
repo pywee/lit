@@ -65,7 +65,7 @@ func main() {
     src := []byte(`
         a = 123;
         b = a + 456;
-        print(b); // 579
+        print(b + 1); // 580
     `)
     _, err := lit.NewExpr(src)
 }
@@ -136,19 +136,6 @@ src := []byte(`
     print(e); // true
 `)
 _, err := lit.NewExpr(src)
-
-src := []byte(`
-    a = true - 1;
-    b = isInt(1);
-    c = isFloat(1.0);
-    d = false == 0.0;
-    e = "false" == 0.0;
-    print(a); // 0
-    print(b); // true
-    print(c); // true
-    print(d); // true
-    print(e); // true
-`)
 
 exprs := []byte(`
     a = false;

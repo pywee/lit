@@ -23,15 +23,16 @@ type Expression struct {
 
 func NewExpr(src []byte) (*Expression, error) {
 	var (
-		s      scanner.Scanner
-		fset   = token.NewFileSet()
-		result = &Expression{publicVariable: make(map[string]*global.Structure, 10)}
-		list   = make([]*global.Structure, 0, 50)
+		funcKuo  int8
+		s        scanner.Scanner
+		fset     = token.NewFileSet()
+		list     = make([]*global.Structure, 0, 20)
+		funcList = make([]*global.Structure, 0, 10)
+		result   = &Expression{publicVariable: make(map[string]*global.Structure, 10)}
 	)
 
 	cfn = fn.NewCustomFunctions()
 	file := fset.AddFile("", fset.Base(), len(src))
-	funcList := make([]*global.Structure, 0, 10)
 	s.Init(file, src, nil, scanner.ScanComments)
 
 	// 发现自定义函数时 保存其形式文本
@@ -42,13 +43,14 @@ func NewExpr(src []byte) (*Expression, error) {
 			break
 		}
 
+		stok := tok.String()
 		posString := fset.Position(pos).String()
 		posLine := "第" + strings.Split(posString, ":")[0] + "行, "
-		if tok.String() == "func" {
+
+		if stok == "func" {
 			foundCustomeFunc = true
 		}
 		if foundCustomeFunc {
-			stok := tok.String()
 			if stok == "CHAR" || stok == "STRING" {
 				lit = formatString(lit)
 			}
@@ -57,24 +59,48 @@ func NewExpr(src []byte) (*Expression, error) {
 				stok = "BOOL"
 			}
 
+			// 去掉 go 语言解析包多余的分割标识符
+			if tok.String() == ";" && lit == "\n" {
+				continue
+			}
+
 			funcList = append(funcList, &global.Structure{
 				Position: fset.Position(pos).String(),
 				Tok:      stok,
 				Lit:      lit,
 			})
 
-			if tok.String() == ";" && lit == "\n" {
-				if len(funcList) < 7 {
-					return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
+			if stok == "{" {
+				funcKuo++
+			} else if stok == "}" {
+				funcKuo--
+				if funcKuo == 0 {
+					if len(funcList) < 7 {
+						return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
+					}
+					funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
+					if err != nil {
+						return nil, errors.New(posLine + err.Error())
+					}
+					funcList = nil
+					foundCustomeFunc = false
+					cfn.AddFunc("", funcsParsed)
 				}
-				funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
-				if err != nil {
-					return nil, errors.New(posLine + err.Error())
-				}
-				funcList = nil
-				foundCustomeFunc = false
-				cfn.AddFunc("", funcsParsed)
 			}
+
+			// if tok.String() == ";" && lit == "\n" {
+			// 	if len(funcList) < 7 {
+			// 		return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
+			// 	}
+			// 	funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
+			// 	if err != nil {
+			// 		return nil, errors.New(posLine + err.Error())
+			// 	}
+			// 	funcList = nil
+			// 	foundCustomeFunc = false
+			// 	cfn.AddFunc("", funcsParsed)
+			// }
+
 			continue
 		}
 
@@ -117,7 +143,6 @@ func NewExpr(src []byte) (*Expression, error) {
 			Tok:      tokString,
 			Lit:      lit,
 		})
-		// fmt.Printf("[ %s ]\t[ %s ]\t [ %s ] \n", fset.Position(pos).String(), tok, lit)
 	}
 	return result, nil
 }
@@ -147,8 +172,8 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 	var (
 		err        error
 		foundKuo   bool
-		count      int
-		firstKey   int = -1
+		count      int8
+		firstKey   = -1
 		firstIdent *global.Structure
 	)
 
