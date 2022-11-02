@@ -127,6 +127,8 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 	if rLen == 0 {
 		return nil, nil
 	}
+
+	// 变量解析
 	if rLen == 1 {
 		rv := expr[0]
 		if rv != nil && rv.Tok == "IDENT" && global.IsVariableOrFunction(rv) {
@@ -171,6 +173,8 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 			count--
 		}
 
+		// first + middle + end
+		// 主要递归 middle
 		// a = (("wwww") + 222))
 		// a = IsInt(("wwww")+222);
 		// a = "你"+Replace("你好", "2", "3", 4)+"xxx";
@@ -198,22 +202,24 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 			var middle *global.Structure
 			if global.IsVariableOrFunction(firstIdent) {
 				funcName := firstIdent.Lit
+
 				// 此判断在前面则可实现对内置函数的重写
 				if fni := cfn.GetCustomeFunc(funcName); fni != nil {
-					// 函数体为空 未写任何代码
 					// global.Output(expr[firstKey+1 : k])
-					// TODO & FIXME 执行自定义函数
-					return r.execCustomFunc(fni, expr[firstKey+1:k], pos)
+					// global.Output(middle)
+					// 执行自定义函数
+					if middle, err = r.execCustomFunc(fni, expr[firstKey+1:k], pos); err != nil {
+						return nil, err
+					}
 				}
 
 				// 查找是否有内置函数
 				if getFunc := fn.CheckFunctionName(funcName); getFunc != nil {
+					// expr[firstKey+1 : k] 为实参
 					// global.Output(expr[firstKey+1 : k])
 					if middle, err = r.execFunc(funcName, expr[firstKey+1:k], pos, innerVariable); err != nil {
 						return nil, err
 					}
-					// GetCustomeFunc 获取定义的函数及其形参
-					// expr[firstKey+1 : k] 为实参
 				}
 			} else if middle, err = r.parse(expr[firstKey+1:k], pos, innerVariable); err != nil {
 				return nil, err
