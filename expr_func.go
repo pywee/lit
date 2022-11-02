@@ -64,13 +64,28 @@ func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos str
 // execCustomFunc 执行自定义函数
 // 当自定义的函数被调用时才会调用此方法
 // realArgValues 为函数被调用时得到的实参
-func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string) (*global.Structure, error) {
+func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string, innerVarInFuncParams map[string]*global.Structure) (*global.Structure, error) {
 	var (
 		// exprSingularLine 函数体内的每一句表达式
 		exprSingularLine = make([]*global.Structure, 0, 3)
 		// innerVariable 函数体内的变量声明
 		innerVariable = make(map[string]*global.Structure)
 	)
+
+	// 以下场景需要在维护上下文 innerVarInFuncParams 局部变量
+	/**
+	func a(x) {
+		return x;
+	}
+	func b(arg) {
+		return a(arg);
+	}
+	print(b(1)+2);
+	**/
+
+	for k, v := range innerVarInFuncParams {
+		innerVariable[k] = v
+	}
 
 	// 为形参赋值
 	// 即: 将调用函数时传入的实参赋值给形参

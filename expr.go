@@ -205,10 +205,11 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 
 				// 此判断在前面则可实现对内置函数的重写
 				if fni := cfn.GetCustomeFunc(funcName); fni != nil {
-					// global.Output(expr[firstKey+1 : k])
-					// global.Output(middle)
 					// 执行自定义函数
-					if middle, err = r.execCustomFunc(fni, expr[firstKey+1:k], pos); err != nil {
+					// global.Output(funcName)
+					// global.Output(expr[firstKey+1 : k])
+					// fmt.Println(funcName, innerVariable, expr[firstKey+1:k])
+					if middle, err = r.execCustomFunc(fni, expr[firstKey+1:k], pos, innerVariable); err != nil {
 						return nil, err
 					}
 				}
