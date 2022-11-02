@@ -95,8 +95,6 @@ func NewExpr(src []byte) (*Expression, error) {
 			if err != nil {
 				return nil, errors.New(posLine + err.Error())
 			}
-			// global.Output(rv)
-
 			// 变量赋值
 			if vName != "" {
 				// fmt.Printf("set %s to %v\n", vName, rv)
@@ -113,16 +111,13 @@ func NewExpr(src []byte) (*Expression, error) {
 		if tokString == "STRING" {
 			lit = formatString(lit)
 		}
-
 		list = append(list, &global.Structure{
 			Position: posString,
 			Tok:      tokString,
 			Lit:      lit,
 		})
-
 		// fmt.Printf("[ %s ]\t[ %s ]\t [ %s ] \n", fset.Position(pos).String(), tok, lit)
 	}
-
 	return result, nil
 }
 
