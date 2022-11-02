@@ -131,15 +131,14 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 		if rv != nil && rv.Tok == "IDENT" && global.IsVariableOrFunction(rv) {
 			// 先寻找作用域变量 再找全局变量
 			if innerRv, ok := innerVariable[rv.Lit]; ok {
-				rv = innerRv
-			} else if pubRv, ok := r.publicVariable[rv.Lit]; ok {
-				rv = pubRv
-			} else {
-				return nil, types.ErrorNotFoundVariable
+				return innerRv, nil
 			}
-			return rv, nil
+			if pubRv, ok := r.publicVariable[rv.Lit]; ok {
+				return pubRv, nil
+			}
+			return nil, types.ErrorNotFoundVariable
 		}
-		return expr[0], nil
+		return rv, nil
 	}
 
 	var (
