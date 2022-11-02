@@ -157,10 +157,10 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 
 	for k, v := range expr {
 		if v.Tok == "||" && firstKey == -1 {
-			return r.parseOr(expr, k, pos)
+			return r.parseOr(expr, k, pos, innerVariable)
 		}
 		if v.Tok == "&&" && firstKey == -1 {
-			return r.parseAnd(expr, k, pos)
+			return r.parseAnd(expr, k, pos, innerVariable)
 		}
 
 		if v.Tok == "(" {
