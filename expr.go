@@ -434,23 +434,27 @@ func findExprBetweenSymbool(l, m, r *global.Structure) (*exprResult, error) {
 
 	// 弱类型处理
 	// 布尔值转整型
-	if l.Lit == "true" {
-		lTok = "INT"
-		l.Tok = "INT"
-		l.Lit = "1"
-	} else if l.Lit == "false" {
-		lTok = "INT"
-		l.Tok = "INT"
-		l.Lit = "0"
+	if l.Tok == "BOOL" {
+		if l.Lit == "true" {
+			lTok = "INT"
+			l.Tok = "INT"
+			l.Lit = "1"
+		} else if l.Lit == "false" {
+			lTok = "INT"
+			l.Tok = "INT"
+			l.Lit = "0"
+		}
 	}
-	if r.Lit == "true" {
-		rTok = "INT"
-		r.Tok = "INT"
-		r.Lit = "1"
-	} else if r.Lit == "false" {
-		rTok = "INT"
-		r.Tok = "INT"
-		r.Lit = "0"
+	if r.Tok == "BOOL" {
+		if r.Lit == "true" {
+			rTok = "INT"
+			r.Tok = "INT"
+			r.Lit = "1"
+		} else if r.Lit == "false" {
+			rTok = "INT"
+			r.Tok = "INT"
+			r.Lit = "0"
+		}
 	}
 
 	// 字符串拼接及弱类型处理的算术计算
