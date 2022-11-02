@@ -245,18 +245,18 @@ src := []byte(`
 _, err := lit.NewExpr(src)
 
 
-// 执行如下句子，将会输出
+// 执行如下句子，将会输出 6
 src := []byte(`
-    func demo(a) {
-        b = 10;
-        return a+1+b;
+    func a() {
+        return 1;
     }
-
-    a = demo(9);
-    print(a); // 20
-    print(b); // 找不到变量
+    func b() {
+        return a() + 2;
+    }
+    print(b()+3); // 6
 `)
 _, err := lit.NewExpr(src)
+
 
 // 指定形参默认数据
 // 执行如下句子，将会输出
