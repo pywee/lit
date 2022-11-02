@@ -72,62 +72,37 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 		innerVariable = make(map[string]*global.Structure)
 	)
 
+	// 为形参赋值
+	// 即: 将调用函数时传入的实参赋值给形参
+	if err := r.setInnerVal(fni, realArgValues, pos, innerVariable); err != nil {
+		return nil, err
+	}
+
 	// 函数体代码解析
 	for _, v := range fni.CustFN {
 		if v.Tok == ";" {
 			// 获得当前代码行的类型
-			cfnInnerLineParsed := parseExprInnerFunc(exprSingularLine)
-			if cfnInnerLineParsed == nil {
+			innertLineParsed := parseExprInnerFunc(exprSingularLine)
+			if innertLineParsed == nil {
 				return nil, types.ErrorWrongSentence
 			}
 
 			// 函数体内 return 语句
-			if cfnInnerLineParsed.typ == returnIdent {
-				if err := r.setInnerVal(fni, realArgValues, pos, innerVariable); err != nil {
-					return nil, err
-				}
-				return r.parse(cfnInnerLineParsed.varExpr, pos, innerVariable)
+			if innertLineParsed.typ == returnIdent {
+				return r.parse(innertLineParsed.varExpr, pos, innerVariable)
 			}
 
 			// 变量赋值
-			if cfnInnerLineParsed.typ == varStatemented {
-				rv, err := r.parse(cfnInnerLineParsed.varExpr, pos, innerVariable)
+			if innertLineParsed.typ == varStatemented {
+				rv, err := r.parse(innertLineParsed.varExpr, pos, innerVariable)
 				if err != nil {
 					return nil, err
 				}
-				innerVariable[cfnInnerLineParsed.vName] = rv
-			} else if cfnInnerLineParsed.typ == funcImplemented {
-
-				// 对比函数形参和实参
-				// realArgList := fn.GetFunctionArgList(realArgValues)
-				// rLen := len(realArgList)
-				// for k, nArg := range fni.Args {
-				// 	var thisArg = make([]*global.Structure, 0, 3)
-				// 	if k+1 > rLen {
-				// 		if nArg.Must {
-				// 			return nil, types.ErrorArgsNotEnough
-				// 		}
-				// 		thisArg = []*global.Structure{
-				// 			{Tok: nArg.Type, Lit: nArg.Value},
-				// 		}
-				// 	} else {
-				// 		thisArg = realArgList[k]
-				// 	}
-
-				// 	// 解析传入的实参 因为实参可能也是函数
-				// 	realArgValueParsed, err := r.parse(thisArg, pos, innerVariable)
-				// 	if err != nil {
-				// 		return nil, err
-				// 	}
-				// 	nArg.Value = realArgValueParsed.Lit
-				// 	innerVariable[nArg.Name] = realArgValueParsed
-				// }
-
-				var err error
-				if err = r.setInnerVal(fni, realArgValues, pos, innerVariable); err != nil {
-					return nil, err
-				}
-				if _, err = r.parse(cfnInnerLineParsed.varExpr, pos, innerVariable); err != nil {
+				innerVariable[innertLineParsed.vName] = rv
+			} else if innertLineParsed.typ == funcImplemented {
+				// TODO
+				// parse 的返回值处理
+				if _, err := r.parse(innertLineParsed.varExpr, pos, innerVariable); err != nil {
 					return nil, err
 				}
 			}
@@ -136,7 +111,8 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 		}
 		exprSingularLine = append(exprSingularLine, v)
 	}
-	return &global.Structure{Tok: "INT", Lit: "1"}, nil
+
+	return nil, nil
 }
 
 const (
@@ -180,7 +156,7 @@ func parseExprInnerFunc(expr []*global.Structure) *innerFuncExpr {
 	}
 
 	// sLen > 2
-	// 变量声明或者境外赋值
+	// 变量声明或者赋值
 	if expr1.Tok == "=" && expr[0].Tok == "IDENT" {
 		return &innerFuncExpr{
 			typ:     varStatemented,
