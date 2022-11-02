@@ -64,7 +64,6 @@ func NewExpr(src []byte) (*Expression, error) {
 			})
 
 			if tok.String() == ";" && lit == "\n" {
-				foundCustomeFunc = false
 				if len(funcList) < 7 {
 					return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
 				}
@@ -72,6 +71,8 @@ func NewExpr(src []byte) (*Expression, error) {
 				if err != nil {
 					return nil, errors.New(posLine + err.Error())
 				}
+				funcList = nil
+				foundCustomeFunc = false
 				cfn.AddFunc("", funcsParsed)
 			}
 			continue
@@ -197,7 +198,6 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 			var middle *global.Structure
 			if global.IsVariableOrFunction(firstIdent) {
 				funcName := firstIdent.Lit
-
 				// 此判断在前面则可实现对内置函数的重写
 				if fni := cfn.GetCustomeFunc(funcName); fni != nil {
 					// 函数体为空 未写任何代码

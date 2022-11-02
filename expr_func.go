@@ -111,7 +111,8 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 		}
 		exprSingularLine = append(exprSingularLine, v)
 	}
-	return &global.Structure{Tok: "INT", Lit: "1"}, nil
+
+	return nil, nil
 }
 
 const (
@@ -196,7 +197,6 @@ func (r *Expression) setInnerVal(fni *fn.FunctionInfo, realArgValues []*global.S
 			thisArg = []*global.Structure{{Tok: nArg.Type, Lit: nArg.Value}}
 		} else {
 			thisArg = realArgList[k]
-			global.Output(thisArg)
 		}
 
 		// 解析传入的实参 因为实参可能也是函数
