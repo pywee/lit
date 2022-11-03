@@ -1,12 +1,93 @@
 package lit
 
 import (
+	"errors"
+	"go/scanner"
+	"go/token"
 	"strings"
 
 	fn "github.com/pywee/lit/function"
 	"github.com/pywee/lit/global"
 	"github.com/pywee/lit/types"
 )
+
+// getFunctionDefined 获取文本内所有自定义函数
+func getFunctionDefined(s scanner.Scanner, file *token.File, fset *token.FileSet) error {
+	var (
+		funcKuo          int8
+		foundCustomeFunc bool
+		funcList         = make([]*global.Structure, 0, 10)
+	)
+
+	cfn = fn.NewCustomFunctions()
+	for {
+		pos, tok, lit := s.Scan()
+		if tok == token.EOF {
+			break
+		}
+
+		stok := tok.String()
+		posString := fset.Position(pos).String()
+		posLine := "第" + strings.Split(posString, ":")[0] + "行, "
+		if stok == "func" {
+			foundCustomeFunc = true
+		}
+		if foundCustomeFunc {
+			if stok == "CHAR" || stok == "STRING" {
+				lit = formatString(lit)
+			}
+			if sLit := strings.ToLower(lit); stok != "STRING" && (sLit == "false" || sLit == "true") {
+				lit = sLit
+				stok = "BOOL"
+			}
+
+			// 去掉 go 语言解析包多余的分割标识符
+			if stok == ";" && lit == "\n" {
+				continue
+			}
+
+			funcList = append(funcList, &global.Structure{
+				Position: fset.Position(pos).String(),
+				Tok:      stok,
+				Lit:      lit,
+			})
+
+			if stok == "{" {
+				funcKuo++
+			} else if stok == "}" {
+				funcKuo--
+				if funcKuo == 0 {
+					if len(funcList) < 7 {
+						return errors.New(posLine + types.ErrorFunctionIlligle.Error())
+					}
+					funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
+					if err != nil {
+						return errors.New(posLine + err.Error())
+					}
+					funcList = nil
+					foundCustomeFunc = false
+					cfn.AddFunc("", funcsParsed)
+				}
+			}
+
+			// if tok.String() == ";" && lit == "\n" {
+			// 	if len(funcList) < 7 {
+			// 		return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
+			// 	}
+			// 	funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
+			// 	if err != nil {
+			// 		return nil, errors.New(posLine + err.Error())
+			// 	}
+			// 	funcList = nil
+			// 	foundCustomeFunc = false
+			// 	cfn.AddFunc("", funcsParsed)
+			// }
+
+			continue
+		}
+	}
+	return nil
+}
 
 // execFunc 执行内置函数
 func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos string, innerVariable map[string]*global.Structure) (*global.Structure, error) {
@@ -82,7 +163,6 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 	}
 	print(b(3)+4);
 	**/
-
 	for k, v := range innerVarInFuncParams {
 		innerVariable[k] = v
 	}
@@ -125,10 +205,10 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 			continue
 		}
 
-		// 前面一层if语句
-		// global.Output(ifList)
-
 		if v.Tok == ";" {
+			// 开始解析上一次发现的if语句
+			global.Output(ifList)
+
 			// 获得当前代码行的类型
 			innertLineParsed := parseExprInnerFunc(exprSingularLine)
 			if innertLineParsed == nil {

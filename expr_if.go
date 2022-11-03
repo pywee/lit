@@ -20,35 +20,3 @@ type exIf struct {
 	// 此处仍会出现if 需要通过递归层层解析
 	body []*global.Structure
 }
-
-// if 语句处理
-// if stok == "if" && !foundIf {
-// 	if !foundCustomeFunc {
-// 		return nil, types.ErrorIfOutsideOfFunctionBody
-// 	}
-// 	foundIf = true
-// }
-// if stok == "else" && lastIsIf {
-// 	foundIf = true
-// }
-// if foundIf {
-// 	if stok == ";" && lit == "\n" {
-// 		lit = ";"
-// 	}
-// 	ifList = append(ifList, &global.Structure{
-// 		Position: fset.Position(pos).String(),
-// 		Tok:      stok,
-// 		Lit:      lit,
-// 	})
-
-// 	if stok == "{" {
-// 		ifDK++
-// 	} else if stok == "}" {
-// 		ifDK--
-// 		if ifDK == 0 {
-// 			foundIf = false
-// 			lastIsIf = true
-// 		}
-// 	}
-// 	// continue
-// }

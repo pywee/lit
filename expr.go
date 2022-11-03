@@ -23,20 +23,27 @@ type Expression struct {
 
 func NewExpr(src []byte) (*Expression, error) {
 	var (
-		funcKuo  int8
-		s        scanner.Scanner
-		fset     = token.NewFileSet()
-		list     = make([]*global.Structure, 0, 20)
-		funcList = make([]*global.Structure, 0, 10)
-		result   = &Expression{publicVariable: make(map[string]*global.Structure, 10)}
+		funcKuo       int8
+		foundCustFunc bool // 发现自定义函数时 保存其形式文本
+		s             scanner.Scanner
+		fset          = token.NewFileSet()
+		list          = make([]*global.Structure, 0, 20)
+		result        = &Expression{publicVariable: make(map[string]*global.Structure, 10)}
 	)
 
-	cfn = fn.NewCustomFunctions()
 	file := fset.AddFile("", fset.Base(), len(src))
 	s.Init(file, src, nil, scanner.ScanComments)
 
-	// 发现自定义函数时 保存其形式文本
-	foundCustomeFunc := false
+	// TODO
+	// 提前获取结构体定义部分
+	// 提前获取常量定义部分
+
+	// 提前获取函数定义部分
+	if err := getFunctionDefined(s, file, fset); err != nil {
+		return nil, err
+	}
+
+	s.Init(file, src, nil, scanner.ScanComments)
 	for {
 		pos, tok, lit := s.Scan()
 		if tok == token.EOF {
@@ -47,60 +54,19 @@ func NewExpr(src []byte) (*Expression, error) {
 		posString := fset.Position(pos).String()
 		posLine := "第" + strings.Split(posString, ":")[0] + "行, "
 
+		// 跳过文本内所有自定义函数
 		if stok == "func" {
-			foundCustomeFunc = true
+			foundCustFunc = true
 		}
-		if foundCustomeFunc {
-			if stok == "CHAR" || stok == "STRING" {
-				lit = formatString(lit)
-			}
-			if sLit := strings.ToLower(lit); stok != "STRING" && (sLit == "false" || sLit == "true") {
-				lit = sLit
-				stok = "BOOL"
-			}
-
-			// 去掉 go 语言解析包多余的分割标识符
-			if tok.String() == ";" && lit == "\n" {
-				continue
-			}
-
-			funcList = append(funcList, &global.Structure{
-				Position: fset.Position(pos).String(),
-				Tok:      stok,
-				Lit:      lit,
-			})
-
+		if foundCustFunc {
 			if stok == "{" {
 				funcKuo++
 			} else if stok == "}" {
 				funcKuo--
 				if funcKuo == 0 {
-					if len(funcList) < 7 {
-						return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
-					}
-					funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
-					if err != nil {
-						return nil, errors.New(posLine + err.Error())
-					}
-					funcList = nil
-					foundCustomeFunc = false
-					cfn.AddFunc("", funcsParsed)
+					foundCustFunc = false
 				}
 			}
-
-			// if tok.String() == ";" && lit == "\n" {
-			// 	if len(funcList) < 7 {
-			// 		return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
-			// 	}
-			// 	funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
-			// 	if err != nil {
-			// 		return nil, errors.New(posLine + err.Error())
-			// 	}
-			// 	funcList = nil
-			// 	foundCustomeFunc = false
-			// 	cfn.AddFunc("", funcsParsed)
-			// }
-
 			continue
 		}
 
@@ -113,7 +79,7 @@ func NewExpr(src []byte) (*Expression, error) {
 
 			// 递归解析表达式
 			for _, v := range list {
-				if sLit := strings.ToLower(v.Lit); v.Tok != "STRING" && (sLit == "false" || sLit == "true") {
+				if sLit := strings.ToLower(v.Lit); stok != "STRING" && (sLit == "false" || sLit == "true") {
 					v.Tok = "BOOL"
 				}
 			}
@@ -131,16 +97,15 @@ func NewExpr(src []byte) (*Expression, error) {
 			continue
 		}
 
-		tokString := tok.String()
-		if tok.String() == "CHAR" {
-			tokString = "STRING"
+		if stok == "CHAR" {
+			stok = "STRING"
 		}
-		if tokString == "STRING" {
+		if stok == "STRING" {
 			lit = formatString(lit)
 		}
 		list = append(list, &global.Structure{
 			Position: posString,
-			Tok:      tokString,
+			Tok:      stok,
 			Lit:      lit,
 		})
 	}
