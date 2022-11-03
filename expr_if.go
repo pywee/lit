@@ -10,10 +10,10 @@ import "github.com/pywee/lit/global"
 
 // ExpressionIfStructure 保存 if 句子信息
 type ExpressionIfStructure struct {
-	List []exIf
+	List []*ExIf
 }
 
-type exIf struct {
+type ExIf struct {
 	// condition if条件
 	condition []*global.Structure
 	// body if句子内数据

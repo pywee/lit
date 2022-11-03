@@ -41,10 +41,13 @@ func getFunctionDefined(s scanner.Scanner, file *token.File, fset *token.FileSet
 				stok = "BOOL"
 			}
 
+			// FIXME 此处去掉符号 ; 可能导致其他逻辑有问题
+			// 需要进一步观察测试
 			// 去掉 go 语言解析包多余的分割标识符
-			if stok == ";" && lit == "\n" {
-				continue
-			}
+			// if stok == ";" && lit == "\n" {
+			// lit = ""
+			// continue
+			// }
 
 			funcList = append(funcList, &global.Structure{
 				Position: fset.Position(pos).String(),
@@ -176,14 +179,27 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 	var (
 		// foundIF 发现if语句标记
 		foundIF bool
-		// 标记括号
+		// foundLdk 发现if语句括号内条件
+		foundLdk bool
+		// ifIDK 标记大括号
 		ifIDK int8
+		// ifLDK 标记小括号
+		ifLDK int8
+		// ifConditions 单个 if 句子内的条件
+		ifConditions = make([]*global.Structure, 0, 10)
 		// ifList if语句体
 		ifList = make([]*global.Structure, 0, 10)
+		// lastV 记录上一个
+		lastV *global.Structure
 	)
 
+	// ifBody := make([]*ExIf, 0, 10)
+
 	// 函数体代码解析
-	for k, v := range fni.CustFN {
+	fniCustFN := fni.CustFN
+	thisIfInfo := new(ExIf)
+	getKuo := false
+	for k, v := range fniCustFN {
 		// TODO
 		// 此处拦截 if 语句
 		if v.Tok == "if" && !foundIF {
@@ -191,23 +207,52 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 		}
 		if foundIF {
 			ifList = append(ifList, v)
-			if v.Tok == "{" {
+			if v.Tok == "(" && lastV.Tok == "if" {
+				ifLDK++
+				foundLdk = true
+			}
+
+			if v.Tok == ")" {
+				ifLDK--
+				if ifLDK == 0 {
+					thisIfInfo.condition = ifConditions
+					foundLdk = false
+					ifConditions = nil
+				}
+			} else if v.Tok == "{" {
+				getKuo = true
 				ifIDK++
 			} else if v.Tok == "}" {
 				ifIDK--
 				if ifIDK == 0 {
+					global.Output(thisIfInfo.condition)
+					global.Output(thisIfInfo.body)
+					thisIfInfo = new(ExIf)
+
+					getKuo = false
 					k1 := k + 1
-					if k1 < len(fni.CustFN) && fni.CustFN[k1].Tok != "else" {
+					if k1 < len(fniCustFN) && fniCustFN[k1].Tok != "else" {
 						foundIF = false
 					}
 				}
 			}
+			if getKuo {
+				thisIfInfo.body = append(thisIfInfo.body, v)
+			}
+			if foundLdk {
+				ifConditions = append(ifConditions, v)
+			}
+			lastV = v
 			continue
 		}
 
 		if v.Tok == ";" {
 			// 开始解析上一次发现的if语句
-			global.Output(ifList)
+			if len(ifList) > 0 {
+				// global.Output(ifList)
+				ifList = nil
+				continue
+			}
 
 			// 获得当前代码行的类型
 			innertLineParsed := parseExprInnerFunc(exprSingularLine)
