@@ -179,80 +179,139 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 	var (
 		// foundIF 发现if语句标记
 		foundIF bool
-		// foundLdk 发现if语句括号内条件
-		foundLdk bool
-		// ifIDK 标记大括号
-		ifIDK int8
-		// ifLDK 标记小括号
-		ifLDK int8
-		// ifConditions 单个 if 句子内的条件
-		ifConditions = make([]*global.Structure, 0, 10)
-		// ifList if语句体
-		ifList = make([]*global.Structure, 0, 10)
-		// lastV 记录上一个
-		lastV *global.Structure
+		// curlyBracket 标记大括号
+		curlyBracket int
+		// thisIfStructure if 数据体
+		thisIfStructure = make([]*global.Structure, 0, 10)
+		// thisIfConditions 单个 if 句子内的条件
+		thisIfConditions = make([]*global.Structure, 0, 10)
+		// expressionIF if表达式列表
+		expressionIF = make([]*ExIf, 0, 5)
 	)
-
-	// ifBody := make([]*ExIf, 0, 10)
 
 	// 函数体代码解析
 	fniCustFN := fni.CustFN
-	thisIfInfo := new(ExIf)
-	getKuo := false
-	for k, v := range fniCustFN {
+	// for _, v := range fniCustFN {
+	// 	// TODO
+	// 	// 此处拦截 if 语句
+	// 	if v.Tok == "if" && !foundIF && curlyBracket == 0 {
+	// 		foundIF = true
+	// 		continue
+	// 	}
+	// 	if curlyBracket == 0 && v.Lit == "else" {
+	// 		continue
+	// 	}
+	// 	if v.Tok == "{" && curlyBracket == 0 {
+	// 		foundIF = false
+	// 		curlyBracket++
+	// 		continue
+	// 	}
+	// 	if v.Tok == "}" {
+	// 		curlyBracket--
+	// 	}
+	// 	if curlyBracket > 0 {
+	// 		thisIfStructure = append(thisIfStructure, v)
+	// 		continue
+	// 	}
+	// 	if !foundIF && curlyBracket == 0 {
+	// 		expressionIF = append(expressionIF, &ExIf{condition: thisIfConditions, body: thisIfStructure})
+	// 		thisIfStructure = nil
+	// 		thisIfConditions = nil
+	// 		if v.Tok == "}" {
+	// 			continue
+	// 		}
+	// 	}
+	// 	if foundIF {
+	// 		thisIfConditions = append(thisIfConditions, v)
+	// 		continue
+	// 	}
+
+	// 	if len(expressionIF) > 0 {
+	// 		for _, vv := range expressionIF {
+	// 			global.Output(vv.condition, vv.body)
+	// 		}
+	// 		expressionIF = nil
+	// 	}
+	// 	println()
+	// 	if v.Tok == ";" && v.Lit == "\n" {
+	// 		continue
+	// 	}
+	// 	fmt.Println(v)
+	// }
+	// return nil, nil
+
+	for _, v := range fniCustFN {
 		// TODO
 		// 此处拦截 if 语句
-		if v.Tok == "if" && !foundIF {
+		if v.Tok == "if" && !foundIF && curlyBracket == 0 {
 			foundIF = true
+			continue
+		}
+		if curlyBracket == 0 && v.Lit == "else" {
+			continue
+		}
+		if v.Tok == "{" && curlyBracket == 0 {
+			foundIF = false
+			curlyBracket++
+			continue
+		}
+		if v.Tok == "}" {
+			curlyBracket--
+		}
+		if curlyBracket > 0 {
+			thisIfStructure = append(thisIfStructure, v)
+			continue
+		}
+		if !foundIF && curlyBracket == 0 {
+			expressionIF = append(expressionIF, &ExIf{condition: thisIfConditions, body: thisIfStructure, bodyLen: len(thisIfStructure)})
+			thisIfStructure = nil
+			thisIfConditions = nil
+			if v.Tok == "}" {
+				continue
+			}
 		}
 		if foundIF {
-			ifList = append(ifList, v)
-			if v.Tok == "(" && lastV.Tok == "if" {
-				ifLDK++
-				foundLdk = true
-			}
+			thisIfConditions = append(thisIfConditions, v)
+			continue
+		}
 
-			if v.Tok == ")" {
-				ifLDK--
-				if ifLDK == 0 {
-					thisIfInfo.condition = ifConditions
-					foundLdk = false
-					ifConditions = nil
-				}
-			} else if v.Tok == "{" {
-				getKuo = true
-				ifIDK++
-			} else if v.Tok == "}" {
-				ifIDK--
-				if ifIDK == 0 {
-					global.Output(thisIfInfo.condition)
-					global.Output(thisIfInfo.body)
-					thisIfInfo = new(ExIf)
+		if len(expressionIF) > 0 {
+			var (
+				err error
+				ret *global.Structure
+			)
+			for _, vv := range expressionIF {
+				if vv.bodyLen > 0 {
+					// 处理 else
+					// 此时是没有条件的
+					if len(vv.condition) == 0 {
+						if _, err = r.parse(vv.body[:vv.bodyLen-1], pos, innerVariable); err != nil {
+							return nil, err
+						}
+						break
+					}
 
-					getKuo = false
-					k1 := k + 1
-					if k1 < len(fniCustFN) && fniCustFN[k1].Tok != "else" {
-						foundIF = false
+					if ret, err = r.parse(vv.condition, pos, innerVariable); err != nil {
+						return nil, err
+					}
+					if ret.Lit == "true" {
+						if _, err = r.parse(vv.body[:vv.bodyLen-1], pos, innerVariable); err != nil {
+							return nil, err
+						}
+						break
 					}
 				}
 			}
-			if getKuo {
-				thisIfInfo.body = append(thisIfInfo.body, v)
-			}
-			if foundLdk {
-				ifConditions = append(ifConditions, v)
-			}
-			lastV = v
+			expressionIF = nil
+		}
+
+		if v.Tok == ";" && v.Lit == "\n" {
 			continue
 		}
 
 		if v.Tok == ";" {
+			// TODO
 			// 开始解析上一次发现的if语句
-			if len(ifList) > 0 {
-				// global.Output(ifList)
-				ifList = nil
-				continue
-			}
 
 			// 获得当前代码行的类型
 			innertLineParsed := parseExprInnerFunc(exprSingularLine)
@@ -287,7 +346,6 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 
 	// 最后一层if语句
 	// global.Output(ifList)
-
 	return nil, nil
 }
 

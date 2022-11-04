@@ -19,4 +19,6 @@ type ExIf struct {
 	// body if句子内数据
 	// 此处仍会出现if 需要通过递归层层解析
 	body []*global.Structure
+	// bodyLen 数据体长度
+	bodyLen int
 }

@@ -41,7 +41,6 @@ func Output(expr interface{}, x ...interface{}) {
 			for _, vv := range v {
 				fmt.Println("output from [][]arr:", vv)
 			}
-			println()
 		}
 	} else if fmt.Sprintf("%T", expr) == "[]*global.Structure" {
 		for _, v := range expr.([]*Structure) {
@@ -53,9 +52,8 @@ func Output(expr interface{}, x ...interface{}) {
 		fmt.Println(expr)
 	}
 	if len(x) > 0 {
-		fmt.Println(" ", x)
+		Output(x[0])
 	}
-	println("")
 }
 
 func Output2(expr [][]*Structure, k int) {
