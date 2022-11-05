@@ -44,6 +44,8 @@ func (r *Expression) parseIf(expr []*global.Structure, pos string, innerVariable
 		expressionIF = make([]*ExIf, 0, 5)
 	)
 
+	// global.Output(expr)
+
 	for _, v := range expr {
 		// 在此处解析 if 语句
 		if !foundIF && curlyBracket == 0 && v.Tok == "if" {
@@ -64,6 +66,9 @@ func (r *Expression) parseIf(expr []*global.Structure, pos string, innerVariable
 			curlyBracket--
 			if curlyBracket == 0 {
 				thisIfBody = append(thisIfBody, v)
+				expressionIF = append(expressionIF, &ExIf{condition: thisIfConditions, body: thisIfBody, bodyLen: len(thisIfBody)})
+				thisIfBody = nil
+				thisIfConditions = nil
 			}
 		}
 		if curlyBracket > 0 {
@@ -94,9 +99,13 @@ func (r *Expression) parseIf(expr []*global.Structure, pos string, innerVariable
 				// 处理 else
 				// 此时是没有条件的
 				if len(vv.condition) == 0 {
-					if _, err = r.parse(vv.body[:vv.bodyLen-1], pos, innerVariable); err != nil {
-						return nil, err
+					if vv.bodyLen > 2 && vv.body[0].Tok == "{" && vv.body[vv.bodyLen-1].Tok == "}" {
+						vv.body = vv.body[1 : vv.bodyLen-1]
+						r.parseIfBody(vv.body, pos, innerVariable)
 					}
+					// if _, err = r.parse(vv.body[:vv.bodyLen-1], pos, innerVariable); err != nil {
+					// 	return nil, err
+					// }
 					break
 				}
 
@@ -129,7 +138,6 @@ func (r *Expression) parseIfBody(expr []*global.Structure, pos string, innerVari
 		foundIF bool
 	)
 
-	// global.Output(expr)
 	for _, v := range expr {
 		if v.Tok == "if" && !foundIF {
 			foundIF = true
@@ -139,6 +147,7 @@ func (r *Expression) parseIfBody(expr []*global.Structure, pos string, innerVari
 				return nil, err
 			}
 			list = nil
+			continue
 		}
 		list = append(list, v)
 	}
