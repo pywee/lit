@@ -14,6 +14,8 @@ import (
 	"github.com/pywee/lit/types"
 )
 
+// FIXME.函数内如果表达式没有用分号分开 程序会报错
+
 // cfn 代码体内的自定义函数
 var cfn *fn.CustomFunctions
 
@@ -43,6 +45,10 @@ func NewExpr(src []byte) (*Expression, error) {
 		return nil, err
 	}
 
+	var (
+		foundIf        bool
+		ifCurlyBracket int8
+	)
 	s.Init(file, src, nil, scanner.ScanComments)
 	for {
 		pos, tok, lit := s.Scan()
@@ -58,6 +64,26 @@ func NewExpr(src []byte) (*Expression, error) {
 		if stok == "func" {
 			foundCustFunc = true
 		}
+		if stok == "if" && !foundIf && !foundCustFunc {
+			foundIf = true
+		}
+		if stok == "else" && !foundIf {
+			foundIf = true
+		}
+
+		// 标记 if 语句代码块
+		if foundIf {
+			if stok == "{" {
+				ifCurlyBracket++
+			} else if stok == "}" {
+				ifCurlyBracket--
+				if ifCurlyBracket == 0 {
+					foundIf = false
+				}
+			}
+		}
+
+		// 标记函数定义代码块
 		if foundCustFunc {
 			if stok == "{" {
 				funcKuo++
@@ -70,7 +96,7 @@ func NewExpr(src []byte) (*Expression, error) {
 			continue
 		}
 
-		if tok.String() == ";" {
+		if !foundIf && tok.String() == ";" {
 			var vName string
 			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", list); vLeftListEndIdx != -1 {
 				vName = vleft[0].Lit
@@ -135,14 +161,22 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 	}
 
 	var (
-		err        error
-		foundKuo   bool
-		count      int8
-		firstKey   = -1
+		// err error
+		err error
+		// foundBracket 发现括号标记
+		foundBracket bool
+		// bracketCount 小括号计数器
+		bracketCount int8
+		// firstKey 收集前后代码使用的标记
+		firstKey = -1
+		// firstIdent 首个出现的定义代码
 		firstIdent *global.Structure
 	)
 
 	for k, v := range expr {
+		if v.Tok == "if" {
+			return r.parseIf(expr, pos, innerVariable)
+		}
 		if v.Tok == "||" && firstKey == -1 {
 			return r.parseOr(expr, k, pos, innerVariable)
 		}
@@ -151,16 +185,16 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 		}
 
 		if v.Tok == "(" {
-			count++
+			bracketCount++
 			if firstKey == -1 {
 				firstKey = k
 			}
-			if firstIdent == nil && k > 0 && !foundKuo {
+			if firstIdent == nil && k > 0 && !foundBracket {
 				firstIdent = expr[k-1]
 			}
-			foundKuo = true
+			foundBracket = true
 		} else if v.Tok == ")" {
-			count--
+			bracketCount--
 		}
 
 		// first + middle + end
@@ -169,7 +203,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 		// a = IsInt(("wwww")+222);
 		// a = "你"+Replace("你好", "2", "3", 4)+"xxx";
 		// FIXME a = (1+IsInt(1+(3))+(11+2)); fixed
-		if count == 0 && foundKuo && firstKey != -1 {
+		if bracketCount == 0 && foundBracket && firstKey != -1 {
 			first := []*global.Structure{}
 			if firstKey > 0 {
 				// 发现函数
@@ -596,4 +630,10 @@ func inArray(sep string, arr []string) bool {
 		}
 	}
 	return false
+}
+
+// isSingularExpr 判断当前是否不需要再进一步解析
+func isSingularExpr(expr *global.Structure) bool {
+	t := expr.Tok
+	return t == "STRING" || t == "INT" || t == "BOOL" || t == "FLOAT"
 }
