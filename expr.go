@@ -58,7 +58,8 @@ func NewExpr(src []byte) (*Expression, error) {
 
 		stok := tok.String()
 		posString := fset.Position(pos).String()
-		posLine := "第" + strings.Split(posString, ":")[0] + "行, "
+		// posInt, _ := strconv.ParseInt(strings.Split(posString, ":")[1], 10, 64)
+		posLine := strings.Split(posString, ":")[0]
 
 		// 跳过文本内所有自定义函数
 		if stok == "func" {
@@ -70,6 +71,8 @@ func NewExpr(src []byte) (*Expression, error) {
 		if stok == "else" && !foundIf {
 			foundIf = true
 		}
+
+		// fmt.Println(tok, lit, foundIf)
 
 		// 标记 if 语句代码块
 		if foundIf {
@@ -96,11 +99,13 @@ func NewExpr(src []byte) (*Expression, error) {
 			continue
 		}
 
-		if !foundIf && tok.String() == ";" {
+		if !foundIf && stok == ";" {
 			var vName string
 			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", list); vLeftListEndIdx != -1 {
-				vName = vleft[0].Lit
-				list = list[vLeftListEndIdx+1:]
+				if vLeftListEndIdx == 1 {
+					vName = vleft[0].Lit
+					list = list[vLeftListEndIdx+1:]
+				}
 			}
 
 			// 递归解析表达式
@@ -109,10 +114,11 @@ func NewExpr(src []byte) (*Expression, error) {
 					v.Tok = "BOOL"
 				}
 			}
+			global.Output(list)
 
 			rv, err := result.parse(list, posLine, nil)
 			if err != nil {
-				return nil, errors.New(posLine + err.Error())
+				return nil, errors.New("第" + posLine + "行: " + err.Error())
 			}
 			// 变量赋值
 			if vName != "" {
@@ -122,6 +128,8 @@ func NewExpr(src []byte) (*Expression, error) {
 			list = nil
 			continue
 		}
+
+		// fmt.Println(tok, lit, foundIf)
 
 		if stok == "CHAR" {
 			stok = "STRING"

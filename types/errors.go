@@ -5,8 +5,8 @@ import (
 )
 
 var (
-	// ErrorNotFoundVariable 找不到变量
-	ErrorNotFoundVariable = errors.New("找不到变量")
+	// ErrorNotFoundVariable 变量不存在，或者你的定义非法
+	ErrorNotFoundVariable = errors.New("变量不存在，或者你的定义非法")
 	// ErrorWrongSentence 语法错误
 	ErrorWrongSentence = errors.New("语法错误")
 	// ErrorNotFoundFunction 找不到调用的函数
@@ -35,6 +35,8 @@ var (
 	ErrorFunctionArgsIrregular = errors.New("函数参数定义不符合规范")
 	// ErrorIfOutsideOfFunctionBody if 条件语句必须在函数体内声明
 	ErrorIfOutsideOfFunctionBody = errors.New("if 条件语句必须在函数体内声明")
+	// ErrorIfExpression if 语句定义不合法
+	ErrorIfExpression = errors.New("if 语句定义不合法")
 )
 
 func WithError(pos, err string) error {
