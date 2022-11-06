@@ -1,7 +1,6 @@
 package lit
 
 import (
-	"errors"
 	"fmt"
 	"go/scanner"
 	"go/token"
@@ -21,7 +20,7 @@ var cfn *fn.CustomFunctions
 
 type Expression struct {
 	funcBlocks     []*fn.FunctionInfo
-	codeBlocks     []*global.Logic
+	codeBlocks     []*global.Block
 	publicVariable map[string]*global.Structure
 }
 
@@ -54,152 +53,101 @@ func NewExpr(src []byte) (*Expression, error) {
 			Position: posLine,
 		})
 	}
-	return nil, result.parseExprs(expr)
+
+	_, err := result.parseExprs(expr, nil)
+	return nil, err
 }
 
 // parseExprs 解析代码块
-func (r *Expression) parseExprs(expr []*global.Structure) error {
+func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[string]*global.Structure) (*global.Structure, error) {
 	var (
-		block      *global.Logic
-		rlen       = len(expr)
+		err        error
 		foundElse  bool
-		blocks     = make([]*global.Logic, 0, 20)
+		rlen       = len(expr)
+		blocks     = make([]*global.Block, 0, 20)
 		funcBlocks = make([]*fn.FunctionInfo, 0, 20)
 	)
 
 	for i := 0; i < rlen; i++ {
 		thisExpr := expr[i]
-		thisExprTok := thisExpr.Tok
-		if thisExprTok == ";" && thisExpr.Lit == "\n" {
+		if thisExpr.Tok == ";" && thisExpr.Lit == "\n" {
+			continue
+		}
+
+		if thisExpr.Tok == "return" {
+			var returnExpr = make([]*global.Structure, 0, 5)
+			for j := i + 1; j < rlen; j++ {
+				if expr[j].Tok == ";" {
+					// blocks = append(blocks, &global.Block{
+					// 	Type: types.CodeTypeIdentRETURN,
+					// 	Code: returnExpr,
+					// })
+					// i = j
+					// break
+					return r.parse(returnExpr, "", innerVariable)
+				}
+				returnExpr = append(returnExpr, expr[j])
+			}
 			continue
 		}
 
 		// 函数定义
-		if thisExprTok == "func" {
-			var foundBracket uint16
-			block = &global.Logic{Type: types.CodeTypeFunctionIdent, Code: make([]*global.Structure, 0, 30)}
-			for j := i; j < rlen; j++ {
-				block.Code = append(block.Code, expr[j])
-				// global.Output(expr[j])
-				if expr[j].Tok == "{" {
-					foundBracket++
-				} else if expr[j].Tok == "}" {
-					foundBracket--
-					if foundBracket == 0 {
-						if len(block.Code) < 7 {
-							return errors.New(thisExpr.Position + types.ErrorFunctionIlligle.Error())
-						}
-						funcsParsed, err := cfn.ParseCutFunc(block.Code, thisExpr.Position)
-						if err != nil {
-							return errors.New(thisExpr.Position + err.Error())
-						}
-						funcBlocks = append(funcBlocks, funcsParsed)
-						block = nil
-						i = j
-						break
-					}
-				}
+		if expr[i].Tok == "func" {
+			if funcBlocks, i, err = parseIdentFUNC(funcBlocks, expr, i, rlen); err != nil {
+				return nil, err
 			}
 			continue
 		}
 
 		// 函数调用
 		if expr[i].Tok == "IDENT" && i < rlen && expr[i+1].Tok == "(" {
-			block = &global.Logic{Type: types.CodeTypeFunctionExec, Code: make([]*global.Structure, 0, 10)}
-			for j := i; j < rlen; j++ {
-				if expr[j].Tok == ";" {
-					blocks = append(blocks, block)
-					block = nil
-					i = j
-					break
-				}
-				block.Code = append(block.Code, expr[j])
-			}
+			blocks, i = parseFuncExec(blocks, expr, i, rlen)
+			continue
 		}
 
 		// 变量声明
 		if expr[i].Tok == "IDENT" && i < rlen && expr[i+1].Tok == "=" {
-			block = &global.Logic{Type: types.CodeTypeVarIdent, Code: make([]*global.Structure, 0, 5)}
-			expr[i].Tok = "VAR"
-			for j := i; j < rlen; j++ {
-				exprJ := expr[j]
-				if exprJ.Tok == ";" {
-					blocks = append(blocks, block)
-					block = nil
-					i = j
-					break
-				}
-				block.Code = append(block.Code, exprJ)
-			}
+			blocks, i = parseIdentedVAR(blocks, expr, i, rlen)
+			continue
 		}
 
 		// if 句子
 		if expr[i].Tok == "if" && !foundElse {
-			var bracketCount int16
-			block = &global.Logic{Type: types.CodeTypeIfIdent, Code: make([]*global.Structure, 0, 5)}
-			for j := i; i < rlen; j++ {
-				exprJ := expr[j]
-				block.Code = append(block.Code, exprJ)
-				if exprJ.Tok == "{" {
-					bracketCount++
-				} else if exprJ.Tok == "}" {
-					bracketCount--
-					if bracketCount < 0 {
-						return types.ErrorIfExpression
-					}
-					if bracketCount == 0 {
-						i = j
-						blocks = append(blocks, block)
-						block = nil
-						break
-					}
-				}
+			parsed, err := parseIdentedIF(blocks, expr, i, rlen)
+			if err != nil {
+				return nil, err
 			}
-			// TODO 错误处理
+			i = parsed.i
+			blocks = parsed.blocks
+			continue
 		}
 
 		// else 处理
 		if expr[i].Tok == "else" {
-			var (
-				count int16
-				code  = make([]*global.Structure, 0, 5)
-			)
-			foundElse = true
-			for j := i; j < rlen; j++ {
-				exprJ := expr[j]
-				code = append(code, exprJ)
-				if exprJ.Tok == "{" {
-					count++
-				} else if exprJ.Tok == "}" {
-					count--
-					if count < 0 {
-						return types.ErrorIfExpression
-					}
-					if count == 0 {
-						if blen := len(blocks); blen > 0 {
-							bsCode := blocks[blen-1].Code
-							blocks[blen-1].Code = append(bsCode, code...)
-							if j+1 < rlen && expr[j+1].Tok == ";" && expr[j+1].Lit == "\n" {
-								foundElse = false
-							}
-							i = j
-							break
-						}
-						return types.ErrorIfExpression
-					}
-				}
+			parsed, err := parseIdentELSE(blocks, expr, i, rlen)
+			if err != nil {
+				return nil, err
 			}
+			i = parsed.i
+			blocks = parsed.blocks
+			foundElse = parsed.foundElse
 		}
 	}
 
 	r.codeBlocks = blocks
 	r.funcBlocks = funcBlocks
-	var innerVariable = make(map[string]*global.Structure, 10)
 	for _, block := range blocks {
-		if block.Type == types.CodeTypeIfIdent {
-			global.Output(block.Code)
-			println("---")
-		} else if block.Type == types.CodeTypeVarIdent {
+		if block.Type == types.CodeTypeFunctionExec {
+			_, err := r.parse(block.Code, "", innerVariable)
+			if err != nil {
+				return nil, err
+			}
+		} else if block.Type == types.CodeTypeIdentIF {
+			for _, v := range block.IfExt {
+				global.Output(v.Condition)
+				println("---")
+			}
+		} else if block.Type == types.CodeTypeIdentVAR {
 			var vName string
 			code := block.Code
 			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", code); vLeftListEndIdx != -1 {
@@ -211,17 +159,13 @@ func (r *Expression) parseExprs(expr []*global.Structure) error {
 			if vName != "" {
 				rv, err := r.parse(code, "", innerVariable)
 				if err != nil {
-					return err
+					return nil, err
 				}
 				r.publicVariable[vName] = rv
 			}
-		} else if block.Type == types.CodeTypeFunctionExec {
-			if _, err := r.parse(block.Code, "", innerVariable); err != nil {
-				return err
-			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable map[string]*global.Structure) (*global.Structure, error) {

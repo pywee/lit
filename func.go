@@ -157,15 +157,6 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 	)
 
 	// 以下场景需要在维护上下文 innerVarInFuncParams 局部变量
-	/**
-	func a(x) {
-		return x+1;
-	}
-	func b(arg) {
-		return a(arg+2);
-	}
-	print(b(3)+4);
-	**/
 	for k, v := range innerVarInFuncParams {
 		innerVariable[k] = v
 	}
@@ -178,7 +169,10 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 
 	// 函数体代码解析
 	fniCustFN := fni.CustFN
-	global.Output(fniCustFN)
+	_, err := r.parseExprs(fniCustFN, innerVariable)
+	if err != nil {
+		return nil, err
+	}
 
 	// fmt.Println(r.parse(fni.CustFN, pos, innerVariable))
 

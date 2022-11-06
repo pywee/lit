@@ -26,16 +26,16 @@ const (
 const (
 	// CodeTypeUnknow 0.未知, 非法定义
 	CodeTypeUnknow = 0
-	// CodeTypeVarIdent 1.变量赋值
-	CodeTypeVarIdent = 1
-	// CodeTypeFunctionIdent 2.函数声明
-	CodeTypeFunctionIdent = 2
+	// CodeTypeIdentVAR 1.变量赋值
+	CodeTypeIdentVAR = 1
+	// CodeTypeIdentFN 2.函数声明
+	CodeTypeIdentFN = 2
 	// CodeTypeFunctionExec 3.函数调用
 	CodeTypeFunctionExec = 3
-	//CodeTypeIfIdent 4.if语句
-	CodeTypeIfIdent = 4
-	// CodeTypeForIdent 5.for
-	CodeTypeForIdent = 5
-	// CodeTypeReturnIdent 6.return
-	CodeTypeReturnIdent = 6
+	//CodeTypeIdentIF 4.if语句
+	CodeTypeIdentIF = 4
+	// CodeTypeIdentFOR 5.for
+	CodeTypeIdentFOR = 5
+	// CodeTypeIdentRETURN 6.return
+	CodeTypeIdentRETURN = 6
 )
