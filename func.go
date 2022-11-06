@@ -178,23 +178,24 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 
 	// 函数体代码解析
 	fniCustFN := fni.CustFN
+	global.Output(fniCustFN)
+
+	// fmt.Println(r.parse(fni.CustFN, pos, innerVariable))
+
 	for _, v := range fniCustFN {
 		if v.Tok == ";" && v.Lit == "\n" {
 			continue
 		}
-
 		if v.Tok == ";" {
 			// 获得当前代码行的类型
 			innertLineParsed := parseExprInnerFunc(exprSingularLine)
 			if innertLineParsed == nil {
 				return nil, types.ErrorWrongSentence
 			}
-
 			// 函数体内 return 语句
 			if innertLineParsed.typ == returnIdent {
 				return r.parse(innertLineParsed.varExpr, pos, innerVariable)
 			}
-
 			// 变量赋值
 			if innertLineParsed.typ == varStatemented {
 				rv, err := r.parse(innertLineParsed.varExpr, pos, innerVariable)

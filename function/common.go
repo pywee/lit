@@ -8,14 +8,6 @@ import (
 // 内置函数列表
 var functions = make([]*FunctionInfo, 0, 100)
 
-func init() {
-	// 输入内置函数列表
-	fns := [][]*FunctionInfo{strFunctions, numberFunctions, baseFunctions}
-	for _, v := range fns {
-		functions = append(functions, v...)
-	}
-}
-
 type FunctionInfo struct {
 	// StructName 所属的结构体名称
 	StructName string
@@ -44,6 +36,14 @@ type functionArgs struct {
 	Value string
 }
 
+func init() {
+	// 输入内置函数列表
+	fns := [][]*FunctionInfo{strFunctions, numberFunctions, baseFunctions}
+	for _, v := range fns {
+		functions = append(functions, v...)
+	}
+}
+
 func IsExprFunction(expr []*global.Structure, rlen int) bool {
 	if rlen < 3 {
 		return false
@@ -51,7 +51,7 @@ func IsExprFunction(expr []*global.Structure, rlen int) bool {
 	if expr[0] == nil {
 		return false
 	}
-	return expr[0].Tok == "IDENT" && expr[1].Tok == "(" && expr[rlen-1].Tok == ")"
+	return expr[0].Tok == "IDENT" && expr[1].Tok == "(" && ((expr[rlen-1].Tok == ";" && expr[rlen-2].Tok == ")") || expr[rlen-1].Tok == ")")
 }
 
 func CheckFunctionName(name string) *FunctionInfo {

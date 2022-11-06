@@ -1,5 +1,13 @@
 package global
 
+type Logic struct {
+	// Type [0-未知, 非法定义; 1.变量赋值; 2.函数声明; 3.函数调用; 4.if语句; 5.for; 6.return]
+	Type int8
+	// Code 代码块
+	Code []*Structure
+}
+
+// Structure 基础数据解析 每一个符号代码
 type Structure struct {
 	Position string
 	Tok      string

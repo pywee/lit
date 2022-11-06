@@ -37,6 +37,12 @@ var (
 	ErrorIfOutsideOfFunctionBody = errors.New("if 条件语句必须在函数体内声明")
 	// ErrorIfExpression if 语句定义不合法
 	ErrorIfExpression = errors.New("if 语句定义不合法")
+	// ErrorIfExpressionWithoutConditions if 语句定义不合法，缺少条件定义
+	ErrorIfExpressionWithoutConditions = errors.New("if 语句定义不合法，缺少条件定义")
+	// ErrorIlligleIfExpressionOfElse 不合理的if语句, 在一个完整的if句子内,else 关键词最多只应该出现一次
+	ErrorIlligleIfExpressionOfElse = errors.New("不合理的if语句, 在一个完整的if句子内, else关键词最多只应该出现一次")
+	// ErrorIlligleIfExpressionOfIf 不合理的if语句, 在一个完整的if句子内,else 关键词最多只应该出现一次
+	ErrorIlligleIfExpressionOfIf = errors.New("不合理的if语句, 在一个完整的if句子内, 单独的if关键词最多只应该出现一次")
 )
 
 func WithError(pos, err string) error {
