@@ -169,10 +169,12 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 
 	// 函数体代码解析
 	fniCustFN := fni.CustFN
-	_, err := r.parseExprs(fniCustFN, innerVariable)
+	// global.Output(fniCustFN)
+	rv, err := r.parseExprs(fniCustFN, innerVariable)
 	if err != nil {
 		return nil, err
 	}
+	return rv, nil
 
 	// fmt.Println(r.parse(fni.CustFN, pos, innerVariable))
 
@@ -184,6 +186,7 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 			// 获得当前代码行的类型
 			innertLineParsed := parseExprInnerFunc(exprSingularLine)
 			if innertLineParsed == nil {
+				// global.Output(exprSingularLine)
 				return nil, types.ErrorWrongSentence
 			}
 			// 函数体内 return 语句
