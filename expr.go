@@ -74,6 +74,12 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[stri
 			continue
 		}
 
+		// 变量声明
+		if expr[i].Tok == "IDENT" && i < rlen && expr[i+1].Tok == "=" {
+			blocks, i = parseIdentedVAR(blocks, expr, i, rlen)
+			continue
+		}
+
 		if thisExpr.Tok == "return" {
 			var returnExpr = make([]*global.Structure, 0, 5)
 			for j := i + 1; j < rlen; j++ {
@@ -105,12 +111,6 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[stri
 			continue
 		}
 
-		// 变量声明
-		if expr[i].Tok == "IDENT" && i < rlen && expr[i+1].Tok == "=" {
-			blocks, i = parseIdentedVAR(blocks, expr, i, rlen)
-			continue
-		}
-
 		// if 句子
 		if expr[i].Tok == "if" && !foundElse {
 			parsed, err := parseIdentedIF(blocks, expr, i, rlen)
@@ -136,6 +136,9 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[stri
 
 	r.codeBlocks = blocks
 	r.funcBlocks = funcBlocks
+
+	global.Output(blocks)
+
 	for _, block := range blocks {
 		if block.Type == types.CodeTypeFunctionExec {
 			_, err := r.parse(block.Code, "", innerVariable)
@@ -161,7 +164,11 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[stri
 				if err != nil {
 					return nil, err
 				}
-				r.publicVariable[vName] = rv
+				if innerVariable != nil {
+					innerVariable[vName] = rv
+				} else {
+					r.publicVariable[vName] = rv
+				}
 			}
 		}
 	}

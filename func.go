@@ -169,8 +169,9 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 
 	// 函数体代码解析
 	fniCustFN := fni.CustFN
-	// global.Output(fniCustFN)
 	rv, err := r.parseExprs(fniCustFN, innerVariable)
+	// global.Output(innerVariable["a"])
+
 	if err != nil {
 		return nil, err
 	}
