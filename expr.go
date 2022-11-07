@@ -54,12 +54,45 @@ func NewExpr(src []byte) (*Expression, error) {
 		})
 	}
 
-	_, err := result.parseExprs(expr, nil)
-	return nil, err
+	bs, err := result.parseExprs(expr, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, block := range bs.codeBlocks {
+		if block.Type == types.CodeTypeFunctionExec {
+			_, err := result.parse(block.Code, "", nil)
+			if err != nil {
+				return nil, err
+			}
+		} else if block.Type == types.CodeTypeIdentIF {
+			for _, v := range block.IfExt {
+				global.Output(v.Condition)
+				println("---")
+			}
+		} else if block.Type == types.CodeTypeIdentVAR {
+			var vName string
+			code := block.Code
+			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", code); vLeftListEndIdx != -1 {
+				if vLeftListEndIdx == 1 {
+					vName = vleft[0].Lit
+					code = code[vLeftListEndIdx+1:]
+				}
+			}
+			if vName != "" {
+				rv, err := result.parse(code, "", nil)
+				if err != nil {
+					return nil, err
+				}
+				result.publicVariable[vName] = rv
+			}
+		}
+	}
+	return nil, nil
 }
 
 // parseExprs 解析代码块
-func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[string]*global.Structure) (*global.Structure, error) {
+func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[string]*global.Structure) (*Expression, error) {
 	var (
 		err        error
 		foundElse  bool
@@ -84,13 +117,10 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[stri
 			var returnExpr = make([]*global.Structure, 0, 5)
 			for j := i + 1; j < rlen; j++ {
 				if expr[j].Tok == ";" {
-					// blocks = append(blocks, &global.Block{
-					// 	Type: types.CodeTypeIdentRETURN,
-					// 	Code: returnExpr,
-					// })
-					// i = j
-					// break
-					return r.parse(returnExpr, "", innerVariable)
+					return &Expression{
+						funcBlocks: funcBlocks,
+						codeBlocks: []*global.Block{{Type: types.CodeTypeIdentRETURN, Code: returnExpr}},
+					}, nil
 				}
 				returnExpr = append(returnExpr, expr[j])
 			}
@@ -134,45 +164,8 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[stri
 		}
 	}
 
-	r.codeBlocks = blocks
 	r.funcBlocks = funcBlocks
-
-	global.Output(blocks)
-
-	for _, block := range blocks {
-		if block.Type == types.CodeTypeFunctionExec {
-			_, err := r.parse(block.Code, "", innerVariable)
-			if err != nil {
-				return nil, err
-			}
-		} else if block.Type == types.CodeTypeIdentIF {
-			for _, v := range block.IfExt {
-				global.Output(v.Condition)
-				println("---")
-			}
-		} else if block.Type == types.CodeTypeIdentVAR {
-			var vName string
-			code := block.Code
-			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", code); vLeftListEndIdx != -1 {
-				if vLeftListEndIdx == 1 {
-					vName = vleft[0].Lit
-					code = code[vLeftListEndIdx+1:]
-				}
-			}
-			if vName != "" {
-				rv, err := r.parse(code, "", innerVariable)
-				if err != nil {
-					return nil, err
-				}
-				if innerVariable != nil {
-					innerVariable[vName] = rv
-				} else {
-					r.publicVariable[vName] = rv
-				}
-			}
-		}
-	}
-	return nil, nil
+	return &Expression{codeBlocks: blocks, funcBlocks: funcBlocks}, nil
 }
 
 func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable map[string]*global.Structure) (*global.Structure, error) {

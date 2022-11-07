@@ -169,13 +169,41 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 
 	// 函数体代码解析
 	fniCustFN := fni.CustFN
-	rv, err := r.parseExprs(fniCustFN, innerVariable)
-	// global.Output(innerVariable["a"])
-
+	// global.Output(fniCustFN)
+	bs, err := r.parseExprs(fniCustFN, innerVariable)
 	if err != nil {
 		return nil, err
 	}
-	return rv, nil
+	for _, block := range bs.codeBlocks {
+		if block.Type == types.CodeTypeFunctionExec {
+			_, err := r.parse(block.Code, "", nil)
+			if err != nil {
+				return nil, err
+			}
+		} else if block.Type == types.CodeTypeIdentIF {
+			for _, v := range block.IfExt {
+				global.Output(v.Condition)
+				println("---")
+			}
+		} else if block.Type == types.CodeTypeIdentVAR {
+			var vName string
+			code := block.Code
+			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", code); vLeftListEndIdx != -1 {
+				if vLeftListEndIdx == 1 {
+					vName = vleft[0].Lit
+					code = code[vLeftListEndIdx+1:]
+				}
+			}
+			if vName != "" {
+				rv, err := r.parse(code, "", nil)
+				if err != nil {
+					return nil, err
+				}
+				r.publicVariable[vName] = rv
+			}
+		}
+	}
+	return nil, nil
 
 	// fmt.Println(r.parse(fni.CustFN, pos, innerVariable))
 
