@@ -11,71 +11,75 @@ import (
 	"github.com/pywee/lit/types"
 )
 
+// parseExecFUNC 解析自定义函数声明
+func parseExecFUNC(blocks []*global.Block, expr []*global.Structure, i int, rlen int) ([]*global.Block, int) {
+	block := &global.Block{Type: types.CodeTypeFunctionExec, Code: make([]*global.Structure, 0, 10)}
+	for j := i; j < rlen; j++ {
+		if expr[j].Tok == ";" {
+			blocks = append(blocks, block)
+			i = j
+			break
+		}
+		block.Code = append(block.Code, expr[j])
+	}
+	return blocks, i
+}
+
+// parseIdentFUNC 解析函数定义
+func parseIdentFUNC(funcBlocks []*fn.FunctionInfo, expr []*global.Structure, i int, rlen int) ([]*fn.FunctionInfo, int, error) {
+	var (
+		bracket uint16
+		block   = &global.Block{Type: types.CodeTypeIdentFN, Code: make([]*global.Structure, 0, 30)}
+	)
+	for j := i; j < rlen; j++ {
+		block.Code = append(block.Code, expr[j])
+		if expr[j].Tok == "{" {
+			bracket++
+		} else if expr[j].Tok == "}" {
+			bracket--
+			if bracket == 0 {
+				if len(block.Code) < 7 {
+					return nil, 0, errors.New(expr[i].Position + types.ErrorFunctionIlligle.Error())
+				}
+				funcsParsed, err := cfn.ParseCutFunc(block.Code, expr[i].Position)
+				if err != nil {
+					return nil, 0, errors.New(expr[i].Position + err.Error())
+				}
+				funcBlocks = append(funcBlocks, funcsParsed)
+				i = j
+				break
+			}
+		}
+	}
+	return funcBlocks, i, nil
+}
+
 // execCustomFunc 执行自定义函数
 // 当自定义的函数被调用时才会调用此方法
 // realArgValues 为函数被调用时得到的实参
 func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string, innerVarInFuncParams map[string]*global.Structure) (*global.Structure, error) {
-	var (
-		// exprSingularLine 函数体内的每一句表达式
-		// exprSingularLine = make([]*global.Structure, 0, 3)
-		// innerVariable 函数体内的变量声明
-		innerVariable = make(map[string]*global.Structure)
-	)
+	// innerVar 函数体内的变量声明
+	var innerVar = make(map[string]*global.Structure)
 
 	// 以下场景需要在维护上下文 innerVarInFuncParams 局部变量
 	for k, v := range innerVarInFuncParams {
-		innerVariable[k] = v
+		innerVar[k] = v
 	}
 
 	// 为形参赋值
 	// 即: 将调用函数时传入的实参赋值给形参
-	if err := r.setInnerVal(fni, realArgValues, pos, innerVariable); err != nil {
+	if err := r.setInnerVal(fni, realArgValues, pos, innerVar); err != nil {
 		return nil, err
 	}
 
 	// 函数体代码解析
-	fniCustFN := fni.CustFN
-	bs, err := r.parseExprs(fniCustFN, innerVariable)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, block := range bs.codeBlocks {
-		if block.Type == types.CodeTypeFunctionExec {
-			_, err := r.parse(block.Code, pos, innerVariable)
-			if err != nil {
-				return nil, err
-			}
-		} else if block.Type == types.CodeTypeIdentIF {
-			// for _, v := range block.IfExt {
-			// 	global.Output(v.Condition)
-			// 	println("---")
-			// }
-		} else if block.Type == types.CodeTypeIdentVAR {
-			var vName string
-			code := block.Code
-			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", code); vLeftListEndIdx != -1 {
-				if vLeftListEndIdx == 1 {
-					vName = vleft[0].Lit
-					code = code[vLeftListEndIdx+1:]
-				}
-			}
-			if vName != "" {
-				rv, err := r.parse(code, pos, innerVariable)
-				if err != nil {
-					return nil, err
-				}
-				innerVariable[vName] = rv
-			}
-		} else if block.Type == types.CodeTypeIdentRETURN {
-			return r.parse(block.Code, pos, innerVariable)
-		}
-	}
-	return nil, nil
+	// 递归回去 从头开始操作
+	// FIXME.需要进一步检查参数上下文传递问题
+	return r.createExpr(fni.CustFN, innerVar)
 }
 
 // execFunc 执行内置函数
-func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos string, innerVariable map[string]*global.Structure) (*global.Structure, error) {
+func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos string, innerVar map[string]*global.Structure) (*global.Structure, error) {
 	fArgs := fn.CheckFunctionName(funcName)
 	if fArgs == nil {
 		return nil, types.ErrorNotFoundFunction
@@ -103,7 +107,7 @@ func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos str
 		// FIXME
 		// 函数中的实参表达式 实参可以是函数、变量、算术表达式等等
 		// global.Output(varg)
-		rv, err := r.parse(varg, pos, innerVariable)
+		rv, err := r.parse(varg, pos, innerVar)
 		if err != nil {
 			return nil, err
 		}
@@ -194,7 +198,7 @@ func parseExprInnerFunc(expr []*global.Structure) *innerFuncExpr {
 // b = abc();
 // c = a + b;
 // return a+b+c
-func (r *Expression) setInnerVal(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string, innerVariable map[string]*global.Structure) error {
+func (r *Expression) setInnerVal(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string, innerVar map[string]*global.Structure) error {
 	// 对比函数形参和实参
 	realArgList := fn.GetFunctionArgList(realArgValues)
 	rLen := len(realArgList)
@@ -210,12 +214,12 @@ func (r *Expression) setInnerVal(fni *fn.FunctionInfo, realArgValues []*global.S
 		}
 
 		// 解析传入的实参 因为实参可能也是函数
-		realArgValueParsed, err := r.parse(thisArg, pos, innerVariable)
+		realArgValueParsed, err := r.parse(thisArg, pos, innerVar)
 		if err != nil {
 			return err
 		}
 		nArg.Value = realArgValueParsed.Lit
-		innerVariable[nArg.Name] = realArgValueParsed
+		innerVar[nArg.Name] = realArgValueParsed
 	}
 	return nil
 }
