@@ -11,85 +11,67 @@ import (
 	"github.com/pywee/lit/types"
 )
 
-// getFunctionDefined 获取文本内所有自定义函数
-func getFunctionDefined(s scanner.Scanner, file *token.File, fset *token.FileSet) error {
+// execCustomFunc 执行自定义函数
+// 当自定义的函数被调用时才会调用此方法
+// realArgValues 为函数被调用时得到的实参
+func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string, innerVarInFuncParams map[string]*global.Structure) (*global.Structure, error) {
 	var (
-		funcKuo          int8
-		foundCustomeFunc bool
-		funcList         = make([]*global.Structure, 0, 10)
+		// exprSingularLine 函数体内的每一句表达式
+		// exprSingularLine = make([]*global.Structure, 0, 3)
+		// innerVariable 函数体内的变量声明
+		innerVariable = make(map[string]*global.Structure)
 	)
 
-	cfn = fn.NewCustomFunctions()
-	for {
-		pos, tok, lit := s.Scan()
-		if tok == token.EOF {
-			break
-		}
+	// 以下场景需要在维护上下文 innerVarInFuncParams 局部变量
+	for k, v := range innerVarInFuncParams {
+		innerVariable[k] = v
+	}
 
-		stok := tok.String()
-		posString := fset.Position(pos).String()
-		posLine := "第" + strings.Split(posString, ":")[0] + "行, "
-		if stok == "func" {
-			foundCustomeFunc = true
-		}
-		if foundCustomeFunc {
-			if stok == "CHAR" || stok == "STRING" {
-				lit = formatString(lit)
-			}
-			if sLit := strings.ToLower(lit); stok != "STRING" && (sLit == "false" || sLit == "true") {
-				lit = sLit
-				stok = "BOOL"
-			}
+	// 为形参赋值
+	// 即: 将调用函数时传入的实参赋值给形参
+	if err := r.setInnerVal(fni, realArgValues, pos, innerVariable); err != nil {
+		return nil, err
+	}
 
-			// FIXME 此处去掉符号 ; 可能导致其他逻辑有问题
-			// 需要进一步观察测试
-			// 去掉 go 语言解析包多余的分割标识符
-			// if stok == ";" && lit == "\n" {
-			// lit = ""
-			// continue
+	// 函数体代码解析
+	fniCustFN := fni.CustFN
+	bs, err := r.parseExprs(fniCustFN, innerVariable)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, block := range bs.codeBlocks {
+		if block.Type == types.CodeTypeFunctionExec {
+			_, err := r.parse(block.Code, pos, innerVariable)
+			if err != nil {
+				return nil, err
+			}
+		} else if block.Type == types.CodeTypeIdentIF {
+			// for _, v := range block.IfExt {
+			// 	global.Output(v.Condition)
+			// 	println("---")
 			// }
-
-			funcList = append(funcList, &global.Structure{
-				Position: fset.Position(pos).String(),
-				Tok:      stok,
-				Lit:      lit,
-			})
-
-			if stok == "{" {
-				funcKuo++
-			} else if stok == "}" {
-				funcKuo--
-				if funcKuo == 0 {
-					if len(funcList) < 7 {
-						return errors.New(posLine + types.ErrorFunctionIlligle.Error())
-					}
-					funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
-					if err != nil {
-						return errors.New(posLine + err.Error())
-					}
-					funcList = nil
-					foundCustomeFunc = false
-					cfn.AddFunc("", funcsParsed)
+		} else if block.Type == types.CodeTypeIdentVAR {
+			var vName string
+			code := block.Code
+			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", code); vLeftListEndIdx != -1 {
+				if vLeftListEndIdx == 1 {
+					vName = vleft[0].Lit
+					code = code[vLeftListEndIdx+1:]
 				}
 			}
-
-			// if tok.String() == ";" && lit == "\n" {
-			// 	if len(funcList) < 7 {
-			// 		return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
-			// 	}
-			// 	funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
-			// 	if err != nil {
-			// 		return nil, errors.New(posLine + err.Error())
-			// 	}
-			// 	funcList = nil
-			// 	foundCustomeFunc = false
-			// 	cfn.AddFunc("", funcsParsed)
-			// }
-
-			continue
+			if vName != "" {
+				rv, err := r.parse(code, pos, innerVariable)
+				if err != nil {
+					return nil, err
+				}
+				innerVariable[vName] = rv
+			}
+		} else if block.Type == types.CodeTypeIdentRETURN {
+			return r.parse(block.Code, pos, innerVariable)
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // execFunc 执行内置函数
@@ -143,105 +125,6 @@ func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos str
 		return nil, err
 	}
 	return fRet, err
-}
-
-// execCustomFunc 执行自定义函数
-// 当自定义的函数被调用时才会调用此方法
-// realArgValues 为函数被调用时得到的实参
-func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string, innerVarInFuncParams map[string]*global.Structure) (*global.Structure, error) {
-	var (
-		// exprSingularLine 函数体内的每一句表达式
-		exprSingularLine = make([]*global.Structure, 0, 3)
-		// innerVariable 函数体内的变量声明
-		innerVariable = make(map[string]*global.Structure)
-	)
-
-	// 以下场景需要在维护上下文 innerVarInFuncParams 局部变量
-	for k, v := range innerVarInFuncParams {
-		innerVariable[k] = v
-	}
-
-	// 为形参赋值
-	// 即: 将调用函数时传入的实参赋值给形参
-	if err := r.setInnerVal(fni, realArgValues, pos, innerVariable); err != nil {
-		return nil, err
-	}
-
-	// 函数体代码解析
-	fniCustFN := fni.CustFN
-	// global.Output(fniCustFN)
-	bs, err := r.parseExprs(fniCustFN, innerVariable)
-	if err != nil {
-		return nil, err
-	}
-	for _, block := range bs.codeBlocks {
-		if block.Type == types.CodeTypeFunctionExec {
-			_, err := r.parse(block.Code, "", nil)
-			if err != nil {
-				return nil, err
-			}
-		} else if block.Type == types.CodeTypeIdentIF {
-			for _, v := range block.IfExt {
-				global.Output(v.Condition)
-				println("---")
-			}
-		} else if block.Type == types.CodeTypeIdentVAR {
-			var vName string
-			code := block.Code
-			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", code); vLeftListEndIdx != -1 {
-				if vLeftListEndIdx == 1 {
-					vName = vleft[0].Lit
-					code = code[vLeftListEndIdx+1:]
-				}
-			}
-			if vName != "" {
-				rv, err := r.parse(code, "", nil)
-				if err != nil {
-					return nil, err
-				}
-				r.publicVariable[vName] = rv
-			}
-		}
-	}
-	return nil, nil
-
-	// fmt.Println(r.parse(fni.CustFN, pos, innerVariable))
-
-	for _, v := range fniCustFN {
-		if v.Tok == ";" && v.Lit == "\n" {
-			continue
-		}
-		if v.Tok == ";" {
-			// 获得当前代码行的类型
-			innertLineParsed := parseExprInnerFunc(exprSingularLine)
-			if innertLineParsed == nil {
-				// global.Output(exprSingularLine)
-				return nil, types.ErrorWrongSentence
-			}
-			// 函数体内 return 语句
-			if innertLineParsed.typ == returnIdent {
-				return r.parse(innertLineParsed.varExpr, pos, innerVariable)
-			}
-			// 变量赋值
-			if innertLineParsed.typ == varStatemented {
-				rv, err := r.parse(innertLineParsed.varExpr, pos, innerVariable)
-				if err != nil {
-					return nil, err
-				}
-				innerVariable[innertLineParsed.vName] = rv
-			} else if innertLineParsed.typ == funcImplemented {
-				// TODO
-				// parse 的返回值处理
-				if _, err := r.parse(innertLineParsed.varExpr, pos, innerVariable); err != nil {
-					return nil, err
-				}
-			}
-			exprSingularLine = nil
-			continue
-		}
-		exprSingularLine = append(exprSingularLine, v)
-	}
-	return nil, nil
 }
 
 const (
@@ -333,6 +216,87 @@ func (r *Expression) setInnerVal(fni *fn.FunctionInfo, realArgValues []*global.S
 		}
 		nArg.Value = realArgValueParsed.Lit
 		innerVariable[nArg.Name] = realArgValueParsed
+	}
+	return nil
+}
+
+// getFunctionDefined 获取文本内所有自定义函数
+func getFunctionDefined(s scanner.Scanner, file *token.File, fset *token.FileSet) error {
+	var (
+		funcKuo          int8
+		foundCustomeFunc bool
+		funcList         = make([]*global.Structure, 0, 10)
+	)
+
+	cfn = fn.NewCustomFunctions()
+	for {
+		pos, tok, lit := s.Scan()
+		if tok == token.EOF {
+			break
+		}
+
+		stok := tok.String()
+		posString := fset.Position(pos).String()
+		posLine := "第" + strings.Split(posString, ":")[0] + "行, "
+		if stok == "func" {
+			foundCustomeFunc = true
+		}
+		if foundCustomeFunc {
+			if stok == "CHAR" || stok == "STRING" {
+				lit = formatString(lit)
+			}
+			if sLit := strings.ToLower(lit); stok != "STRING" && (sLit == "false" || sLit == "true") {
+				lit = sLit
+				stok = "BOOL"
+			}
+
+			// FIXME 此处去掉符号 ; 可能导致其他逻辑有问题
+			// 需要进一步观察测试
+			// 去掉 go 语言解析包多余的分割标识符
+			// if stok == ";" && lit == "\n" {
+			// lit = ""
+			// continue
+			// }
+
+			funcList = append(funcList, &global.Structure{
+				Position: fset.Position(pos).String(),
+				Tok:      stok,
+				Lit:      lit,
+			})
+
+			if stok == "{" {
+				funcKuo++
+			} else if stok == "}" {
+				funcKuo--
+				if funcKuo == 0 {
+					if len(funcList) < 7 {
+						return errors.New(posLine + types.ErrorFunctionIlligle.Error())
+					}
+					funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
+					if err != nil {
+						return errors.New(posLine + err.Error())
+					}
+					funcList = nil
+					foundCustomeFunc = false
+					cfn.AddFunc("", funcsParsed)
+				}
+			}
+
+			// if tok.String() == ";" && lit == "\n" {
+			// 	if len(funcList) < 7 {
+			// 		return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
+			// 	}
+			// 	funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
+			// 	if err != nil {
+			// 		return nil, errors.New(posLine + err.Error())
+			// 	}
+			// 	funcList = nil
+			// 	foundCustomeFunc = false
+			// 	cfn.AddFunc("", funcsParsed)
+			// }
+
+			continue
+		}
 	}
 	return nil
 }

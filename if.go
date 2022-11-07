@@ -1,7 +1,6 @@
 package lit
 
 import (
-	fn "github.com/pywee/lit/function"
 	"github.com/pywee/lit/global"
 	"github.com/pywee/lit/types"
 )
@@ -210,7 +209,7 @@ func (r *Expression) parseIfConditionList(expressionIF []*ExIf, pos string, inne
 		}
 
 		// if ret.Lit == "true" {
-		if _, ok := fn.ChangeToBool(ret); ok {
+		if _, ok := global.ChangeToBool(ret); ok {
 			// 截取if内部数据 向内部截取一层
 			if vv.bodyLen > 2 && vv.body[0].Tok == "{" && vv.body[vv.bodyLen-1].Tok == "}" {
 				vv.body = vv.body[1 : vv.bodyLen-1]

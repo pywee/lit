@@ -2,7 +2,6 @@ package function
 
 import (
 	"github.com/pywee/lit/global"
-	"github.com/pywee/lit/types"
 )
 
 // 内置函数列表
@@ -96,82 +95,3 @@ func GetFunctionArgList(expr []*global.Structure) [][]*global.Structure {
 }
 
 func BoolToInt(src *global.Structure) {}
-
-// FIXME
-// ChangeToBool 将当前的输入转换为布尔值
-func ChangeToBool(src *global.Structure) (*global.Structure, bool) {
-	var returnBool bool
-	if src.Tok == "BOOL" {
-		if src.Lit != "" && src.Lit != "false" {
-			src.Lit = "true"
-			return src, true
-		}
-		src.Lit = "false"
-		return src, returnBool
-	}
-
-	if src.Tok == "STRING" && src.Lit != "" && src.Lit != "0" {
-		src.Lit = "true"
-		returnBool = true
-	} else if src.Tok == "INT" && src.Lit != "0" {
-		src.Lit = "true"
-		returnBool = true
-	} else if src.Tok == "FLOAT" && src.Lit != "0" {
-		src.Lit = "true"
-		returnBool = true
-	} else {
-		src.Lit = "false"
-	}
-	src.Tok = "BOOL"
-	return src, returnBool
-}
-
-// ChangeBoolToInt 将布尔值转换为整型
-func ChangeBoolToInt(src *global.Structure) error {
-	src.Tok = "INT"
-	if src.Lit == "false" {
-		src.Lit = "0"
-		return nil
-	}
-	if src.Lit == "true" {
-		src.Lit = "1"
-		return nil
-	}
-	return types.ErrorIdentType
-}
-
-// ChangeTokTypeStringToTypeIntOrFloat 将字符串数字标记为整型
-func ChangeTokTypeStringToTypeIntOrFloat(src *global.Structure) error {
-	var (
-		ok  bool
-		err error
-	)
-
-	if src.Tok == "STRING" {
-		if src.Lit == "" || src.Lit == "false" {
-			src.Tok = "INT"
-			src.Lit = "0"
-			return nil
-		}
-		if src.Lit == "true" {
-			src.Tok = "INT"
-			src.Lit = "1"
-			return nil
-		}
-	}
-	if ok, err = global.IsInt(src.Lit); err != nil {
-		return err
-	}
-	if ok {
-		src.Tok = "INT"
-		return nil
-	}
-	if ok, err = global.IsFloat(src.Lit); err != nil {
-		return err
-	}
-	if ok {
-		src.Tok = "FLOAT"
-		return nil
-	}
-	return types.ErrorStringIntCompared
-}

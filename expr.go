@@ -54,21 +54,59 @@ func NewExpr(src []byte) (*Expression, error) {
 		})
 	}
 
-	bs, err := result.parseExprs(expr, nil)
+	var innerVariable = make(map[string]*global.Structure)
+	_, err := result.createExpr(expr, innerVariable)
+	return nil, err
+}
+
+// createExpr 全局表达式入口
+func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*global.Structure) (*global.Structure, error) {
+	bs, err := r.parseExprs(expr, nil)
 	if err != nil {
 		return nil, err
 	}
 
+	r.funcBlocks = bs.funcBlocks
 	for _, block := range bs.codeBlocks {
 		if block.Type == types.CodeTypeFunctionExec {
-			_, err := result.parse(block.Code, "", nil)
+			_, err := r.parse(block.Code, "", nil)
 			if err != nil {
 				return nil, err
 			}
 		} else if block.Type == types.CodeTypeIdentIF {
+			var conditionResult bool
 			for _, v := range block.IfExt {
-				global.Output(v.Condition)
-				println("---")
+				if v.ConditionLen == 0 {
+					if v.Tok != "else" {
+						return nil, types.ErrorIfExpression
+					}
+					conditionResult = true
+				} else if v.ConditionLen > 0 {
+					if v.Tok != "if" && v.Tok != "elseif" {
+						return nil, types.ErrorIfExpression
+					}
+					rv, err := r.parse(v.Condition, "", innerVar)
+					if err != nil {
+						return nil, err
+					}
+					_, conditionResult = global.ChangeToBool(rv)
+				}
+				if !conditionResult {
+					continue
+				}
+
+				blen := len(v.Body)
+				if blen < 2 {
+					return nil, types.ErrorIfExpression
+				}
+				ret, err := r.createExpr(v.Body[1:blen-1], innerVar)
+				if err != nil {
+					return nil, err
+				}
+				if ret != nil {
+					return ret, nil
+				}
+				break
 			}
 		} else if block.Type == types.CodeTypeIdentVAR {
 			var vName string
@@ -80,11 +118,11 @@ func NewExpr(src []byte) (*Expression, error) {
 				}
 			}
 			if vName != "" {
-				rv, err := result.parse(code, "", nil)
+				rv, err := r.parse(code, "", nil)
 				if err != nil {
 					return nil, err
 				}
-				result.publicVariable[vName] = rv
+				r.publicVariable[vName] = rv
 			}
 		}
 	}
@@ -117,10 +155,11 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[stri
 			var returnExpr = make([]*global.Structure, 0, 5)
 			for j := i + 1; j < rlen; j++ {
 				if expr[j].Tok == ";" {
-					return &Expression{
-						funcBlocks: funcBlocks,
-						codeBlocks: []*global.Block{{Type: types.CodeTypeIdentRETURN, Code: returnExpr}},
-					}, nil
+					blocks = append(blocks, &global.Block{
+						Type: types.CodeTypeIdentRETURN,
+						Code: returnExpr,
+					})
+					return &Expression{funcBlocks: funcBlocks, codeBlocks: blocks}, nil
 				}
 				returnExpr = append(returnExpr, expr[j])
 			}
@@ -164,10 +203,10 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[stri
 		}
 	}
 
-	r.funcBlocks = funcBlocks
 	return &Expression{codeBlocks: blocks, funcBlocks: funcBlocks}, nil
 }
 
+// parse 解析单条表达式 此处不能再包含;分割符
 func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable map[string]*global.Structure) (*global.Structure, error) {
 	rLen := len(expr)
 	if rLen == 0 {
@@ -259,9 +298,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 			var middle *global.Structure
 			if global.IsVariableOrFunction(firstIdent) {
 				funcName := firstIdent.Lit
-
 				// 此判断在前面则可实现对内置函数的重写
-				// global.Output(funcName)
 				// if fni := cfn.GetCustomeFunc(funcName); fni != nil {
 				if fni := getFuncIdented(r.funcBlocks, funcName); fni != nil {
 					// 执行自定义函数
