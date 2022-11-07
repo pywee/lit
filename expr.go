@@ -54,8 +54,8 @@ func NewExpr(src []byte) (*Expression, error) {
 		})
 	}
 
-	var innerVariable = make(map[string]*global.Structure)
-	_, err := result.createExpr(expr, innerVariable)
+	innerVar := make(map[string]*global.Structure)
+	_, err := result.createExpr(expr, innerVar)
 	return nil, err
 }
 
@@ -69,9 +69,12 @@ func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*g
 	r.funcBlocks = bs.funcBlocks
 	for _, block := range bs.codeBlocks {
 		if block.Type == types.CodeTypeFunctionExec {
-			_, err := r.parse(block.Code, "", nil)
+			rv, err := r.parse(block.Code, "", innerVar)
 			if err != nil {
 				return nil, err
+			}
+			if rv != nil {
+				return rv, nil
 			}
 		} else if block.Type == types.CodeTypeIdentIF {
 			var conditionResult bool
@@ -122,15 +125,18 @@ func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*g
 				if err != nil {
 					return nil, err
 				}
-				r.publicVariable[vName] = rv
+				// r.publicVariable[vName] = rv
+				innerVar[vName] = rv
 			}
+		} else if block.Type == types.CodeTypeIdentRETURN {
+			return r.parse(block.Code, "", innerVar)
 		}
 	}
 	return nil, nil
 }
 
 // parseExprs 解析代码块
-func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[string]*global.Structure) (*Expression, error) {
+func (r *Expression) parseExprs(expr []*global.Structure, innerVar map[string]*global.Structure) (*Expression, error) {
 	var (
 		err        error
 		foundElse  bool
@@ -176,7 +182,7 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[stri
 
 		// 函数调用
 		if expr[i].Tok == "IDENT" && i < rlen && expr[i+1].Tok == "(" {
-			blocks, i = parseFuncExec(blocks, expr, i, rlen)
+			blocks, i = parseExecFUNC(blocks, expr, i, rlen)
 			continue
 		}
 
@@ -207,7 +213,7 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVariable map[stri
 }
 
 // parse 解析单条表达式 此处不能再包含;分割符
-func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable map[string]*global.Structure) (*global.Structure, error) {
+func (r *Expression) parse(expr []*global.Structure, pos string, innerVar map[string]*global.Structure) (*global.Structure, error) {
 	rLen := len(expr)
 	if rLen == 0 {
 		return nil, nil
@@ -218,7 +224,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 		rv := expr[0]
 		if rv != nil && rv.Tok == "IDENT" && global.IsVariableOrFunction(rv) {
 			// 先寻找作用域变量 再找全局变量
-			if innerRv, ok := innerVariable[rv.Lit]; ok {
+			if innerRv, ok := innerVar[rv.Lit]; ok {
 				return innerRv, nil
 			}
 			if pubRv, ok := r.publicVariable[rv.Lit]; ok {
@@ -246,14 +252,11 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 		if v == nil {
 			return nil, types.ErrorWrongSentence
 		}
-		if v.Tok == "if" {
-			return nil, r.parseIf(expr, pos, innerVariable)
-		}
 		if v.Tok == "||" && firstKey == -1 {
-			return r.parseOr(expr, k, pos, innerVariable)
+			return r.parseOr(expr, k, pos, innerVar)
 		}
 		if v.Tok == "&&" && firstKey == -1 {
-			return r.parseAnd(expr, k, pos, innerVariable)
+			return r.parseAnd(expr, k, pos, innerVar)
 		}
 
 		if v.Tok == "(" {
@@ -304,8 +307,8 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 					// 执行自定义函数
 					// global.Output(funcName)
 					// global.Output(expr[firstKey+1 : k])
-					// fmt.Println(funcName, innerVariable, expr[firstKey+1:k])
-					if middle, err = r.execCustomFunc(fni, expr[firstKey+1:k], pos, innerVariable); err != nil {
+					// fmt.Println(funcName, innerVar, expr[firstKey+1:k])
+					if middle, err = r.execCustomFunc(fni, expr[firstKey+1:k], pos, innerVar); err != nil {
 						return nil, err
 					}
 				}
@@ -314,11 +317,11 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 				if getFunc := fn.CheckFunctionName(funcName); getFunc != nil {
 					// expr[firstKey+1 : k] 为实参
 					// global.Output(expr[firstKey+1 : k])
-					if middle, err = r.execFunc(funcName, expr[firstKey+1:k], pos, innerVariable); err != nil {
+					if middle, err = r.execFunc(funcName, expr[firstKey+1:k], pos, innerVar); err != nil {
 						return nil, err
 					}
 				}
-			} else if middle, err = r.parse(expr[firstKey+1:k], pos, innerVariable); err != nil {
+			} else if middle, err = r.parse(expr[firstKey+1:k], pos, innerVar); err != nil {
 				return nil, err
 			}
 
@@ -326,7 +329,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 			expr = append(first, middle)
 			expr = append(expr, end...)
 
-			return r.parse(expr, pos, innerVariable)
+			return r.parse(expr, pos, innerVar)
 		}
 	}
 
@@ -338,7 +341,7 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVariable m
 	)
 	for k, v := range expr {
 		if v.Tok == "IDENT" && global.IsVariableOrFunction(v) {
-			if value, exists = innerVariable[v.Lit]; exists {
+			if value, exists = innerVar[v.Lit]; exists {
 				expr[k] = value
 				continue
 			}
@@ -449,7 +452,6 @@ func (r *Expression) findExprK(expr []*global.Structure, pos string) ([]*global.
 			return r.findExprK(append(result, expr[endIdx+1:]...), pos)
 		}
 	}
-
 	return parsePlusReduceMulDivB(expr, pos)
 }
 
@@ -462,20 +464,17 @@ func parsePlusReduceMulDivB(arr []*global.Structure, pos string) ([]*global.Stru
 	if len(result) == 1 {
 		return result, nil
 	}
-
 	if result, err = parsePlusReduceMulDiv([]string{"&"}, result); err != nil {
 		return nil, err
 	}
 	if len(result) == 1 {
 		return result, nil
 	}
-
 	if len(result) > 0 {
 		if result, err = parsePlusReduceMulDiv([]string{"+", "-", "|", "^"}, result); err != nil {
 			return nil, err
 		}
 	}
-
 	if len(result) != 1 {
 		return nil, types.ErrorWrongSentence
 	}
@@ -713,131 +712,3 @@ func inArray(sep string, arr []string) bool {
 	}
 	return false
 }
-
-// isSingularExpr 判断当前是否不需要再进一步解析
-// func isSingularExpr(expr *global.Structure) bool {
-// 	t := expr.Tok
-// 	return t == "STRING" || t == "INT" || t == "BOOL" || t == "FLOAT"
-// }
-
-// func NewExpr2(src []byte) (*Expression, error) {
-// 	var (
-// 		funcKuo       int8
-// 		foundCustFunc bool // 发现自定义函数时 保存其形式文本
-// 		s             scanner.Scanner
-// 		fset          = token.NewFileSet()
-// 		list          = make([]*global.Structure, 0, 20)
-// 		result        = &Expression{publicVariable: make(map[string]*global.Structure, 10)}
-// 	)
-
-// 	file := fset.AddFile("", fset.Base(), len(src))
-// 	s.Init(file, src, nil, scanner.ScanComments)
-
-// 	// TODO
-// 	// 提前获取结构体定义部分
-// 	// 提前获取常量定义部分
-
-// 	// 提前获取函数定义部分
-// 	if err := getFunctionDefined(s, file, fset); err != nil {
-// 		return nil, err
-// 	}
-
-// 	var (
-// 		foundIf        bool
-// 		ifCurlyBracket int8
-// 	)
-// 	s.Init(file, src, nil, scanner.ScanComments)
-// 	for {
-// 		pos, tok, lit := s.Scan()
-// 		if tok == token.EOF {
-// 			break
-// 		}
-
-// 		stok := tok.String()
-// 		posString := fset.Position(pos).String()
-// 		// posInt, _ := strconv.ParseInt(strings.Split(posString, ":")[1], 10, 64)
-// 		posLine := strings.Split(posString, ":")[0]
-
-// 		// 跳过文本内所有自定义函数
-// 		if stok == "func" {
-// 			foundCustFunc = true
-// 		}
-// 		if stok == "if" && !foundIf && !foundCustFunc {
-// 			foundIf = true
-// 		}
-// 		if stok == "else" && !foundIf && !foundCustFunc {
-// 			foundIf = true
-// 		}
-
-// 		// fmt.Println(tok, lit, foundIf)
-
-// 		// 标记 if 语句代码块
-// 		if foundIf {
-// 			if stok == "{" {
-// 				ifCurlyBracket++
-// 			} else if stok == "}" {
-// 				ifCurlyBracket--
-// 				if ifCurlyBracket == 0 {
-// 					foundIf = false
-// 				}
-// 			}
-// 		}
-
-// 		// 标记函数定义代码块
-// 		if foundCustFunc {
-// 			if stok == "{" {
-// 				funcKuo++
-// 			} else if stok == "}" {
-// 				funcKuo--
-// 				if funcKuo == 0 {
-// 					foundCustFunc = false
-// 				}
-// 			}
-// 			continue
-// 		}
-
-// 		if !foundIf && stok == ";" {
-// 			var vName string
-// 			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", list); vLeftListEndIdx != -1 {
-// 				if vLeftListEndIdx == 1 {
-// 					vName = vleft[0].Lit
-// 					list = list[vLeftListEndIdx+1:]
-// 				}
-// 			}
-
-// 			// 递归解析表达式
-// 			for _, v := range list {
-// 				if sLit := strings.ToLower(v.Lit); stok != "STRING" && (sLit == "false" || sLit == "true") {
-// 					v.Tok = "BOOL"
-// 				}
-// 			}
-
-// 			rv, err := result.parse(list, posLine, nil)
-// 			if err != nil {
-// 				return nil, errors.New("第" + posLine + "行: " + err.Error())
-// 			}
-// 			// 变量赋值
-// 			if vName != "" {
-// 				// fmt.Printf("set %s to %v\n", vName, rv)
-// 				result.publicVariable[vName] = rv
-// 			}
-// 			list = nil
-// 			continue
-// 		}
-
-// 		// fmt.Println(tok, lit, foundIf)
-
-// 		if stok == "CHAR" {
-// 			stok = "STRING"
-// 		}
-// 		if stok == "STRING" {
-// 			lit = formatString(lit)
-// 		}
-// 		list = append(list, &global.Structure{
-// 			Position: posString,
-// 			Tok:      stok,
-// 			Lit:      lit,
-// 		})
-// 	}
-// 	return result, nil
-// }
