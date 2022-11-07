@@ -5,8 +5,8 @@ import (
 )
 
 var (
-	// ErrorNotFoundVariable 找不到变量
-	ErrorNotFoundVariable = errors.New("找不到变量")
+	// ErrorNotFoundVariable 变量不存在，或者你的定义非法
+	ErrorNotFoundVariable = errors.New("变量不存在，或者你的定义非法")
 	// ErrorWrongSentence 语法错误
 	ErrorWrongSentence = errors.New("语法错误")
 	// ErrorNotFoundFunction 找不到调用的函数
@@ -35,6 +35,14 @@ var (
 	ErrorFunctionArgsIrregular = errors.New("函数参数定义不符合规范")
 	// ErrorIfOutsideOfFunctionBody if 条件语句必须在函数体内声明
 	ErrorIfOutsideOfFunctionBody = errors.New("if 条件语句必须在函数体内声明")
+	// ErrorIfExpression if 语句定义不合法
+	ErrorIfExpression = errors.New("if 语句定义不合法")
+	// ErrorIfExpressionWithoutConditions if 语句定义不合法，缺少条件定义
+	ErrorIfExpressionWithoutConditions = errors.New("if 语句定义不合法，缺少条件定义")
+	// ErrorIlligleIfExpressionOfElse 不合理的if语句, 在一个完整的if句子内,else 关键词最多只应该出现一次
+	ErrorIlligleIfExpressionOfElse = errors.New("不合理的if语句, 在一个完整的if句子内, else关键词最多只应该出现一次")
+	// ErrorIlligleIfExpressionOfIf 不合理的if语句, 在一个完整的if句子内,else 关键词最多只应该出现一次
+	ErrorIlligleIfExpressionOfIf = errors.New("不合理的if语句, 在一个完整的if句子内, 单独的if关键词最多只应该出现一次")
 )
 
 func WithError(pos, err string) error {

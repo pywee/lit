@@ -7,14 +7,14 @@ import (
 	"github.com/pywee/lit/types"
 )
 
-var (
+// var (
 // functions 内部全局方法
 // functions = []string{"print", "printf", "sprintf"}
 // privateVariable 自定义局部变量
 // privateVariable = make(map[string]*structure, 10)
 // publicVariable 自定义全局变量
 // publicVariable = make(map[string]*structure, 10)
-)
+// )
 
 type CodeInfomation struct {
 	Name  string

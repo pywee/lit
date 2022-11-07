@@ -3,7 +3,6 @@ package lit
 import (
 	"strconv"
 
-	fn "github.com/pywee/lit/function"
 	"github.com/pywee/lit/global"
 	"github.com/pywee/lit/types"
 )
@@ -168,21 +167,21 @@ func changeTypeToCompare(left, right *global.Structure) (interface{}, interface{
 	var err error
 
 	if left.Tok == "STRING" {
-		if err = fn.ChangeTokTypeStringToTypeIntOrFloat(left); err != nil {
+		if err = global.ChangeTokTypeStringToTypeIntOrFloat(left); err != nil {
 			return nil, nil, err
 		}
 	} else if left.Tok == "BOOL" {
-		if err = fn.ChangeBoolToInt(left); err != nil {
+		if err = global.ChangeBoolToInt(left); err != nil {
 			return nil, nil, err
 		}
 	}
 
 	if right.Tok == "STRING" {
-		if err = fn.ChangeTokTypeStringToTypeIntOrFloat(right); err != nil {
+		if err = global.ChangeTokTypeStringToTypeIntOrFloat(right); err != nil {
 			return nil, nil, err
 		}
 	} else if right.Tok == "BOOL" {
-		if err = fn.ChangeBoolToInt(right); err != nil {
+		if err = global.ChangeBoolToInt(right); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -216,11 +215,11 @@ func formatValueTypeToCompare(src *global.Structure) (interface{}, error) {
 	)
 
 	if src.Tok == "STRING" {
-		if err = fn.ChangeTokTypeStringToTypeIntOrFloat(src); err != nil {
+		if err = global.ChangeTokTypeStringToTypeIntOrFloat(src); err != nil {
 			return nil, err
 		}
 	} else if src.Tok == "BOOL" {
-		if err = fn.ChangeBoolToInt(src); err != nil {
+		if err = global.ChangeBoolToInt(src); err != nil {
 			return nil, err
 		}
 	}
