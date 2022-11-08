@@ -72,7 +72,7 @@ func getFunctionArgs(expr []*global.Structure, pos string) (*functionArgsInfo, e
 		// arg 收集到的函数 expr 形式
 		arg = make([]*global.Structure, 0, 5)
 		// funcBody 函数体数据保存
-		funcBody = make([]*global.Structure, 0, 20)
+		funcBody = make([]*global.Structure, 0, 10)
 	)
 
 	for _, v := range expr {

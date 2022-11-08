@@ -69,14 +69,14 @@ func Output2(expr [][]*Structure, k int) {
 
 // FIXME
 // ChangeToBool 将当前的输入转换为布尔值
-func ChangeToBool(src *Structure) (*Structure, bool) {
+func ChangeToBool(src *Structure) bool {
 	if src.Tok == "BOOL" {
 		if src.Lit != "" && src.Lit != "false" {
 			src.Lit = "true"
-			return src, true
+			return true
 		}
 		src.Lit = "false"
-		return src, false
+		return false
 	}
 
 	var returnBool bool
@@ -93,7 +93,7 @@ func ChangeToBool(src *Structure) (*Structure, bool) {
 		src.Lit = "false"
 	}
 	src.Tok = "BOOL"
-	return src, returnBool
+	return returnBool
 }
 
 // ChangeBoolToInt 将布尔值转换为整型
