@@ -76,10 +76,10 @@ type pasedElse struct {
 // parseIdentELSE 解析if句子else和elseif部分
 func parseIdentELSE(blocks []*global.Block, expr []*global.Structure, i int, rlen int) (*pasedElse, error) {
 	var (
-		count      int16
 		foundElse  bool
-		parsed     = new(pasedElse)
+		count      int16
 		elseIF     = "else"
+		parsed     = new(pasedElse)
 		code       = make([]*global.Structure, 0, 5)
 		body       = make([]*global.Structure, 0, 10)
 		conditions = make([]*global.Structure, 0, 10)
@@ -104,7 +104,7 @@ func parseIdentELSE(blocks []*global.Block, expr []*global.Structure, i int, rle
 				if blen := len(blocks); blen > 0 {
 					if elseIF == "elseif" {
 						if len(conditions) <= 2 {
-							return nil, types.ErrorIfExpression
+							return nil, types.ErrorIfExpressionWithoutConditions
 						}
 						conditions = conditions[2:]
 					} else {
@@ -138,4 +138,35 @@ func parseIdentELSE(blocks []*global.Block, expr []*global.Structure, i int, rle
 		}
 	}
 	return parsed, nil
+}
+
+// checkLegitimateIF 检查if句子合法性
+func checkLegitimateIF(arr []*global.ExIf) error {
+	var (
+		seenElse bool
+		lastV    string
+	)
+	for k, v := range arr {
+		vTok := v.Tok
+		if v.ConditionLen == 0 && vTok != "else" {
+			return types.ErrorIfExpressionWithoutConditions
+		}
+		if (k == 0 && vTok != "if") || (vTok == "if" && k != 0) {
+			return types.ErrorIfExpression
+		}
+		if vTok == "elseif" && lastV == "else" {
+			return types.ErrorLogicOfIfExpression
+		}
+		if vTok == "else" {
+			if v.ConditionLen > 0 {
+				return types.ErrorElseExpression
+			}
+			if seenElse {
+				return types.ErrorIlligleIfExpressionOfElse
+			}
+			seenElse = true
+		}
+		lastV = vTok
+	}
+	return nil
 }

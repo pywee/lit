@@ -33,14 +33,21 @@ var (
 	ErrorFunctionNameIrregular = errors.New("函数名称不符合规范")
 	// ErrorFunctionArgsIrregular 函数参数定义不符合规范
 	ErrorFunctionArgsIrregular = errors.New("函数参数定义不符合规范")
-	// ErrorIfOutsideOfFunctionBody if 条件语句必须在函数体内声明
-	ErrorIfOutsideOfFunctionBody = errors.New("if 条件语句必须在函数体内声明")
+)
+
+// 专门针对if语句声明如下错误提示
+// if 语句需要做的检查特别多
+var (
 	// ErrorIfExpression if 语句定义不合法
 	ErrorIfExpression = errors.New("if 语句定义不合法")
+	// ErrorLogicOfIfExpression if 语句逻辑顺序有误
+	ErrorLogicOfIfExpression = errors.New("if 语句逻辑顺序有误")
+	// ErrorElseExpression else 语句定义不合法，不应该带有条件表达式
+	ErrorElseExpression = errors.New("else 语句定义不合法，不应该带有条件表达式")
 	// ErrorIfExpressionWithoutConditions if 语句定义不合法，缺少条件定义
 	ErrorIfExpressionWithoutConditions = errors.New("if 语句定义不合法，缺少条件定义")
 	// ErrorIlligleIfExpressionOfElse 不合理的if语句, 在一个完整的if句子内,else 关键词最多只应该出现一次
-	ErrorIlligleIfExpressionOfElse = errors.New("不合理的if语句, 在一个完整的if句子内, else关键词最多只应该出现一次")
+	ErrorIlligleIfExpressionOfElse = errors.New("if 语句定义不合法, 在一个完整的if句子内, else关键词最多只应该出现一次")
 	// ErrorIlligleIfExpressionOfIf 不合理的if语句, 在一个完整的if句子内,else 关键词最多只应该出现一次
 	ErrorIlligleIfExpressionOfIf = errors.New("不合理的if语句, 在一个完整的if句子内, 单独的if关键词最多只应该出现一次")
 )

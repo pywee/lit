@@ -77,22 +77,21 @@ func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*g
 				return rv, nil
 			}
 		} else if block.Type == types.CodeTypeIdentIF {
+			// 检查if语句合法性
+			if err = checkLegitimateIF(block.IfExt); err != nil {
+				return nil, err
+			}
+
 			var conditionResult bool
 			for _, v := range block.IfExt {
 				if v.ConditionLen == 0 {
-					if v.Tok != "else" {
-						return nil, types.ErrorIfExpression
-					}
 					conditionResult = true
 				} else if v.ConditionLen > 0 {
-					if v.Tok != "if" && v.Tok != "elseif" {
-						return nil, types.ErrorIfExpression
-					}
 					rv, err := r.parse(v.Condition, "", innerVar)
 					if err != nil {
 						return nil, err
 					}
-					_, conditionResult = global.ChangeToBool(rv)
+					conditionResult = global.ChangeToBool(rv)
 				}
 				if !conditionResult {
 					continue

@@ -14,7 +14,7 @@ func (r *Expression) parseAnd(expr []*global.Structure, k int, pos string, inner
 	}
 	// if rv.Tok != "IDENT" {
 	// }
-	if _, ok := global.ChangeToBool(rv); !ok {
+	if !global.ChangeToBool(rv) {
 		return rv, nil
 	}
 	if rv, err = r.parse(expr[k+1:], pos, innerVariable); err != nil {
@@ -32,7 +32,7 @@ func (r *Expression) parseOr(expr []*global.Structure, k int, pos string, innerV
 	if rv, err = r.parse(expr[:k], pos, innerVariable); err != nil {
 		return nil, err
 	}
-	if _, ok := global.ChangeToBool(rv); ok {
+	if global.ChangeToBool(rv) {
 		return rv, nil
 	}
 	if rv, err = r.parse(expr[k+1:], pos, innerVariable); err != nil {
