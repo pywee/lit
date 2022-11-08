@@ -44,8 +44,11 @@ func NewExpr(src []byte) (*Expression, error) {
 		stok := tok.String()
 		posString := fset.Position(pos).String()
 		posLine := strings.Split(posString, ":")[0]
-		if sLit := strings.ToLower(lit); stok != "STRING" && (sLit == "false" || sLit == "true") {
+		if sLit := strings.ToLower(lit); sLit == "false" || sLit == "true" {
 			stok = "BOOL"
+		}
+		if stok == "STRING" || stok == "CHAR" {
+			lit = formatString(lit)
 		}
 		expr = append(expr, &global.Structure{
 			Tok:      stok,
