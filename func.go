@@ -2,9 +2,6 @@ package lit
 
 import (
 	"errors"
-	"go/scanner"
-	"go/token"
-	"strings"
 
 	fn "github.com/pywee/lit/function"
 	"github.com/pywee/lit/global"
@@ -131,67 +128,6 @@ func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos str
 	return fRet, err
 }
 
-const (
-	// varStatemented 变量声明或者赋值
-	varStatemented = 1
-	// funcImplemented 函数调用
-	funcImplemented = 2
-	// returnIdent return 语句
-	returnIdent = 3
-)
-
-type innerFuncExpr struct {
-	// typ 类型 1-表示变量赋值 2-函数调用 3-return句子
-	typ int8
-	// vName 变量名称 如果有的话
-	vName string
-	// tok 变量操作符 有可能是赋值时用的 = 或者是i++之类
-	tok string
-	// varExpr 表达式
-	varExpr []*global.Structure
-}
-
-// parseExprInnerFunc 解析当前函数体内的某一行代码
-func parseExprInnerFunc(expr []*global.Structure) *innerFuncExpr {
-	sLen := len(expr)
-	if sLen < 2 {
-		return nil
-	}
-
-	expr0 := expr[0]
-	expr1 := expr[1]
-	if strings.ToLower(expr0.Lit) == "return" {
-		return &innerFuncExpr{
-			typ:     returnIdent,
-			vName:   "return",
-			tok:     "return",
-			varExpr: expr[1:],
-		}
-	}
-
-	// sLen > 2
-	// 变量声明或者赋值
-	if expr1.Tok == "=" && expr[0].Tok == "IDENT" {
-		return &innerFuncExpr{
-			typ:     varStatemented,
-			vName:   expr0.Lit,
-			tok:     expr1.Tok,
-			varExpr: expr[2:],
-		}
-	}
-
-	// 函数调用
-	if sLen >= 3 && expr0.Tok == "IDENT" && global.IsVariableOrFunction(expr0) && expr[sLen-1].Tok == ")" {
-		return &innerFuncExpr{
-			typ:     funcImplemented,
-			vName:   expr0.Lit,
-			varExpr: expr,
-		}
-	}
-
-	return nil
-}
-
 // setInnerVal 解析函数体内的变量声明句子
 // for example:
 // a = 1;
@@ -224,83 +160,144 @@ func (r *Expression) setInnerVal(fni *fn.FunctionInfo, realArgValues []*global.S
 	return nil
 }
 
-// getFunctionDefined 获取文本内所有自定义函数
-func getFunctionDefined(s scanner.Scanner, file *token.File, fset *token.FileSet) error {
-	var (
-		funcKuo          int8
-		foundCustomeFunc bool
-		funcList         = make([]*global.Structure, 0, 10)
-	)
+// const (
+// 	// varStatemented 变量声明或者赋值
+// 	varStatemented = 1
+// 	// funcImplemented 函数调用
+// 	funcImplemented = 2
+// 	// returnIdent return 语句
+// 	returnIdent = 3
+// )
 
-	cfn = fn.NewCustomFunctions()
-	for {
-		pos, tok, lit := s.Scan()
-		if tok == token.EOF {
-			break
-		}
+// type innerFuncExpr struct {
+// 	// typ 类型 1-表示变量赋值 2-函数调用 3-return句子
+// 	typ int8
+// 	// vName 变量名称 如果有的话
+// 	vName string
+// 	// tok 变量操作符 有可能是赋值时用的 = 或者是i++之类
+// 	tok string
+// 	// varExpr 表达式
+// 	varExpr []*global.Structure
+// }
 
-		stok := tok.String()
-		posString := fset.Position(pos).String()
-		posLine := "第" + strings.Split(posString, ":")[0] + "行, "
-		if stok == "func" {
-			foundCustomeFunc = true
-		}
-		if foundCustomeFunc {
-			if stok == "CHAR" || stok == "STRING" {
-				lit = formatString(lit)
-			}
-			if sLit := strings.ToLower(lit); stok != "STRING" && (sLit == "false" || sLit == "true") {
-				lit = sLit
-				stok = "BOOL"
-			}
+// parseExprInnerFunc 解析当前函数体内的某一行代码
+// func parseExprInnerFunc(expr []*global.Structure) *innerFuncExpr {
+// 	sLen := len(expr)
+// 	if sLen < 2 {
+// 		return nil
+// 	}
 
-			// FIXME 此处去掉符号 ; 可能导致其他逻辑有问题
-			// 需要进一步观察测试
-			// 去掉 go 语言解析包多余的分割标识符
-			// if stok == ";" && lit == "\n" {
-			// lit = ""
-			// continue
-			// }
+// 	expr0 := expr[0]
+// 	expr1 := expr[1]
+// 	if strings.ToLower(expr0.Lit) == "return" {
+// 		return &innerFuncExpr{
+// 			typ:     returnIdent,
+// 			vName:   "return",
+// 			tok:     "return",
+// 			varExpr: expr[1:],
+// 		}
+// 	}
 
-			funcList = append(funcList, &global.Structure{
-				Position: fset.Position(pos).String(),
-				Tok:      stok,
-				Lit:      lit,
-			})
+// 	// sLen > 2
+// 	// 变量声明或者赋值
+// 	if expr1.Tok == "=" && expr[0].Tok == "IDENT" {
+// 		return &innerFuncExpr{
+// 			typ:     varStatemented,
+// 			vName:   expr0.Lit,
+// 			tok:     expr1.Tok,
+// 			varExpr: expr[2:],
+// 		}
+// 	}
 
-			if stok == "{" {
-				funcKuo++
-			} else if stok == "}" {
-				funcKuo--
-				if funcKuo == 0 {
-					if len(funcList) < 7 {
-						return errors.New(posLine + types.ErrorFunctionIlligle.Error())
-					}
-					funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
-					if err != nil {
-						return errors.New(posLine + err.Error())
-					}
-					funcList = nil
-					foundCustomeFunc = false
-					cfn.AddFunc("", funcsParsed)
-				}
-			}
+// 	// 函数调用
+// 	if sLen >= 3 && expr0.Tok == "IDENT" && global.IsVariableOrFunction(expr0) && expr[sLen-1].Tok == ")" {
+// 		return &innerFuncExpr{
+// 			typ:     funcImplemented,
+// 			vName:   expr0.Lit,
+// 			varExpr: expr,
+// 		}
+// 	}
 
-			// if tok.String() == ";" && lit == "\n" {
-			// 	if len(funcList) < 7 {
-			// 		return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
-			// 	}
-			// 	funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
-			// 	if err != nil {
-			// 		return nil, errors.New(posLine + err.Error())
-			// 	}
-			// 	funcList = nil
-			// 	foundCustomeFunc = false
-			// 	cfn.AddFunc("", funcsParsed)
-			// }
+// 	return nil
+// }
 
-			continue
-		}
-	}
-	return nil
-}
+// // getFunctionDefined 获取文本内所有自定义函数
+// func getFunctionDefined(s scanner.Scanner, file *token.File, fset *token.FileSet) error {
+// 	var (
+// 		funcKuo          int8
+// 		foundCustomeFunc bool
+// 		funcList         = make([]*global.Structure, 0, 10)
+// 	)
+
+// 	cfn = fn.NewCustomFunctions()
+// 	for {
+// 		pos, tok, lit := s.Scan()
+// 		if tok == token.EOF {
+// 			break
+// 		}
+
+// 		stok := tok.String()
+// 		posString := fset.Position(pos).String()
+// 		posLine := "第" + strings.Split(posString, ":")[0] + "行, "
+// 		if stok == "func" {
+// 			foundCustomeFunc = true
+// 		}
+// 		if foundCustomeFunc {
+// 			if stok == "CHAR" || stok == "STRING" {
+// 				lit = formatString(lit)
+// 			}
+// 			if sLit := strings.ToLower(lit); stok != "STRING" && (sLit == "false" || sLit == "true") {
+// 				lit = sLit
+// 				stok = "BOOL"
+// 			}
+
+// 			// FIXME 此处去掉符号 ; 可能导致其他逻辑有问题
+// 			// 需要进一步观察测试
+// 			// 去掉 go 语言解析包多余的分割标识符
+// 			// if stok == ";" && lit == "\n" {
+// 			// lit = ""
+// 			// continue
+// 			// }
+
+// 			funcList = append(funcList, &global.Structure{
+// 				Position: fset.Position(pos).String(),
+// 				Tok:      stok,
+// 				Lit:      lit,
+// 			})
+
+// 			if stok == "{" {
+// 				funcKuo++
+// 			} else if stok == "}" {
+// 				funcKuo--
+// 				if funcKuo == 0 {
+// 					if len(funcList) < 7 {
+// 						return errors.New(posLine + types.ErrorFunctionIlligle.Error())
+// 					}
+// 					funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
+// 					if err != nil {
+// 						return errors.New(posLine + err.Error())
+// 					}
+// 					funcList = nil
+// 					foundCustomeFunc = false
+// 					cfn.AddFunc("", funcsParsed)
+// 				}
+// 			}
+
+// 			// if tok.String() == ";" && lit == "\n" {
+// 			// 	if len(funcList) < 7 {
+// 			// 		return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
+// 			// 	}
+// 			// 	funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
+// 			// 	if err != nil {
+// 			// 		return nil, errors.New(posLine + err.Error())
+// 			// 	}
+// 			// 	funcList = nil
+// 			// 	foundCustomeFunc = false
+// 			// 	cfn.AddFunc("", funcsParsed)
+// 			// }
+
+// 			continue
+// 		}
+// 	}
+// 	return nil
+// }

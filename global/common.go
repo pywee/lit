@@ -37,36 +37,6 @@ func InArrayString(str string, arr []string) bool {
 	return false
 }
 
-func Output(expr interface{}, x ...interface{}) {
-	if fmt.Sprintf("%T", expr) == "[][]*global.Structure" {
-		for _, v := range expr.([][]*Structure) {
-			for _, vv := range v {
-				fmt.Println("output from [][]arr:", vv)
-			}
-		}
-	} else if fmt.Sprintf("%T", expr) == "[]*global.Structure" {
-		for _, v := range expr.([]*Structure) {
-			fmt.Println("output from []arr:", v)
-		}
-	} else if fmt.Sprintf("%T", expr) == "*global.Structure" {
-		fmt.Println("result value output:", expr)
-	} else {
-		fmt.Println(expr)
-	}
-	if len(x) > 0 {
-		Output(x[0])
-	}
-}
-
-func Output2(expr [][]*Structure, k int) {
-	for _, x := range expr {
-		for _, v := range x {
-			fmt.Println(k, "output:", v.Tok, v.Lit)
-		}
-	}
-	println("")
-}
-
 // FIXME
 // ChangeToBool 将当前的输入转换为布尔值
 func ChangeToBool(src *Structure) bool {
@@ -144,4 +114,34 @@ func ChangeTokTypeStringToTypeIntOrFloat(src *Structure) error {
 		return nil
 	}
 	return types.ErrorStringIntCompared
+}
+
+func Output(expr interface{}, x ...interface{}) {
+	if fmt.Sprintf("%T", expr) == "[][]*global.Structure" {
+		for _, v := range expr.([][]*Structure) {
+			for _, vv := range v {
+				fmt.Println("output from [][]arr:", vv)
+			}
+		}
+	} else if fmt.Sprintf("%T", expr) == "[]*global.Structure" {
+		for _, v := range expr.([]*Structure) {
+			fmt.Println("output from []arr:", v)
+		}
+	} else if fmt.Sprintf("%T", expr) == "*global.Structure" {
+		fmt.Println("result value output:", expr)
+	} else {
+		fmt.Println(expr)
+	}
+	if len(x) > 0 {
+		Output(x[0])
+	}
+}
+
+func Output2(expr [][]*Structure, k int) {
+	for _, x := range expr {
+		for _, v := range x {
+			fmt.Println(k, "output:", v.Tok, v.Lit)
+		}
+	}
+	println("")
 }
