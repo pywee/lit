@@ -69,7 +69,10 @@ func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*g
 		return nil, err
 	}
 
-	r.funcBlocks = bs.funcBlocks
+	if len(r.funcBlocks) == 0 {
+		r.funcBlocks = bs.funcBlocks
+	}
+
 	for _, block := range bs.codeBlocks {
 		if block.Type == types.CodeTypeFunctionExec {
 			rv, err := r.parse(block.Code, "", innerVar)
