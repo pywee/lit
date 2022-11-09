@@ -61,6 +61,9 @@ func NewExpr(src []byte) (*Expression, error) {
 		})
 	}
 
+	// global.Output(expr)
+	// return nil, nil
+
 	innerVar := make(map[string]*global.Structure)
 	_, err := result.createExpr(expr, innerVar)
 	return nil, err
@@ -78,6 +81,9 @@ func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*g
 	}
 
 	for _, block := range bs.codeBlocks {
+		if block.Type == types.CodeTypeIdentRETURN {
+			return r.parse(block.Code, "", innerVar)
+		}
 		if block.Type == types.CodeTypeFunctionExec {
 			rv, err := r.parse(block.Code, "", innerVar)
 			if err != nil {
@@ -137,8 +143,20 @@ func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*g
 				// r.publicVariable[vName] = rv
 				innerVar[vName] = rv
 			}
-		} else if block.Type == types.CodeTypeIdentRETURN {
-			return r.parse(block.Code, "", innerVar)
+		} else if block.Type == types.CodeTypeVariablePlus {
+			if len(block.Code) != 2 {
+				return nil, types.ErrorWrongSentence
+			}
+			if err = execVarPlusReduce(block, innerVar, true); err != nil {
+				return nil, err
+			}
+		} else if block.Type == types.CodeTypeVariableReduce {
+			if len(block.Code) != 2 {
+				return nil, types.ErrorWrongSentence
+			}
+			if err = execVarPlusReduce(block, innerVar, false); err != nil {
+				return nil, err
+			}
 		}
 	}
 	return nil, nil
@@ -160,23 +178,39 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVar map[string]*g
 			continue
 		}
 
+		// for 流程控制语句
+		// if thisExpr.Tok == "for" {
+		// 	var forExpr = make([]*global.Structure, 0, 5)
+		// 	for j := i + 1; j < rlen; j++ {
+		// 		if expr[j].Tok == "{" {
+		// 			i = j
+		// 			break
+		// 		}
+		// 		forExpr = append(forExpr, expr[j])
+		// 	}
+		// 	// global.Output(forExpr)
+		// 	continue
+		// }
+
 		// 变量声明
-		if expr[i].Tok == "IDENT" && i < rlen && expr[i+1].Tok == "=" {
+		if thisExpr.Tok == "IDENT" && i < rlen && expr[i+1].Tok == "=" {
 			blocks, i = parseIdentedVAR(blocks, expr, i, rlen)
 			continue
 		}
 
+		// return 语句
 		if thisExpr.Tok == "return" {
 			var returnExpr = make([]*global.Structure, 0, 5)
 			for j := i + 1; j < rlen; j++ {
-				if expr[j].Tok == ";" {
+				exprJ := expr[j]
+				if exprJ.Tok == ";" {
 					blocks = append(blocks, &global.Block{
 						Type: types.CodeTypeIdentRETURN,
 						Code: returnExpr,
 					})
 					return &Expression{funcBlocks: funcBlocks, codeBlocks: blocks}, nil
 				}
-				returnExpr = append(returnExpr, expr[j])
+				returnExpr = append(returnExpr, exprJ)
 			}
 			continue
 		}
@@ -215,6 +249,18 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVar map[string]*g
 			i = parsed.i
 			blocks = parsed.blocks
 			foundElse = parsed.foundElse
+		}
+
+		// 变量自增操作
+		if thisExpr.Tok == "IDENT" && i < rlen && expr[i+1].Tok == "++" {
+			blocks, i = parseIdentedVarPLUS(blocks, expr, i, rlen)
+			continue
+		}
+
+		// 变量自减操作
+		if thisExpr.Tok == "IDENT" && i < rlen && expr[i+1].Tok == "--" {
+			blocks, i = parseIdentedVarREDUCE(blocks, expr, i, rlen)
+			continue
 		}
 	}
 

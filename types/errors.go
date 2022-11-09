@@ -5,10 +5,10 @@ import (
 )
 
 var (
-	// ErrorNotFoundVariable 变量不存在，或者你的定义非法
-	ErrorNotFoundVariable = errors.New("变量不存在，或者你的定义非法")
 	// ErrorWrongSentence 语法错误
 	ErrorWrongSentence = errors.New("语法错误")
+	// ErrorNotFoundVariable 变量不存在，或者你的定义非法
+	ErrorNotFoundVariable = errors.New("变量不存在，或者你的定义非法")
 	// ErrorNotFoundFunction 找不到调用的函数
 	ErrorNotFoundFunction = errors.New("找不到声明的函数")
 	// ErrorArgsNotEnough 参数不足
@@ -33,6 +33,8 @@ var (
 	ErrorFunctionNameIrregular = errors.New("函数名称不符合规范")
 	// ErrorFunctionArgsIrregular 函数参数定义不符合规范
 	ErrorFunctionArgsIrregular = errors.New("函数参数定义不符合规范")
+	// ErrorHandleUnsupported 不支持的操作，类型不符
+	ErrorHandleUnsupported = errors.New("不支持的操作，类型不符")
 )
 
 // 专门针对if语句声明如下错误提示

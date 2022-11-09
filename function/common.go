@@ -1,7 +1,7 @@
 package function
 
 import (
-	"github.com/pywee/lit/global"
+	global "github.com/pywee/lit/global"
 )
 
 // 内置函数列表
