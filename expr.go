@@ -178,6 +178,15 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVar map[string]*g
 			continue
 		}
 
+		// FIXME.
+		// 负数处理 bug
+
+		// TODO
+		// 数组
+		// 对象
+		// 内置函数完善
+		// for 流程控制语句
+
 		// for 流程控制语句
 		// if thisExpr.Tok == "for" {
 		// 	var forExpr = make([]*global.Structure, 0, 5)
@@ -229,7 +238,7 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVar map[string]*g
 			continue
 		}
 
-		// if 句子
+		// if 流程控制语句
 		if expr[i].Tok == "if" && !foundElse {
 			parsed, err := parseIdentedIF(blocks, expr, i, rlen)
 			if err != nil {

@@ -117,10 +117,11 @@ _, err = lit.NewExpr([]byte(exprs))
 
 // 执行下面语句 最终会输出 100
 exprs := `
-    func demo() {
-        return 1-false*3/10+(20-1);
+    func demo(arg) {
+        arg ++;
+        return arg-false*3/10+(20-1);
     }
-    print(demo()+80); // 100
+    print(demo(10)+70); // 100
 `
 _, err = lit.NewExpr([]byte(exprs))
 
