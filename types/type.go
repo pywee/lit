@@ -38,4 +38,8 @@ const (
 	CodeTypeIdentFOR = 5
 	// CodeTypeIdentRETURN 6.return
 	CodeTypeIdentRETURN = 6
+	// CodeTypeVariablePlus 变量自增 n++
+	CodeTypeVariablePlus = 7
+	// CodeTypeVariableReduce 变量自减 n--
+	CodeTypeVariableReduce = 8
 )
