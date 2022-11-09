@@ -26,7 +26,7 @@ func parseExecFUNC(blocks []*global.Block, expr []*global.Structure, i int, rlen
 func parseIdentFUNC(funcBlocks []*fn.FunctionInfo, expr []*global.Structure, i int, rlen int) ([]*fn.FunctionInfo, int, error) {
 	var (
 		bracket uint16
-		block   = &global.Block{Type: types.CodeTypeIdentFN, Code: make([]*global.Structure, 0, 30)}
+		block   = &global.Block{Type: types.CodeTypeIdentFN, Code: make([]*global.Structure, 0, 20)}
 	)
 	for j := i; j < rlen; j++ {
 		block.Code = append(block.Code, expr[j])

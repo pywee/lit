@@ -42,6 +42,10 @@ func NewExpr(src []byte) (*Expression, error) {
 			break
 		}
 		stok := tok.String()
+		if stok == "COMMENT" {
+			continue
+		}
+
 		posString := fset.Position(pos).String()
 		posLine := strings.Split(posString, ":")[0]
 		if sLit := strings.ToLower(lit); sLit == "false" || sLit == "true" {
@@ -69,7 +73,10 @@ func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*g
 		return nil, err
 	}
 
-	r.funcBlocks = bs.funcBlocks
+	if len(r.funcBlocks) == 0 {
+		r.funcBlocks = bs.funcBlocks
+	}
+
 	for _, block := range bs.codeBlocks {
 		if block.Type == types.CodeTypeFunctionExec {
 			rv, err := r.parse(block.Code, "", innerVar)
