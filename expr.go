@@ -42,6 +42,10 @@ func NewExpr(src []byte) (*Expression, error) {
 			break
 		}
 		stok := tok.String()
+		if stok == "COMMENT" {
+			continue
+		}
+
 		posString := fset.Position(pos).String()
 		posLine := strings.Split(posString, ":")[0]
 		if sLit := strings.ToLower(lit); sLit == "false" || sLit == "true" {
