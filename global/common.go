@@ -3,6 +3,7 @@ package global
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/pywee/lit/types"
 )
@@ -144,4 +145,34 @@ func Output2(expr [][]*Structure, k int) {
 		}
 	}
 	println("")
+}
+
+type CodeInfomation struct {
+	Name  string
+	Type  string
+	Value interface{}
+}
+
+func FormatString(s string) string {
+	var (
+		slen = len(s)
+	)
+
+	if s[0] == 34 && s[slen-1] == 34 {
+		s = s[1 : slen-1]
+		s = strings.Replace(s, `\"`, `"`, -1)
+		s = strings.Replace(s, `\\`, `\`, -1)
+	}
+	return s
+
+	// if s[0] == 39 && s[slen-1] == 39 { // 引号 '
+	// 	// FIXME
+	// 	lit = strings.TrimRight(s[1:], "'")
+	// } else if s[0] == 34 && s[slen-1] == 34 { // 引号 "
+	// 	lit = strings.TrimRight(s[1:], `"`)
+	// 	lit = strings.TrimRight(lit, "\"")
+	// 	lit = strings.Replace(lit, `\"`, `"`, -1)
+	// 	lit = strings.Replace(lit, `\\`, `\`, -1)
+	// }
+	// return lit
 }

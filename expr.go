@@ -24,6 +24,12 @@ type Expression struct {
 	publicVariable map[string]*global.Structure
 }
 
+type exprResult struct {
+	Type  string
+	Tok   string
+	Value interface{}
+}
+
 func NewExpr(src []byte) (*Expression, error) {
 	var (
 		s      scanner.Scanner
@@ -52,7 +58,7 @@ func NewExpr(src []byte) (*Expression, error) {
 			stok = "BOOL"
 		}
 		if stok == "STRING" || stok == "CHAR" {
-			lit = formatString(lit)
+			lit = global.FormatString(lit)
 		}
 		expr = append(expr, &global.Structure{
 			Tok:      stok,
@@ -831,4 +837,24 @@ func inArray(sep string, arr []string) bool {
 		}
 	}
 	return false
+}
+
+func (r *Expression) Get(vName string) (*global.Structure, error) {
+	ret, ok := r.publicVariable[vName]
+	if !ok {
+		return nil, types.ErrorNotFoundVariable
+	}
+	// fmt.Printf("get variable by name: %s, value: %v\n", vName, ret)
+	return ret, nil
+}
+
+func (r *Expression) GetVal(vName string) interface{} {
+	ret, ok := r.publicVariable[vName]
+	if !ok {
+		return types.ErrorNotFoundVariable
+	}
+	if len(ret.Lit) > 1 && (ret.Tok == "STRING" || ret.Tok == "CHAR") {
+		return global.FormatString(ret.Lit)
+	}
+	return ret.Lit
 }
