@@ -189,8 +189,14 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVar map[string]*g
 
 		// for 流程控制语句
 		if thisExpr.Tok == "for" {
-			var bracketCount int8
-			var forExpr = make([]*global.Structure, 0, 5)
+			var (
+				// bracketCount 计算分号
+				bracketCount int8
+				// for 中间条件
+				condition = make([]*global.Structure, 0, 3)
+				// forExpr 通过;分割后的表达式
+				forExpr = make([]*global.Structure, 0, 5)
+			)
 			for j := i + 1; j < rlen; j++ {
 				exprJ := expr[j]
 				if expr[j].Tok == "{" {
@@ -212,10 +218,40 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVar map[string]*g
 							return nil, nil
 						}
 						forExpr = nil
-					} else if bracketCount == 2 {
-
+						continue
 					}
-					continue
+					if bracketCount == 2 {
+						fLen := len(forExpr)
+						if fLen == 0 {
+							return nil, types.ErrorForExpression
+						}
+						condition = forExpr[:fLen-1]
+						forExpr = nil
+						continue
+					}
+				}
+			}
+
+			// for n=0; n<j; n++ ...
+			if bracketCount == 2 {
+				fLen := len(forExpr)
+				if fLen < 2 {
+					return nil, types.ErrorForExpression
+				}
+				forExpr = append(forExpr, &global.Structure{Tok: ";", Lit: ";"})
+				for {
+					rv, err := r.parse(condition, "", innerVar)
+					if err != nil {
+						return nil, err
+					}
+					if !global.ChangeToBool(rv) {
+						break
+					}
+					if _, err = r.createExpr(forExpr, innerVar); err != nil {
+						return nil, err
+					}
+					// TODO
+					print("output...")
 				}
 			}
 			continue
