@@ -71,7 +71,7 @@ func NewExpr(src []byte) (*Expression, error) {
 
 // createExpr 全局表达式入口
 func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*global.Structure) (*global.Structure, error) {
-	bs, err := r.parseExprs(expr, nil)
+	bs, err := r.parseExprs(expr, innerVar)
 	if err != nil {
 		return nil, err
 	}
@@ -136,12 +136,12 @@ func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*g
 				}
 			}
 			if vName != "" {
-				rv, err := r.parse(code, "", nil)
+				rv, err := r.parse(code, "", innerVar)
 				if err != nil {
 					return nil, err
 				}
-				// r.publicVariable[vName] = rv
 				innerVar[vName] = rv
+				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
 			}
 		} else if block.Type == types.CodeTypeVariablePlus {
 			if len(block.Code) != 2 {
@@ -188,18 +188,38 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVar map[string]*g
 		// for 流程控制语句
 
 		// for 流程控制语句
-		// if thisExpr.Tok == "for" {
-		// 	var forExpr = make([]*global.Structure, 0, 5)
-		// 	for j := i + 1; j < rlen; j++ {
-		// 		if expr[j].Tok == "{" {
-		// 			i = j
-		// 			break
-		// 		}
-		// 		forExpr = append(forExpr, expr[j])
-		// 	}
-		// 	// global.Output(forExpr)
-		// 	continue
-		// }
+		if thisExpr.Tok == "for" {
+			var bracketCount int8
+			var forExpr = make([]*global.Structure, 0, 5)
+			for j := i + 1; j < rlen; j++ {
+				exprJ := expr[j]
+				if expr[j].Tok == "{" {
+					i = j
+					break
+				}
+				forExpr = append(forExpr, exprJ)
+				if exprJ.Tok == ";" {
+					bracketCount++
+					if bracketCount == 1 {
+						if len(forExpr) != 4 || forExpr[1].Tok != "=" {
+							return nil, types.ErrorForExpression
+						}
+						rv, err := r.createExpr(forExpr, innerVar)
+						if err != nil {
+							return nil, err
+						}
+						if rv == nil || !global.ChangeToBool(rv) {
+							return nil, nil
+						}
+						forExpr = nil
+					} else if bracketCount == 2 {
+
+					}
+					continue
+				}
+			}
+			continue
+		}
 
 		// 变量声明
 		if thisExpr.Tok == "IDENT" && i < rlen && expr[i+1].Tok == "=" {

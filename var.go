@@ -10,7 +10,7 @@ import (
 // parseIdentedVAR 解析变量声明
 func parseIdentedVAR(blocks []*global.Block, expr []*global.Structure, i int, rlen int) ([]*global.Block, int) {
 	code := make([]*global.Structure, 0, 5)
-	expr[i].Tok = "VAR"
+	// expr[i].Tok = "VAR"
 	for j := i; j < rlen; j++ {
 		exprJ := expr[j]
 		if exprJ.Tok == ";" {

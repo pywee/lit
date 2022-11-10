@@ -54,6 +54,11 @@ var (
 	ErrorIlligleIfExpressionOfIf = errors.New("不合理的if语句, 在一个完整的if句子内, 单独的if关键词最多只应该出现一次")
 )
 
+// for 流程控制语句错误处理
+var (
+	ErrorForExpression = errors.New("for 语法错误")
+)
+
 func WithError(pos, err string) error {
 	return errors.New(pos + err)
 }
