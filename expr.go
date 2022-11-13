@@ -278,8 +278,17 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 				return nil, err
 			}
 		} else if block.Type == types.CodeTypeIdentFOR {
-			if _, err = r.execFORType1(block.ForExt, innerVar); err != nil {
-				return nil, err
+			forExpr := block.ForExt
+			if forExpr.Type == 1 {
+				if _, err = r.execFORType1(forExpr, innerVar); err != nil {
+					return nil, err
+				}
+			}
+			// TODO range 操作
+			if forExpr.Type == 2 {
+			}
+			// TODO 无限循环
+			if forExpr.Type == 3 {
 			}
 		}
 	}
@@ -380,31 +389,12 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 		// 比较运算
 		// 考虑后期再支持 ===
 		if tok := inArray(expr[i].Tok, []string{"==", "!=", ">", "<", ">=", "<="}); tok != "" {
-			var (
-				ok    bool
-				err   error
-				left  *global.Structure
-				right *global.Structure
-			)
-			if left, err = r.parse(nExpr, innerVar); err != nil {
-				return nil, err
-			}
-			if right, err = r.parse(expr[i+1:], innerVar); err != nil {
-				return nil, err
-			}
-
-			if tok == "==" && compareEqual(left, right) {
-				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
-			}
-			if tok == "!=" && compareNotEqual(left, right) {
-				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
-			}
-			if ok, err = compareGreaterLessEqual(tok, left, right); err != nil {
-				return nil, err
-			} else if ok {
-				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
-			}
-			return &global.Structure{Tok: "BOOL", Lit: "false"}, nil
+			return r.parseComparison(i, &parseComparisonStruct{
+				tok:      tok,
+				innerVar: innerVar,
+				expr:     expr,
+				nExpr:    nExpr,
+			})
 		}
 
 		nExpr = append(nExpr, expr[i])
