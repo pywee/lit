@@ -1,43 +1,46 @@
 package lit
 
-import (
-	"github.com/pywee/lit/global"
-)
+import "github.com/pywee/lit/global"
 
-func (r *Expression) parseAnd(expr []*global.Structure, k int, pos string, innerVariable map[string]*global.Structure) (*global.Structure, error) {
+// parseAnd 解析逻辑运算符 "&&"
+func (r *expression) parseAnd(expr, nExpr []*global.Structure, innerVar global.InnerVar, i int) (*global.Structure, error) {
 	var (
-		err error
-		rv  *global.Structure
+		err   error
+		left  *global.Structure
+		right *global.Structure
 	)
-	if rv, err = r.parse(expr[:k], pos, innerVariable); err != nil {
+	if left, err = r.parse(nExpr, innerVar); err != nil {
 		return nil, err
 	}
-	// if rv.Tok != "IDENT" {
-	// }
-	if !global.ChangeToBool(rv) {
-		return rv, nil
+	if !global.ChangeToBool(left) {
+		return left, nil
 	}
-	if rv, err = r.parse(expr[k+1:], pos, innerVariable); err != nil {
+
+	if right, err = r.parse(expr[i+1:], innerVar); err != nil {
 		return nil, err
 	}
-	global.ChangeToBool(rv)
-	return rv, nil
+	global.ChangeToBool(right)
+
+	return right, nil
 }
 
-func (r *Expression) parseOr(expr []*global.Structure, k int, pos string, innerVariable map[string]*global.Structure) (*global.Structure, error) {
+// parseOr 解析逻辑运算符 "||"
+func (r *expression) parseOr(expr, nExpr []*global.Structure, innerVar global.InnerVar, i int) (*global.Structure, error) {
 	var (
-		err error
-		rv  *global.Structure
+		err   error
+		left  *global.Structure
+		right *global.Structure
 	)
-	if rv, err = r.parse(expr[:k], pos, innerVariable); err != nil {
+	if left, err = r.parse(nExpr, innerVar); err != nil {
 		return nil, err
 	}
-	if global.ChangeToBool(rv) {
-		return rv, nil
+	if global.ChangeToBool(left) {
+		return left, nil
 	}
-	if rv, err = r.parse(expr[k+1:], pos, innerVariable); err != nil {
+
+	if right, err = r.parse(expr[i+1:], innerVar); err != nil {
 		return nil, err
 	}
-	global.ChangeToBool(rv)
-	return rv, nil
+	global.ChangeToBool(right)
+	return right, nil
 }

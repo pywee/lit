@@ -25,7 +25,7 @@ var baseFunctions = []*FunctionInfo{
 					print(v.Lit, " ")
 				}
 			}
-			print("\n")
+			println()
 			return nil, nil
 		},
 	},

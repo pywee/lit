@@ -20,7 +20,7 @@ type forArgs struct {
 
 // FIXME 未针对for语句的合法性做充分检查
 // parseIdentedFOR 解析for语句
-func (r *Expression) parseIdentedFOR(arg *forArgs) ([]*global.Block, int, error) {
+func (r *expression) parseIdentedFOR(arg *forArgs) ([]*global.Block, int, error) {
 	var (
 		// i 解析代码块时的游标
 		i = arg.i
@@ -91,9 +91,49 @@ func (r *Expression) parseIdentedFOR(arg *forArgs) ([]*global.Block, int, error)
 	forExpr = append(forExpr, &global.Structure{Tok: ";", Lit: ";"})
 	conditions = append(conditions, forExpr)
 	blocks = append(blocks, &global.Block{
-		// Name:   "FOR",
+		Name:   "FOR",
 		ForExt: &global.ForExpression{Type: 1, Conditions: conditions, Code: curlyBracketCode},
 		Type:   types.CodeTypeIdentFOR,
 	})
 	return blocks, i, nil
+}
+
+// execFORType1 解析以下形式的 for 流程控制:
+// n = 0; n < y; n ++
+func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global.InnerVar) (*global.Structure, error) {
+	// 在解析 for 语句定义的时候已经做了检查 此处只需处理逻辑
+	// n = 0
+	var err error
+	conditions := forExpr.Conditions
+	if _, err = r.initExpr(conditions[0], innerVar); err != nil {
+		return nil, err
+	}
+
+	var (
+		code          = forExpr.Code
+		conditionIdx1 = conditions[1]
+		idx1Len       = len(conditionIdx1)
+		conditionIdx2 = conditions[2]
+	)
+
+	conditionIdx1 = conditionIdx1[:idx1Len-1]
+
+	for {
+		// n < j
+		rv, err := r.parse(conditionIdx1, innerVar)
+		if err != nil {
+			return nil, err
+		}
+		if !global.ChangeToBool(rv) {
+			break
+		}
+		if _, err = r.initExpr(code, innerVar); err != nil {
+			return nil, err
+		}
+		// n++
+		if _, err = r.initExpr(conditionIdx2, innerVar); err != nil {
+			return nil, err
+		}
+	}
+	return nil, nil
 }

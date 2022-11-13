@@ -9,54 +9,54 @@ import (
 
 // parseCompare 比较运算
 // == >= <= != > < === !==
-func (r *Expression) parseCompare(expr []*global.Structure, pos string) (*global.Structure, error) {
-	var (
-		err     error
-		rvLeft  *global.Structure
-		rvRight *global.Structure
-	)
-	for k, v := range expr {
-		if v.Tok == "==" {
-			if rvLeft, err = r.parse(expr[:k], pos, nil); err != nil {
-				return nil, err
-			}
-			if rvRight, err = r.parse(expr[k+1:], pos, nil); err != nil {
-				return nil, err
-			}
-			if compareEqual(rvLeft, rvRight) {
-				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
-			}
-			return &global.Structure{Tok: "BOOL", Lit: "false"}, nil
-		}
-		if v.Tok == "!=" {
-			if rvLeft, err = r.parse(expr[:k], pos, nil); err != nil {
-				return nil, err
-			}
-			if rvRight, err = r.parse(expr[k+1:], pos, nil); err != nil {
-				return nil, err
-			}
-			if compareNotEqual(rvLeft, rvRight) {
-				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
-			}
-			return &global.Structure{Tok: "BOOL", Lit: "false"}, nil
-		}
-		if inArray(v.Tok, []string{">", "<", ">=", "<="}) {
-			if rvLeft, err = r.parse(expr[:k], pos, nil); err != nil {
-				return nil, err
-			}
-			if rvRight, err = r.parse(expr[k+1:], pos, nil); err != nil {
-				return nil, err
-			}
-			if ok, err := compareGreaterLessEqual(v.Tok, rvLeft, rvRight); err != nil {
-				return nil, err
-			} else if ok {
-				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
-			}
-			return &global.Structure{Tok: "BOOL", Lit: "false"}, nil
-		}
-	}
-	return nil, nil
-}
+// func (r *expression) parseCompare(expr []*global.Structure, pos string) (*global.Structure, error) {
+// 	var (
+// 		err     error
+// 		rvLeft  *global.Structure
+// 		rvRight *global.Structure
+// 	)
+// 	for k, v := range expr {
+// 		if v.Tok == "==" {
+// 			if rvLeft, err = r.parse(expr[:k], pos, nil); err != nil {
+// 				return nil, err
+// 			}
+// 			if rvRight, err = r.parse(expr[k+1:], pos, nil); err != nil {
+// 				return nil, err
+// 			}
+// 			if compareEqual(rvLeft, rvRight) {
+// 				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+// 			}
+// 			return &global.Structure{Tok: "BOOL", Lit: "false"}, nil
+// 		}
+// 		if v.Tok == "!=" {
+// 			if rvLeft, err = r.parse(expr[:k], pos, nil); err != nil {
+// 				return nil, err
+// 			}
+// 			if rvRight, err = r.parse(expr[k+1:], pos, nil); err != nil {
+// 				return nil, err
+// 			}
+// 			if compareNotEqual(rvLeft, rvRight) {
+// 				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+// 			}
+// 			return &global.Structure{Tok: "BOOL", Lit: "false"}, nil
+// 		}
+// 		if inArray(v.Tok, []string{">", "<", ">=", "<="}) != "" {
+// 			if rvLeft, err = r.parse(expr[:k], pos, nil); err != nil {
+// 				return nil, err
+// 			}
+// 			if rvRight, err = r.parse(expr[k+1:], pos, nil); err != nil {
+// 				return nil, err
+// 			}
+// 			if ok, err := compareGreaterLessEqual(v.Tok, rvLeft, rvRight); err != nil {
+// 				return nil, err
+// 			} else if ok {
+// 				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+// 			}
+// 			return &global.Structure{Tok: "BOOL", Lit: "false"}, nil
+// 		}
+// 	}
+// 	return nil, nil
+// }
 
 // compareEqual 比较符: ==
 func compareEqual(left, right *global.Structure) bool {
