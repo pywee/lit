@@ -7,8 +7,19 @@ type Block struct {
 	Name string
 	// Code 代码块
 	Code []*Structure
-	// if 语句
+	// IfExt if 流程控制语句
 	IfExt []*ExIf
+	// ForExt for流程控制语句
+	ForExt *ForExpression
+}
+
+type ForExpression struct {
+	// Type 循环方式 [1. n=1; n < x; n ++]; 2.range操作; 0.无限循环]
+	Type int8
+	// Condtions 循环条件
+	Conditions [][]*Structure
+	// Code for语句内部代码块
+	Code []*Structure
 }
 
 type ExIf struct {

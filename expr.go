@@ -24,6 +24,12 @@ type Expression struct {
 	publicVariable map[string]*global.Structure
 }
 
+type exprResult struct {
+	Type  string
+	Tok   string
+	Value interface{}
+}
+
 func NewExpr(src []byte) (*Expression, error) {
 	var (
 		s      scanner.Scanner
@@ -52,7 +58,7 @@ func NewExpr(src []byte) (*Expression, error) {
 			stok = "BOOL"
 		}
 		if stok == "STRING" || stok == "CHAR" {
-			lit = formatString(lit)
+			lit = global.FormatString(lit)
 		}
 		expr = append(expr, &global.Structure{
 			Tok:      stok,
@@ -65,13 +71,14 @@ func NewExpr(src []byte) (*Expression, error) {
 	// return nil, nil
 
 	innerVar := make(map[string]*global.Structure)
-	_, err := result.createExpr(expr, innerVar)
+	_, err := result.initExpr(expr, innerVar)
 	return nil, err
 }
 
-// createExpr 全局表达式入口
-func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*global.Structure) (*global.Structure, error) {
-	bs, err := r.parseExprs(expr, nil)
+// initExpr 全局表达式入口
+// 代码块中如果带有 if 等复杂语句 则需要从这里进入递归
+func (r *Expression) initExpr(expr []*global.Structure, innerVar map[string]*global.Structure) (*global.Structure, error) {
+	bs, err := r.parseExprs(expr, innerVar)
 	if err != nil {
 		return nil, err
 	}
@@ -84,11 +91,29 @@ func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*g
 		if block.Type == types.CodeTypeIdentRETURN {
 			return r.parse(block.Code, "", innerVar)
 		}
-		if block.Type == types.CodeTypeFunctionExec {
+		if block.Type == types.CodeTypeIdentVAR {
+			vName := ""
+			code := block.Code
+			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", code); vLeftListEndIdx != -1 {
+				if vLeftListEndIdx == 1 {
+					vName = vleft[0].Lit
+					code = code[vLeftListEndIdx+1:]
+				}
+			}
+			if vName != "" {
+				rv, err := r.parse(code, "", innerVar)
+				if err != nil {
+					return nil, err
+				}
+				innerVar[vName] = rv
+				return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+			}
+		} else if block.Type == types.CodeTypeFunctionExec {
 			rv, err := r.parse(block.Code, "", innerVar)
 			if err != nil {
 				return nil, err
 			}
+			// global.Output(block.Code)
 			if rv != nil {
 				return rv, nil
 			}
@@ -117,7 +142,7 @@ func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*g
 				if blen < 2 {
 					return nil, types.ErrorIfExpression
 				}
-				ret, err := r.createExpr(v.Body[1:blen-1], innerVar)
+				ret, err := r.initExpr(v.Body[1:blen-1], innerVar)
 				if err != nil {
 					return nil, err
 				}
@@ -125,23 +150,6 @@ func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*g
 					return ret, nil
 				}
 				break
-			}
-		} else if block.Type == types.CodeTypeIdentVAR {
-			var vName string
-			code := block.Code
-			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", code); vLeftListEndIdx != -1 {
-				if vLeftListEndIdx == 1 {
-					vName = vleft[0].Lit
-					code = code[vLeftListEndIdx+1:]
-				}
-			}
-			if vName != "" {
-				rv, err := r.parse(code, "", nil)
-				if err != nil {
-					return nil, err
-				}
-				// r.publicVariable[vName] = rv
-				innerVar[vName] = rv
 			}
 		} else if block.Type == types.CodeTypeVariablePlus {
 			if len(block.Code) != 2 {
@@ -157,8 +165,53 @@ func (r *Expression) createExpr(expr []*global.Structure, innerVar map[string]*g
 			if err = execVarPlusReduce(block, innerVar, false); err != nil {
 				return nil, err
 			}
+		} else if block.Type == types.CodeTypeIdentFOR {
+			// 在解析 for 语句定义的时候已经做了检查 此处只需处理逻辑
+			// n = 0
+			conditions := block.ForExt.Conditions
+			if _, err = r.initExpr(conditions[0], innerVar); err != nil {
+				return nil, err
+			}
+
+			// global.Output(conditions[1])
+
+			// var (
+			// 	rv    *global.Structure
+			// 	cd1   = conditions[1]
+			// 	c1len = len(cd1)
+			// 	cd2   = conditions[2]
+			// 	n     = 0
+			// )
+
+			// // n < j
+			// for {
+			// 	n++
+			// 	if rv, err = r.parse(c, "", innerVar); err != nil {
+			// 		return nil, err
+			// 	}
+
+			// 	// n++
+			// 	// if _, err = r.initExpr(cd2, innerVar); err != nil {
+			// 	// 	return nil, err
+			// 	// }
+
+			// 	// if !global.ChangeToBool(rv) {
+			// 	// 	break
+			// 	// }
+
+			// 	// code := block.ForExt.Code
+			// 	// if _, err = r.initExpr(code, innerVar); err != nil {
+			// 	// 	return nil, err
+			// 	// }
+			// 	// global.Output(rv, err)
+
+			// 	if n > 100 {
+			// 		break
+			// 	}
+			// }
 		}
 	}
+
 	return nil, nil
 }
 
@@ -185,21 +238,22 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVar map[string]*g
 		// 数组
 		// 对象
 		// 内置函数完善
-		// for 流程控制语句
 
 		// for 流程控制语句
-		// if thisExpr.Tok == "for" {
-		// 	var forExpr = make([]*global.Structure, 0, 5)
-		// 	for j := i + 1; j < rlen; j++ {
-		// 		if expr[j].Tok == "{" {
-		// 			i = j
-		// 			break
-		// 		}
-		// 		forExpr = append(forExpr, expr[j])
-		// 	}
-		// 	// global.Output(forExpr)
-		// 	continue
-		// }
+		// FIXME 未针对for语句的合法性做充分检查
+		if thisExpr.Tok == "for" {
+			blocks, i, _ = r.parseIdentedFOR(&forArgs{
+				i:        i,
+				rlen:     rlen,
+				expr:     expr,
+				blocks:   blocks,
+				innerVar: innerVar,
+			})
+			if err != nil {
+				return nil, err
+			}
+			continue
+		}
 
 		// 变量声明
 		if thisExpr.Tok == "IDENT" && i < rlen && expr[i+1].Tok == "=" {
@@ -213,10 +267,7 @@ func (r *Expression) parseExprs(expr []*global.Structure, innerVar map[string]*g
 			for j := i + 1; j < rlen; j++ {
 				exprJ := expr[j]
 				if exprJ.Tok == ";" {
-					blocks = append(blocks, &global.Block{
-						Type: types.CodeTypeIdentRETURN,
-						Code: returnExpr,
-					})
+					blocks = append(blocks, &global.Block{Type: types.CodeTypeIdentRETURN, Code: returnExpr})
 					return &Expression{funcBlocks: funcBlocks, codeBlocks: blocks}, nil
 				}
 				returnExpr = append(returnExpr, exprJ)
@@ -291,9 +342,9 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVar map[st
 			if innerRv, ok := innerVar[rv.Lit]; ok {
 				return innerRv, nil
 			}
-			if pubRv, ok := r.publicVariable[rv.Lit]; ok {
-				return pubRv, nil
-			}
+			// if pubRv, ok := r.publicVariable[rv.Lit]; ok {
+			// 	return pubRv, nil
+			// }
 			return nil, types.ErrorNotFoundVariable
 		}
 		return rv, nil
@@ -364,26 +415,30 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVar map[st
 			// 发现中间表达式为函数执行调用
 			var middle *global.Structure
 			if global.IsVariableOrFunction(firstIdent) {
-				funcName := firstIdent.Lit
 				// 此判断在前面则可实现对内置函数的重写
-				// if fni := cfn.GetCustomeFunc(funcName); fni != nil {
-				if fni := getFuncIdented(r.funcBlocks, funcName); fni != nil {
+				var (
+					customFunc *fn.FunctionInfo
+					innerFunc  *fn.FunctionInfo
+					funcName   = firstIdent.Lit
+				)
+				if customFunc = getFuncIdented(r.funcBlocks, funcName); customFunc != nil {
 					// 执行自定义函数
-					// global.Output(funcName)
+					// global.Output(customFunc.CustFN)
 					// global.Output(expr[firstKey+1 : k])
 					// fmt.Println(funcName, innerVar, expr[firstKey+1:k])
-					if middle, err = r.execCustomFunc(fni, expr[firstKey+1:k], pos, innerVar); err != nil {
+					if middle, err = r.execCustomFunc(customFunc, expr[firstKey+1:k], pos, innerVar); err != nil {
 						return nil, err
 					}
-				}
-
-				// 查找是否有内置函数
-				if getFunc := fn.CheckFunctionName(funcName); getFunc != nil {
+				} else if innerFunc = fn.CheckFunctionName(funcName); innerFunc != nil {
+					// 查找是否有内置函数
 					// expr[firstKey+1 : k] 为实参
 					// global.Output(expr[firstKey+1 : k])
 					if middle, err = r.execFunc(funcName, expr[firstKey+1:k], pos, innerVar); err != nil {
 						return nil, err
 					}
+				}
+				if customFunc == nil && innerFunc == nil {
+					return nil, types.ErrorNotFoundFunction
 				}
 			} else if middle, err = r.parse(expr[firstKey+1:k], pos, innerVar); err != nil {
 				return nil, err
@@ -392,7 +447,6 @@ func (r *Expression) parse(expr []*global.Structure, pos string, innerVar map[st
 			// 左中右结合再次递归
 			expr = append(first, middle)
 			expr = append(expr, end...)
-
 			return r.parse(expr, pos, innerVar)
 		}
 	}
@@ -775,4 +829,24 @@ func inArray(sep string, arr []string) bool {
 		}
 	}
 	return false
+}
+
+func (r *Expression) Get(vName string) (*global.Structure, error) {
+	ret, ok := r.publicVariable[vName]
+	if !ok {
+		return nil, types.ErrorNotFoundVariable
+	}
+	// fmt.Printf("get variable by name: %s, value: %v\n", vName, ret)
+	return ret, nil
+}
+
+func (r *Expression) GetVal(vName string) interface{} {
+	ret, ok := r.publicVariable[vName]
+	if !ok {
+		return types.ErrorNotFoundVariable
+	}
+	if len(ret.Lit) > 1 && (ret.Tok == "STRING" || ret.Tok == "CHAR") {
+		return global.FormatString(ret.Lit)
+	}
+	return ret.Lit
 }

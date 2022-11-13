@@ -25,6 +25,7 @@ func parseIdentedIF(blocks []*global.Block, expr []*global.Structure, i int, rle
 		conditions = make([]*global.Structure, 0, 10)
 	)
 	block := &global.Block{
+		// Name:  "IF",
 		Type:  types.CodeTypeIdentIF,
 		Code:  make([]*global.Structure, 0, 5),
 		IfExt: make([]*global.ExIf, 0, 5),

@@ -1,7 +1,7 @@
 package function
 
 import (
-	"github.com/pywee/lit/global"
+	global "github.com/pywee/lit/global"
 	"github.com/pywee/lit/types"
 )
 
@@ -18,13 +18,14 @@ func NewCustomFunctions() *CustomFunctions {
 // ParseCutFunc 解析函数数据
 func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*FunctionInfo, error) {
 	// 判断是否为类方法或普通函数
-	funcName := expr[1].Tok
+	expr1 := expr[1]
 	// 普通函数处理
+	funcName := expr1.Tok
 	if funcName != "IDENT" {
 		return nil, types.ErrorNotFoundFunction
 	}
 
-	if !global.IsVariableOrFunction(expr[1]) {
+	if !global.IsVariableOrFunction(expr1) {
 		return nil, types.ErrorFunctionNameIrregular
 	}
 
@@ -36,7 +37,7 @@ func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*F
 	}
 
 	return &FunctionInfo{
-		FunctionName: expr[1].Lit,
+		FunctionName: expr1.Lit,
 		CustFN:       ret.fnBody,
 		MustAmount:   ret.needArgsAmount,
 		MaxAmount:    ret.maxArgsAmount,

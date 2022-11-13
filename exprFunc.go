@@ -8,7 +8,7 @@ import (
 	"github.com/pywee/lit/types"
 )
 
-// parseExecFUNC 解析自定义函数声明
+// parseExecFUNC 解析自定义函数调用
 func parseExecFUNC(blocks []*global.Block, expr []*global.Structure, i int, rlen int) ([]*global.Block, int) {
 	block := &global.Block{Type: types.CodeTypeFunctionExec, Code: make([]*global.Structure, 0, 10)}
 	for j := i; j < rlen; j++ {
@@ -25,20 +25,20 @@ func parseExecFUNC(blocks []*global.Block, expr []*global.Structure, i int, rlen
 // parseIdentFUNC 解析函数定义
 func parseIdentFUNC(funcBlocks []*fn.FunctionInfo, expr []*global.Structure, i int, rlen int) ([]*fn.FunctionInfo, int, error) {
 	var (
-		bracket uint16
-		block   = &global.Block{Type: types.CodeTypeIdentFN, Code: make([]*global.Structure, 0, 20)}
+		bracket  uint8
+		funcCode = make([]*global.Structure, 0, 20)
 	)
 	for j := i; j < rlen; j++ {
-		block.Code = append(block.Code, expr[j])
+		funcCode = append(funcCode, expr[j])
 		if expr[j].Tok == "{" {
 			bracket++
 		} else if expr[j].Tok == "}" {
 			bracket--
 			if bracket == 0 {
-				if len(block.Code) < 7 {
+				if len(funcCode) < 7 {
 					return nil, 0, errors.New(expr[i].Position + types.ErrorFunctionIlligle.Error())
 				}
-				funcsParsed, err := cfn.ParseCutFunc(block.Code, expr[i].Position)
+				funcsParsed, err := cfn.ParseCutFunc(funcCode, expr[i].Position)
 				if err != nil {
 					return nil, 0, errors.New(expr[i].Position + err.Error())
 				}
@@ -72,7 +72,7 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 	// 函数体代码解析
 	// 递归回去 从头开始操作
 	// FIXME.需要进一步检查参数上下文传递问题
-	return r.createExpr(fni.CustFN, innerVar)
+	return r.initExpr(fni.CustFN, innerVar)
 }
 
 // execFunc 执行内置函数
