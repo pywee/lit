@@ -5,7 +5,7 @@ import (
 )
 
 // 内置函数列表
-var functions = make([]*FunctionInfo, 0, 100)
+var functions = make([]*FunctionInfo, 0, 20)
 
 type FunctionInfo struct {
 	// StructName 所属的结构体名称
@@ -53,7 +53,8 @@ func IsExprFunction(expr []*global.Structure, rlen int) bool {
 	return expr[0].Tok == "IDENT" && expr[1].Tok == "(" && ((expr[rlen-1].Tok == ";" && expr[rlen-2].Tok == ")") || expr[rlen-1].Tok == ")")
 }
 
-func CheckFunctionName(name string) *FunctionInfo {
+// GetInnerIdentedFunc 查找内部函数
+func GetInnerIdentedFunc(name string) *FunctionInfo {
 	for _, v := range functions {
 		if v.FunctionName == name {
 			return v

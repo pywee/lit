@@ -43,6 +43,8 @@ type Structure struct {
 	Lit      string
 }
 
+type InnerVar map[string]*Structure
+
 func (s *Structure) IsBoolTrue() bool {
 	return s.Lit == "true"
 }

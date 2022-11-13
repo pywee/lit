@@ -1,8 +1,6 @@
 package lit
 
 import (
-	"errors"
-
 	fn "github.com/pywee/lit/function"
 	"github.com/pywee/lit/global"
 	"github.com/pywee/lit/types"
@@ -10,14 +8,19 @@ import (
 
 // parseExecFUNC 解析自定义函数调用
 func parseExecFUNC(blocks []*global.Block, expr []*global.Structure, i int, rlen int) ([]*global.Block, int) {
-	block := &global.Block{Type: types.CodeTypeFunctionExec, Code: make([]*global.Structure, 0, 10)}
+	block := &global.Block{
+		Name: expr[0].Lit,
+		Type: types.CodeTypeFunctionExec,
+		Code: make([]*global.Structure, 0, 5),
+	}
 	for j := i; j < rlen; j++ {
-		if expr[j].Tok == ";" {
+		exprJ := expr[j]
+		if exprJ.Tok == ";" {
 			blocks = append(blocks, block)
 			i = j
 			break
 		}
-		block.Code = append(block.Code, expr[j])
+		block.Code = append(block.Code, exprJ)
 	}
 	return blocks, i
 }
@@ -29,18 +32,19 @@ func parseIdentFUNC(funcBlocks []*fn.FunctionInfo, expr []*global.Structure, i i
 		funcCode = make([]*global.Structure, 0, 20)
 	)
 	for j := i; j < rlen; j++ {
-		funcCode = append(funcCode, expr[j])
-		if expr[j].Tok == "{" {
+		exprJ := expr[j]
+		funcCode = append(funcCode, exprJ)
+		if exprJ.Tok == "{" {
 			bracket++
-		} else if expr[j].Tok == "}" {
+		} else if exprJ.Tok == "}" {
 			bracket--
 			if bracket == 0 {
-				if len(funcCode) < 7 {
-					return nil, 0, errors.New(expr[i].Position + types.ErrorFunctionIlligle.Error())
+				if len(funcCode) < 6 {
+					return nil, 0, types.ErrorFunctionIlligle
 				}
-				funcsParsed, err := cfn.ParseCutFunc(funcCode, expr[i].Position)
+				funcsParsed, err := cfn.ParseCutFunc(funcCode, exprJ.Position)
 				if err != nil {
-					return nil, 0, errors.New(expr[i].Position + err.Error())
+					return nil, 0, err
 				}
 				funcBlocks = append(funcBlocks, funcsParsed)
 				i = j
@@ -54,7 +58,7 @@ func parseIdentFUNC(funcBlocks []*fn.FunctionInfo, expr []*global.Structure, i i
 // execCustomFunc 执行自定义函数
 // 当自定义的函数被调用时才会调用此方法
 // realArgValues 为函数被调用时得到的实参
-func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string, innerVarInFuncParams map[string]*global.Structure) (*global.Structure, error) {
+func (r *expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string, innerVarInFuncParams map[string]*global.Structure) (*global.Structure, error) {
 	// innerVar 函数体内的变量声明
 	var innerVar = make(map[string]*global.Structure)
 
@@ -75,9 +79,9 @@ func (r *Expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 	return r.initExpr(fni.CustFN, innerVar)
 }
 
-// execFunc 执行内置函数
-func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos string, innerVar map[string]*global.Structure) (*global.Structure, error) {
-	fArgs := fn.CheckFunctionName(funcName)
+// execInnerFunc 执行内置函数
+func (r *expression) execInnerFunc(funcName string, expr []*global.Structure, pos string, innerVar map[string]*global.Structure) (*global.Structure, error) {
+	fArgs := fn.GetInnerIdentedFunc(funcName)
 	if fArgs == nil {
 		return nil, types.ErrorNotFoundFunction
 	}
@@ -104,7 +108,7 @@ func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos str
 		// FIXME
 		// 函数中的实参表达式 实参可以是函数、变量、算术表达式等等
 		// global.Output(varg)
-		rv, err := r.parse(varg, pos, innerVar)
+		rv, err := r.parse(varg, innerVar)
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +138,7 @@ func (r *Expression) execFunc(funcName string, expr []*global.Structure, pos str
 // b = abc();
 // c = a + b;
 // return a+b+c
-func (r *Expression) setInnerVal(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string, innerVar map[string]*global.Structure) error {
+func (r *expression) setInnerVal(fni *fn.FunctionInfo, realArgValues []*global.Structure, pos string, innerVar map[string]*global.Structure) error {
 	// 对比函数形参和实参
 	realArgList := fn.GetFunctionArgList(realArgValues)
 	rLen := len(realArgList)
@@ -150,7 +154,7 @@ func (r *Expression) setInnerVal(fni *fn.FunctionInfo, realArgValues []*global.S
 		}
 
 		// 解析传入的实参 因为实参可能也是函数
-		realArgValueParsed, err := r.parse(thisArg, pos, innerVar)
+		realArgValueParsed, err := r.parse(thisArg, innerVar)
 		if err != nil {
 			return err
 		}
@@ -160,144 +164,29 @@ func (r *Expression) setInnerVal(fni *fn.FunctionInfo, realArgValues []*global.S
 	return nil
 }
 
-// const (
-// 	// varStatemented 变量声明或者赋值
-// 	varStatemented = 1
-// 	// funcImplemented 函数调用
-// 	funcImplemented = 2
-// 	// returnIdent return 语句
-// 	returnIdent = 3
-// )
-
-// type innerFuncExpr struct {
-// 	// typ 类型 1-表示变量赋值 2-函数调用 3-return句子
-// 	typ int8
-// 	// vName 变量名称 如果有的话
-// 	vName string
-// 	// tok 变量操作符 有可能是赋值时用的 = 或者是i++之类
-// 	tok string
-// 	// varExpr 表达式
-// 	varExpr []*global.Structure
-// }
-
-// parseExprInnerFunc 解析当前函数体内的某一行代码
-// func parseExprInnerFunc(expr []*global.Structure) *innerFuncExpr {
-// 	sLen := len(expr)
-// 	if sLen < 2 {
-// 		return nil
-// 	}
-
-// 	expr0 := expr[0]
-// 	expr1 := expr[1]
-// 	if strings.ToLower(expr0.Lit) == "return" {
-// 		return &innerFuncExpr{
-// 			typ:     returnIdent,
-// 			vName:   "return",
-// 			tok:     "return",
-// 			varExpr: expr[1:],
-// 		}
-// 	}
-
-// 	// sLen > 2
-// 	// 变量声明或者赋值
-// 	if expr1.Tok == "=" && expr[0].Tok == "IDENT" {
-// 		return &innerFuncExpr{
-// 			typ:     varStatemented,
-// 			vName:   expr0.Lit,
-// 			tok:     expr1.Tok,
-// 			varExpr: expr[2:],
-// 		}
-// 	}
-
-// 	// 函数调用
-// 	if sLen >= 3 && expr0.Tok == "IDENT" && global.IsVariableOrFunction(expr0) && expr[sLen-1].Tok == ")" {
-// 		return &innerFuncExpr{
-// 			typ:     funcImplemented,
-// 			vName:   expr0.Lit,
-// 			varExpr: expr,
-// 		}
-// 	}
-
-// 	return nil
-// }
-
-// // getFunctionDefined 获取文本内所有自定义函数
-// func getFunctionDefined(s scanner.Scanner, file *token.File, fset *token.FileSet) error {
-// 	var (
-// 		funcKuo          int8
-// 		foundCustomeFunc bool
-// 		funcList         = make([]*global.Structure, 0, 10)
-// 	)
-
-// 	cfn = fn.NewCustomFunctions()
-// 	for {
-// 		pos, tok, lit := s.Scan()
-// 		if tok == token.EOF {
-// 			break
-// 		}
-
-// 		stok := tok.String()
-// 		posString := fset.Position(pos).String()
-// 		posLine := "第" + strings.Split(posString, ":")[0] + "行, "
-// 		if stok == "func" {
-// 			foundCustomeFunc = true
-// 		}
-// 		if foundCustomeFunc {
-// 			if stok == "CHAR" || stok == "STRING" {
-// 				lit = formatString(lit)
-// 			}
-// 			if sLit := strings.ToLower(lit); stok != "STRING" && (sLit == "false" || sLit == "true") {
-// 				lit = sLit
-// 				stok = "BOOL"
-// 			}
-
-// 			// FIXME 此处去掉符号 ; 可能导致其他逻辑有问题
-// 			// 需要进一步观察测试
-// 			// 去掉 go 语言解析包多余的分割标识符
-// 			// if stok == ";" && lit == "\n" {
-// 			// lit = ""
-// 			// continue
-// 			// }
-
-// 			funcList = append(funcList, &global.Structure{
-// 				Position: fset.Position(pos).String(),
-// 				Tok:      stok,
-// 				Lit:      lit,
-// 			})
-
-// 			if stok == "{" {
-// 				funcKuo++
-// 			} else if stok == "}" {
-// 				funcKuo--
-// 				if funcKuo == 0 {
-// 					if len(funcList) < 7 {
-// 						return errors.New(posLine + types.ErrorFunctionIlligle.Error())
-// 					}
-// 					funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
-// 					if err != nil {
-// 						return errors.New(posLine + err.Error())
-// 					}
-// 					funcList = nil
-// 					foundCustomeFunc = false
-// 					cfn.AddFunc("", funcsParsed)
-// 				}
-// 			}
-
-// 			// if tok.String() == ";" && lit == "\n" {
-// 			// 	if len(funcList) < 7 {
-// 			// 		return nil, errors.New(posLine + types.ErrorFunctionIlligle.Error())
-// 			// 	}
-// 			// 	funcsParsed, err := cfn.ParseCutFunc(funcList, posString)
-// 			// 	if err != nil {
-// 			// 		return nil, errors.New(posLine + err.Error())
-// 			// 	}
-// 			// 	funcList = nil
-// 			// 	foundCustomeFunc = false
-// 			// 	cfn.AddFunc("", funcsParsed)
-// 			// }
-
-// 			continue
-// 		}
-// 	}
-// 	return nil
-// }
+// execFUNC 执行函数
+func (r *expression) execFUNC(expr []*global.Structure, xArgs []*global.Structure, innerVar map[string]*global.Structure) (*global.Structure, error) {
+	var (
+		innerFunc  *fn.FunctionInfo
+		customFunc *fn.FunctionInfo
+		funcName   = expr[0].Lit
+	)
+	if customFunc = r.getIdentedCustomFunc(funcName); customFunc != nil {
+		rv, err := r.execCustomFunc(customFunc, xArgs, "", innerVar)
+		if err != nil {
+			return nil, err
+		}
+		return rv, nil
+	}
+	if innerFunc = fn.GetInnerIdentedFunc(funcName); innerFunc != nil {
+		// 查找是否有内置函数
+		// expr[firstKey+1 : k] 为实参
+		// global.Output(expr[firstKey+1 : k])
+		rv, err := r.execInnerFunc(funcName, xArgs, "", innerVar)
+		if err != nil {
+			return nil, err
+		}
+		return rv, nil
+	}
+	return nil, types.ErrorNotFoundFunction
+}
