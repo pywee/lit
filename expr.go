@@ -228,7 +228,7 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 			if rv != nil {
 				return rv, nil
 			}
-			return &global.Structure{Tok: "NULL", Lit: "NULL"}, nil
+			// return &global.Structure{Tok: "NULL", Lit: "NULL"}, nil
 		} else if block.Type == types.CodeTypeIdentIF {
 			// 检查if语句合法性
 			if err = checkLegitimateIF(block.IfExt); err != nil {
