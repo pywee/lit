@@ -1,0 +1,93 @@
+// 例1
+// 变量声明、进行算术运算、执行内置函数
+a = 5;
+b = a + 6;
+c = a + b * (1 + 2 * (3 + 4) - 5 / b);
+print(a + b + c); // 输出 186
+
+
+// 例2
+// 较为复杂的算术运算，优先级的处理逻辑与 golang 保持一致
+// * 以下代码如果是在 PHP 中执行会输出 -24，两种语言针对优先级的处理略微不一样，其他语言也是如此
+a = (2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11))) / 10 * 2;
+b = 12 / 333 + 31 + (5 / 10) - 6 | 100;
+print(a); // 输出 16
+print(b); // 输出 125
+
+
+// 例3
+// 自定义函数以及弱类型处理
+func demo(arg) {
+    arg++;
+    return arg-false*3/10+(20-1);
+}
+print(demo(10)+70); // 100
+
+
+// 例4
+// 下面的句子调用了两个函数 
+// isInt(arg) 用来检查 arg 是否为整型 
+// replace(arg1, arg2, arg3, arg4) 用来做字符串替换
+a = replace("Hello Word111!", "1", "", 2-isInt((1+(1 + isInt(123+(1+2)))-1)+2)-2);
+print(a); // 输出 Hello word!
+
+
+// 例5
+// 更多关于弱类型的处理，基本上参考了 PHP
+a = true - 1;
+b = isInt(1);
+c = isFloat(1.0);
+d = false == 0.0;
+e = "false" == 0.0;
+print(a); // 0
+print(b); // true
+print(c); // true
+print(d); // true
+print(e); // true
+
+a = false;
+b = true;
+c = "123";
+d = 456;
+print(a + b); // 1
+print(a >= b); // false
+print(a + b + c + d); // 580
+
+
+// 例6
+// 流程控制语句 if 多if嵌套示例
+a = 100;
+func functionDemo() {
+    return 1;
+}
+if a == 101 - functionDemo() {
+    if 1+1 == 2 && 3-1 == 20 {
+        print("yes");
+    } else {
+        if 1+a == 102{
+            print("no");
+        } else {
+            if false {
+                print(0)
+            } else {
+                print("Hello world!")
+            }
+        }
+    }
+}
+
+
+// 例7
+// 流程控制语句 for
+a = 5;
+if a == 6-returnNumber() {
+    for i = 0; i < returnNumber()+a; i ++ {
+        print(a+i); // 输出 5 6 7 8 9 10
+    }
+}
+func returnNumber() {
+    return 1;
+}
+
+// * for 功能仍在迭代中，仅实现了一种
+// * 我在完成对数组的支持后会继续迭代 for 功能，实现 range 操作
