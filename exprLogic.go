@@ -38,7 +38,6 @@ func (r *Expression) parseOr(expr []*global.Structure, k int, pos string, innerV
 	if rv, err = r.parse(expr[k+1:], pos, innerVariable); err != nil {
 		return nil, err
 	}
-
 	global.ChangeToBool(rv)
 	return rv, nil
 }

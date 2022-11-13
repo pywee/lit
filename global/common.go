@@ -123,6 +123,7 @@ func Output(expr interface{}, x ...interface{}) {
 			for _, vv := range v {
 				fmt.Println("output from [][]arr:", vv)
 			}
+			println()
 		}
 	} else if fmt.Sprintf("%T", expr) == "[]*global.Structure" {
 		for _, v := range expr.([]*Structure) {

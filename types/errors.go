@@ -9,8 +9,8 @@ var (
 	ErrorWrongSentence = errors.New("语法错误")
 	// ErrorNotFoundVariable 变量不存在，或者你的定义非法
 	ErrorNotFoundVariable = errors.New("变量不存在，或者你的定义非法")
-	// ErrorNotFoundFunction 找不到调用的函数
-	ErrorNotFoundFunction = errors.New("找不到声明的函数")
+	// ErrorNotFoundFunction 找不到函数
+	ErrorNotFoundFunction = errors.New("找不到函数")
 	// ErrorArgsNotEnough 参数不足
 	ErrorArgsNotEnough = errors.New("函数参数值数量不足")
 	// ErrorTooManyArgs 参数过多
