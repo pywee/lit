@@ -24,12 +24,12 @@ func (r *expression) parseIdentedFOR(expr []*global.Structure, blocks []*global.
 	var (
 		// rlen 数据长度
 		rlen = len(expr)
-		// conditions
-		conditions = make([]*global.Structure, 0, 10)
 		// foundCurlyBracket 花括号标记
 		foundCurlyBracket bool
 		// curlyBracketCount 计算花括号
 		curlyBracketCount uint8
+		// conditions for 条件
+		conditions = make([]*global.Structure, 0, 12)
 		// curlyBracketCode 花括号内的代码块
 		curlyBracketCode = make([]*global.Structure, 0, 10)
 	)
@@ -53,11 +53,9 @@ func (r *expression) parseIdentedFOR(expr []*global.Structure, blocks []*global.
 		}
 	}
 
-	global.Output(curlyBracketCode)
-
 	blocks = append(blocks, &global.Block{
 		Name:   "FOR",
-		ForExt: &global.ForExpression{Type: 1, Conditions: conditions, Code: curlyBracketCode},
+		ForExt: &global.ForExpression{Type: 1, Conditions: conditions, Code: curlyBracketCode[1 : len(curlyBracketCode)-1]},
 		Type:   types.CodeTypeIdentFOR,
 	})
 	return blocks, i, nil
@@ -66,5 +64,24 @@ func (r *expression) parseIdentedFOR(expr []*global.Structure, blocks []*global.
 // execFORType1 解析以下形式的 for 流程控制:
 // n = 0; n < y; n ++
 func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global.InnerVar) (*global.Structure, error) {
+	var (
+		lf         int
+		cd1        = make([]*global.Structure, 0, 5)
+		cd2        = make([]*global.Structure, 0, 5)
+		conditions = forExpr.Conditions
+	)
+	for i := 0; i < len(conditions); i++ {
+		if conditions[i].Tok == ";" {
+			if len(cd1) == 0 {
+				cd1 = conditions[1 : i+1]
+			} else if len(cd2) == 0 {
+				cd2 = conditions[len(cd1)+1 : i+1]
+				lf = i
+				break
+			}
+		}
+	}
+
+	global.Output(conditions[lf+1:])
 	return nil, nil
 }

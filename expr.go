@@ -100,7 +100,7 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		// for 流程控制语句
 		// FIXME 未针对for语句的合法性做充分检查
 		if thisExpr.Tok == "for" {
-			blocks, i, err = r.parseIdentedFOR(expr, blocks, innerVar, i+1)
+			blocks, i, err = r.parseIdentedFOR(expr, blocks, innerVar, i)
 			if err != nil {
 				return nil, err
 			}
