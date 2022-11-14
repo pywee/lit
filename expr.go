@@ -100,13 +100,8 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		// for 流程控制语句
 		// FIXME 未针对for语句的合法性做充分检查
 		if thisExpr.Tok == "for" {
-			if blocks, i, err = r.parseIdentedFOR(&forArgs{
-				i:        i,
-				rlen:     rlen,
-				expr:     expr,
-				blocks:   blocks,
-				innerVar: innerVar,
-			}); err != nil {
+			blocks, i, err = r.parseIdentedFOR(expr, blocks, innerVar, i+1)
+			if err != nil {
 				return nil, err
 			}
 			continue
@@ -209,7 +204,6 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 					code = code[vLeftListEndIdx+1:]
 				}
 			}
-
 			if vName != "" {
 				rv, err := r.parse(code, innerVar)
 				if err != nil {
@@ -283,12 +277,6 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 				if _, err = r.execFORType1(forExpr, innerVar); err != nil {
 					return nil, err
 				}
-			}
-			// TODO range 操作
-			if forExpr.Type == 2 {
-			}
-			// TODO 无限循环
-			if forExpr.Type == 3 {
 			}
 		}
 	}

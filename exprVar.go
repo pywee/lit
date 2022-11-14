@@ -25,12 +25,11 @@ func parseIdentedVAR(blocks []*global.Block, expr []*global.Structure, i int, rl
 // parseIdentedVarPLUS 解析变量自增
 func parseIdentedVarPLUS(blocks []*global.Block, expr []*global.Structure, i int, rlen int) ([]*global.Block, int) {
 	vplus := make([]*global.Structure, 0, 3)
-	name := expr[i].Lit
 	for j := i; j < rlen; j++ {
 		exprJ := expr[j]
 		if exprJ.Tok == ";" {
 			blocks = append(blocks, &global.Block{
-				Name: name,
+				Name: expr[i].Lit,
 				Type: types.CodeTypeVariablePlus,
 				Code: vplus,
 			})
@@ -45,12 +44,11 @@ func parseIdentedVarPLUS(blocks []*global.Block, expr []*global.Structure, i int
 // parseIdentedVarREDUCE 解析变量自减
 func parseIdentedVarREDUCE(blocks []*global.Block, expr []*global.Structure, i int, rlen int) ([]*global.Block, int) {
 	vreduce := make([]*global.Structure, 0, 3)
-	name := expr[i].Lit
 	for j := i; j < rlen; j++ {
 		exprJ := expr[j]
 		if exprJ.Tok == ";" {
 			blocks = append(blocks, &global.Block{
-				Name: name,
+				Name: expr[i].Lit,
 				Type: types.CodeTypeVariableReduce,
 				Code: vreduce,
 			})
