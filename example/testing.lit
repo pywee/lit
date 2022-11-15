@@ -1,13 +1,14 @@
 
 
+
 for i = 0; i < 2; i ++ {
-    if i == 1 {
-        for n = 1; n < 5; n ++ {
-            print(i, n)
-        }
+    for n = 0; n < 3; n ++ {
+       demo(n)
     }
 }
 
-
+func demo(arg) {
+    print(arg)
+}
 
 
