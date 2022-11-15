@@ -261,14 +261,14 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 			if len(block.Code) != 2 {
 				return nil, types.ErrorWrongSentence
 			}
-			if err = execVarPlusReduce(block, innerVar, true); err != nil {
+			if _, err = execVarPlusReduce(block, innerVar, true); err != nil {
 				return nil, err
 			}
 		} else if block.Type == types.CodeTypeVariableReduce {
 			if len(block.Code) != 2 {
 				return nil, types.ErrorWrongSentence
 			}
-			if err = execVarPlusReduce(block, innerVar, false); err != nil {
+			if _, err = execVarPlusReduce(block, innerVar, false); err != nil {
 				return nil, err
 			}
 		} else if block.Type == types.CodeTypeIdentFOR {

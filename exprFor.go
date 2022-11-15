@@ -70,18 +70,45 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 		cd2        = make([]*global.Structure, 0, 5)
 		conditions = forExpr.Conditions
 	)
+
 	for i := 0; i < len(conditions); i++ {
 		if conditions[i].Tok == ";" {
 			if len(cd1) == 0 {
 				cd1 = conditions[1 : i+1]
 			} else if len(cd2) == 0 {
-				cd2 = conditions[len(cd1)+1 : i+1]
+				cd2 = conditions[len(cd1)+1 : i]
 				lf = i
 				break
 			}
 		}
 	}
 
-	global.Output(conditions[lf+1:])
+	// n = 0
+	if _, err := r.initExpr(cd1, innerVar); err != nil {
+		return nil, err
+	}
+
+	// n ++
+	cd3 := append(conditions[lf+1:], &global.Structure{Tok: ";", Lit: ";"})
+
+	for {
+		// n < y
+		rv, err := r.parse(cd2, innerVar)
+		if err != nil {
+			return nil, err
+		}
+		if !global.ChangeToBool(rv) {
+			break
+		}
+
+		if _, err = r.initExpr(forExpr.Code, innerVar); err != nil {
+			return nil, err
+		}
+
+		if _, err = r.initExpr(cd3, innerVar); err != nil {
+			return nil, err
+		}
+	}
+
 	return nil, nil
 }
