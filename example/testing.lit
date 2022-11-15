@@ -1,5 +1,14 @@
 
 
 
-a = 1==2-1;
-print(a)
+for i = 0; i < 2; i ++ {
+    for n = 0; n < 3; n ++ {
+       demo(n)
+    }
+}
+
+func demo(arg) {
+    print(arg)
+}
+
+

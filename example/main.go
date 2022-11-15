@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	exprs, err := os.ReadFile("./src.lit")
+	exprs, err := os.ReadFile("./testing.lit")
 	if err != nil {
 		panic(err)
 	}

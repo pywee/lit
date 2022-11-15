@@ -17,7 +17,7 @@ type ForExpression struct {
 	// Type 循环方式 [1. n=1; n < x; n ++]; 2.range操作; 3.无限循环]
 	Type uint8
 	// Condtions 循环条件
-	Conditions [][]*Structure
+	Conditions []*Structure
 	// Code for语句内部代码块
 	Code []*Structure
 }

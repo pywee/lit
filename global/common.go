@@ -41,6 +41,9 @@ func InArrayString(str string, arr []string) bool {
 // FIXME
 // ChangeToBool 将当前的输入转换为布尔值
 func ChangeToBool(src *Structure) bool {
+	if src == nil {
+		return false
+	}
 	if src.Tok == "BOOL" {
 		if src.Lit != "" && src.Lit != "false" {
 			src.Lit = "true"

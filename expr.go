@@ -100,13 +100,8 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		// for 流程控制语句
 		// FIXME 未针对for语句的合法性做充分检查
 		if thisExpr.Tok == "for" {
-			if blocks, i, err = r.parseIdentedFOR(&forArgs{
-				i:        i,
-				rlen:     rlen,
-				expr:     expr,
-				blocks:   blocks,
-				innerVar: innerVar,
-			}); err != nil {
+			blocks, i, err = r.parseIdentedFOR(expr, blocks, innerVar, i)
+			if err != nil {
 				return nil, err
 			}
 			continue
@@ -209,7 +204,6 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 					code = code[vLeftListEndIdx+1:]
 				}
 			}
-
 			if vName != "" {
 				rv, err := r.parse(code, innerVar)
 				if err != nil {
@@ -267,14 +261,14 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 			if len(block.Code) != 2 {
 				return nil, types.ErrorWrongSentence
 			}
-			if err = execVarPlusReduce(block, innerVar, true); err != nil {
+			if _, err = execVarPlusReduce(block, innerVar, true); err != nil {
 				return nil, err
 			}
 		} else if block.Type == types.CodeTypeVariableReduce {
 			if len(block.Code) != 2 {
 				return nil, types.ErrorWrongSentence
 			}
-			if err = execVarPlusReduce(block, innerVar, false); err != nil {
+			if _, err = execVarPlusReduce(block, innerVar, false); err != nil {
 				return nil, err
 			}
 		} else if block.Type == types.CodeTypeIdentFOR {
@@ -283,12 +277,6 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 				if _, err = r.execFORType1(forExpr, innerVar); err != nil {
 					return nil, err
 				}
-			}
-			// TODO range 操作
-			if forExpr.Type == 2 {
-			}
-			// TODO 无限循环
-			if forExpr.Type == 3 {
 			}
 		}
 	}

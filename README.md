@@ -1,12 +1,14 @@
 # 基于 Golang 编写的解释型语言 (迭代中)
 
+This is an interpreter which created by Golang. You can also see it as a novel computer language, but i'm now still working on it to produce a bit more features ...
+
 这是一个基于纯 Golang 开发的解释型编程语言，目前仍在持续开发中，还没有<b>正式的名字</b>，暂且叫作 <b>Lit</b>。
 
 最终我想把它实现为一个解释型的弱类型编程语言，希望它能用于日常的 Web 开发。
 
 关于目前已实现的特性，请看如下文档示例，我将会定期更新。
 
-当前文档更新日期是: 2022.11.13
+当前文档更新日期是: 2022.11.16
 
 ---
 
