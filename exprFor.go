@@ -5,19 +5,6 @@ import (
 	"github.com/pywee/lit/types"
 )
 
-type forExpression struct {
-	i      int
-	blocks []*global.Block
-}
-
-type forArgs struct {
-	i        int
-	rlen     int
-	blocks   []*global.Block
-	expr     []*global.Structure
-	innerVar map[string]*global.Structure
-}
-
 // FIXME 未针对for语句的合法性做充分检查
 // parseIdentedFOR 解析for语句
 func (r *expression) parseIdentedFOR(expr []*global.Structure, blocks []*global.Block, innerVar global.InnerVar, i int) ([]*global.Block, int, error) {
@@ -63,7 +50,7 @@ func (r *expression) parseIdentedFOR(expr []*global.Structure, blocks []*global.
 
 // execFORType1 解析以下形式的 for 流程控制:
 // n = 0; n < y; n ++
-func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global.InnerVar) (*global.Structure, error) {
+func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global.InnerVar) error {
 	var (
 		lf         int
 		cd1        = make([]*global.Structure, 0, 5)
@@ -85,16 +72,16 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 
 	// n = 0
 	if _, err := r.initExpr(cd1, innerVar); err != nil {
-		return nil, err
+		return err
 	}
 
 	// n ++
 	cd3 := conditions[lf+1:]
 	if len(cd3) < 2 {
-		return nil, types.ErrorForExpression
+		return types.ErrorForExpression
 	}
 	if tok := cd3[1].Tok; tok != "++" && tok != "--" && tok != "+=" && tok != "-=" {
-		return nil, types.ErrorForExpression
+		return types.ErrorForExpression
 	}
 	cd3 = append(cd3, &global.Structure{Tok: ";", Lit: ";"})
 
@@ -102,19 +89,17 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 		// n < y
 		rv, err := r.parse(cd2, innerVar)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if !global.ChangeToBool(rv) {
 			break
 		}
-
 		if _, err = r.initExpr(forExpr.Code, innerVar); err != nil {
-			return nil, err
+			return err
 		}
-
 		if _, err = r.initExpr(cd3, innerVar); err != nil {
-			return nil, err
+			return err
 		}
 	}
-	return nil, nil
+	return nil
 }

@@ -274,7 +274,7 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 		} else if block.Type == types.CodeTypeIdentFOR {
 			forExpr := block.ForExt
 			if forExpr.Type == 1 {
-				if _, err = r.execFORType1(forExpr, innerVar); err != nil {
+				if err = r.execFORType1(forExpr, innerVar); err != nil {
 					return nil, err
 				}
 			}
