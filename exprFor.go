@@ -63,7 +63,7 @@ func (r *expression) parseIdentedFOR(expr []*global.Structure, blocks []*global.
 
 // execFORType1 解析以下形式的 for 流程控制:
 // n = 0; n < y; n ++
-func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global.InnerVar) (*global.Structure, error) {
+func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global.InnerVar) error {
 	var (
 		lf         int
 		cd1        = make([]*global.Structure, 0, 5)
@@ -85,7 +85,7 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 
 	// n = 0
 	if _, err := r.initExpr(cd1, innerVar); err != nil {
-		return nil, err
+		return err
 	}
 
 	// n ++
@@ -95,20 +95,17 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 		// n < y
 		rv, err := r.parse(cd2, innerVar)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if !global.ChangeToBool(rv) {
 			break
 		}
-
 		if _, err = r.initExpr(forExpr.Code, innerVar); err != nil {
-			return nil, err
+			return err
 		}
-
 		if _, err = r.initExpr(cd3, innerVar); err != nil {
-			return nil, err
+			return err
 		}
 	}
-
-	return nil, nil
+	return nil
 }
