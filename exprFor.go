@@ -77,14 +77,25 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 
 	// n ++
 	cd3 := conditions[lf+1:]
-	if len(cd3) < 2 {
+	cLen := len(cd3)
+	if cLen < 2 {
 		return types.ErrorForExpression
 	}
-	if tok := cd3[1].Tok; tok != "++" && tok != "--" && tok != "+=" && tok != "-=" {
-		return types.ErrorForExpression
-	}
-	cd3 = append(cd3, &global.Structure{Tok: ";", Lit: ";"})
 
+	if cLen == 2 {
+		if tok := cd3[1].Tok; tok != "++" && tok != "--" {
+			return types.ErrorForExpression
+		}
+	}
+
+	// FIXME 暂未基于此类表达式做通用处理
+	if cLen >= 3 {
+		if tok := cd3[1].Tok; tok != "+=" && tok != "-=" {
+			return types.ErrorForExpression
+		}
+	}
+
+	cd3 = append(cd3, &global.Structure{Tok: ";", Lit: ";"})
 	for {
 		// n < y
 		rv, err := r.parse(cd2, innerVar)
