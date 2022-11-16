@@ -89,7 +89,14 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 	}
 
 	// n ++
-	cd3 := append(conditions[lf+1:], &global.Structure{Tok: ";", Lit: ";"})
+	cd3 := conditions[lf+1:]
+	if len(cd3) < 2 {
+		return nil, types.ErrorForExpression
+	}
+	if tok := cd3[1].Tok; tok != "++" && tok != "--" && tok != "+=" && tok != "-=" {
+		return nil, types.ErrorForExpression
+	}
+	cd3 = append(cd3, &global.Structure{Tok: ";", Lit: ";"})
 
 	for {
 		// n < y
@@ -109,6 +116,5 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 			return nil, err
 		}
 	}
-
 	return nil, nil
 }
