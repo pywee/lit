@@ -1,14 +1,9 @@
 
 
 
-for i = 0; i < 2; i ++ {
-    for n = 0; n < 3; n ++ {
-       demo(n)
-    }
+for i = 10; i > 0; i- {
+    print(i)
 }
 
-func demo(arg) {
-    print(arg)
-}
 
 
