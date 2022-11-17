@@ -48,50 +48,42 @@ func parseIdentedVAR(arg *parseVar, innerVal global.InnerVar, i int) (int, error
 				return 0, err
 			}
 		} else if tok == "+=" {
-			nexpr := []*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "+"}}
-			nexpr = append(nexpr, code2...)
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "+"}}, code2...)
 			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
 				return 0, err
 			}
 		} else if tok == "-=" {
-			nexpr := []*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "-"}}
-			nexpr = append(nexpr, code2...)
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "-"}}, code2...)
 			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
 				return 0, err
 			}
 		} else if tok == "*=" {
-			nexpr := []*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "*"}}
-			nexpr = append(nexpr, code2...)
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "*"}}, code2...)
 			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
 				return 0, err
 			}
 		} else if tok == "/=" {
-			nexpr := []*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "/"}}
-			nexpr = append(nexpr, code2...)
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "/"}}, code2...)
 			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
 				return 0, err
 			}
 		} else if tok == "%=" {
-			nexpr := []*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "%"}}
-			nexpr = append(nexpr, code2...)
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "%"}}, code2...)
 			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
 				return 0, err
 			}
 		} else if tok == "&=" {
-			nexpr := []*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "&"}}
-			nexpr = append(nexpr, code2...)
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "&"}}, code2...)
 			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
 				return 0, err
 			}
 		} else if tok == "|=" {
-			nexpr := []*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "|"}}
-			nexpr = append(nexpr, code2...)
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "|"}}, code2...)
 			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
 				return 0, err
 			}
 		} else if tok == "^=" {
-			nexpr := []*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "^"}}
-			nexpr = append(nexpr, code2...)
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "^"}}, code2...)
 			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
 				return 0, err
 			}
