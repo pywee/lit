@@ -108,9 +108,16 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		}
 
 		// 变量声明
-		if thisExpr.Tok == "IDENT" && i < rlen && expr[i+1].Tok == "=" {
-			blocks, i = parseIdentedVAR(blocks, expr, i, rlen)
-			continue
+		if thisExpr.Tok == "IDENT" && i < rlen {
+			tok := expr[i+1].Tok
+			if global.InArrayString(tok, mathSym) {
+				i, err = parseIdentedVAR(&parseVar{blocks: blocks, expr: expr, r: r, tok: tok, rlen: rlen}, innerVar, i)
+				// global.Output(innerVar)
+				if err != nil {
+					return nil, err
+				}
+				continue
+			}
 		}
 
 		// return 语句
