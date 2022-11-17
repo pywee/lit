@@ -1,4 +1,4 @@
 
-for i = 10; i >= 0; i-- {
-    print(i)
-}
+i = 100
+i += 1+2
+print(i)
