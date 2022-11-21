@@ -44,8 +44,11 @@ func ChangeToBool(src *Structure) bool {
 	if src == nil {
 		return false
 	}
-	if src.Tok == "BOOL" {
-		if src.Lit != "" && src.Lit != "false" {
+
+	sTok := src.Tok
+	sLit := src.Lit
+	if sTok == "BOOL" {
+		if sLit != "" && sLit != "false" {
 			src.Lit = "true"
 			return true
 		}
@@ -54,13 +57,13 @@ func ChangeToBool(src *Structure) bool {
 	}
 
 	var returnBool bool
-	if src.Tok == "STRING" && src.Lit != "" && src.Lit != "0" {
+	if sTok == "STRING" && sLit != "" && sLit != "0" {
 		src.Lit = "true"
 		returnBool = true
-	} else if src.Tok == "INT" && src.Lit != "0" {
+	} else if sTok == "INT" && sLit != "0" {
 		src.Lit = "true"
 		returnBool = true
-	} else if src.Tok == "FLOAT" && src.Lit != "0" {
+	} else if sTok == "FLOAT" && sLit != "0" {
 		src.Lit = "true"
 		returnBool = true
 	} else {

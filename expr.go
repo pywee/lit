@@ -20,6 +20,8 @@ import (
 var cfn *fn.CustomFunctions
 
 type expression struct {
+	isContinue     bool
+	isBreak        bool
 	funcBlocks     []*fn.FunctionInfo
 	codeBlocks     []*global.Block
 	publicVariable map[string]*global.Structure
@@ -67,12 +69,12 @@ func NewExpr(src []byte) (*expression, error) {
 	}
 
 	innerVar := make(map[string]*global.Structure, 5)
-	_, err := result.initExpr(expr, innerVar)
+	_, err := result.initExpr(expr, innerVar, false)
 	return nil, err
 }
 
 // parseExprs 解析代码块
-func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerVar) (*expression, error) {
+func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerVar, isInLoop bool) (*expression, error) {
 	var (
 		err        error
 		foundElse  bool
@@ -107,10 +109,35 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 			continue
 		}
 
+		// continue 语句
+		if thisExpr.Tok == "continue" {
+			if !isInLoop {
+				return nil, types.ErrorForContinue
+			}
+			blocks = append(blocks, &global.Block{Type: types.CodeTypeContinue})
+			return &expression{codeBlocks: blocks, funcBlocks: funcBlocks}, nil
+		}
+
+		// break 语句
+		if thisExpr.Tok == "break" {
+			if !isInLoop {
+				return nil, types.ErrorForBreak
+			}
+			blocks = append(blocks, &global.Block{Type: types.CodeTypeBreak})
+			return &expression{codeBlocks: blocks, funcBlocks: funcBlocks}, nil
+		}
+
 		// 变量声明
-		if thisExpr.Tok == "IDENT" && i < rlen && expr[i+1].Tok == "=" {
-			blocks, i = parseIdentedVAR(blocks, expr, i, rlen)
-			continue
+		if thisExpr.Tok == "IDENT" && i < rlen {
+			tok := expr[i+1].Tok
+			if global.InArrayString(tok, mathSym) {
+				i, err = parseIdentedVAR(&parseVar{blocks: blocks, expr: expr, r: r, tok: tok, rlen: rlen}, innerVar, i)
+				// global.Output(innerVar)
+				if err != nil {
+					return nil, err
+				}
+				continue
+			}
 		}
 
 		// return 语句
@@ -181,8 +208,8 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 
 // initExpr 全局表达式入口
 // 代码块中如果带有 if 等复杂语句 则需要从这里进入递归
-func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar) (*global.Structure, error) {
-	bs, err := r.parseExprs(expr, innerVar)
+func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar, isInLoop bool) (*global.Structure, error) {
+	bs, err := r.parseExprs(expr, innerVar, isInLoop)
 	if err != nil {
 		return nil, err
 	}
@@ -192,9 +219,18 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 	}
 
 	for _, block := range bs.codeBlocks {
+		if block.Type == types.CodeTypeContinue {
+			return &global.Structure{Tok: "continue", Lit: "continue"}, nil
+		}
+
+		if block.Type == types.CodeTypeBreak {
+			return &global.Structure{Tok: "break", Lit: "break"}, nil
+		}
+
 		if block.Type == types.CodeTypeIdentRETURN {
 			return r.parse(block.Code, innerVar)
 		}
+
 		if block.Type == types.CodeTypeIdentVAR {
 			vName := ""
 			code := block.Code
@@ -248,7 +284,7 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 				if blen < 2 {
 					return nil, types.ErrorIfExpression
 				}
-				ret, err := r.initExpr(v.Body[1:blen-1], innerVar)
+				ret, err := r.initExpr(v.Body[1:blen-1], innerVar, isInLoop)
 				if err != nil {
 					return nil, err
 				}

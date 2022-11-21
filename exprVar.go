@@ -7,8 +7,105 @@ import (
 	"github.com/pywee/lit/types"
 )
 
+var mathSym = []string{"=", "+=", "-=", "*=", "/=", "^=", "&=", "|=", "%="}
+
+type parseVar struct {
+	i      int
+	rlen   int
+	tok    string
+	r      *expression
+	blocks []*global.Block
+	expr   []*global.Structure
+}
+
 // parseIdentedVAR 解析变量声明
-func parseIdentedVAR(blocks []*global.Block, expr []*global.Structure, i int, rlen int) ([]*global.Block, int) {
+func parseIdentedVAR(arg *parseVar, innerVal global.InnerVar, i int) (int, error) {
+	var (
+		err     error
+		rv      *global.Structure
+		tok     = arg.tok
+		expr    = arg.expr
+		rlen    = arg.rlen
+		thisLit = expr[0].Lit
+		thisTok = expr[0].Tok
+		code    = make([]*global.Structure, 0, 5)
+	)
+
+	for j := i; j < rlen; j++ {
+		exprJ := expr[j]
+		if exprJ.Tok != ";" {
+			code = append(code, exprJ)
+			continue
+		}
+
+		if len(code) < 3 {
+			return 0, types.ErrorWrongVarOperation
+		}
+
+		code2 := code[2:]
+		if tok == "=" {
+			if rv, err = arg.r.parse(code2, innerVal); err != nil {
+				return 0, err
+			}
+		} else if tok == "+=" {
+			code2 = append(code2, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "+"}, {Tok: "("}}, code2...)
+			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
+				return 0, err
+			}
+		} else if tok == "-=" {
+			code2 = append(code2, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "-"}, {Tok: "("}}, code2...)
+			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
+				return 0, err
+			}
+		} else if tok == "*=" {
+			code2 = append(code2, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "*"}, {Tok: "("}}, code2...)
+			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
+				return 0, err
+			}
+		} else if tok == "/=" {
+			code2 = append(code2, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "/"}, {Tok: "("}}, code2...)
+			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
+				return 0, err
+			}
+		} else if tok == "%=" {
+			code2 = append(code2, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "%"}, {Tok: "("}}, code2...)
+			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
+				return 0, err
+			}
+		} else if tok == "&=" {
+			code2 = append(code2, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "&"}, {Tok: "("}}, code2...)
+			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
+				return 0, err
+			}
+		} else if tok == "|=" {
+			code2 = append(code2, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "|"}, {Tok: "("}}, code2...)
+			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
+				return 0, err
+			}
+		} else if tok == "^=" {
+			code2 = append(code2, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "^"}, {Tok: "("}}, code2...)
+			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
+				return 0, err
+			}
+		}
+		i = j
+		innerVal[thisLit] = rv
+		break
+	}
+
+	return i, nil
+}
+
+// parseIdentedVAROld 解析变量声明
+func parseIdentedVAROld(blocks []*global.Block, expr []*global.Structure, i int, rlen int) ([]*global.Block, int) {
 	code := make([]*global.Structure, 0, 5)
 	for j := i; j < rlen; j++ {
 		exprJ := expr[j]

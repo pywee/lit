@@ -7,6 +7,8 @@ import (
 var (
 	// ErrorWrongSentence 语法错误
 	ErrorWrongSentence = errors.New("语法错误")
+	// ErrorWrongVarOperation 语法错误,变量操作不合法
+	ErrorWrongVarOperation = errors.New("语法错误,变量操作不合法")
 	// ErrorNotFoundVariable 变量不存在，或者你的定义非法
 	ErrorNotFoundVariable = errors.New("变量不存在，或者你的定义非法")
 	// ErrorNotFoundFunction 找不到函数
@@ -57,6 +59,8 @@ var (
 // for 流程控制语句错误处理
 var (
 	ErrorForExpression = errors.New("for 语法错误")
+	ErrorForContinue   = errors.New("continue 关键字应在循环语句中出现")
+	ErrorForBreak      = errors.New("break 关键字应在循环语句中出现")
 )
 
 func WithError(pos, err string) error {

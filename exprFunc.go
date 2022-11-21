@@ -76,7 +76,7 @@ func (r *expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 	// 函数体代码解析
 	// 递归回去 从头开始操作
 	// FIXME.需要进一步检查参数上下文传递问题
-	return r.initExpr(fni.CustFN, innerVar)
+	return r.initExpr(fni.CustFN, innerVar, false)
 }
 
 // execInnerFunc 执行内置函数

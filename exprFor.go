@@ -71,20 +71,32 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 	}
 
 	// n = 0
-	if _, err := r.initExpr(cd1, innerVar); err != nil {
+	if _, err := r.initExpr(cd1, innerVar, false); err != nil {
 		return err
 	}
 
 	// n ++
 	cd3 := conditions[lf+1:]
-	if len(cd3) < 2 {
+	cLen := len(cd3)
+	if cLen < 2 {
 		return types.ErrorForExpression
 	}
-	if tok := cd3[1].Tok; tok != "++" && tok != "--" && tok != "+=" && tok != "-=" {
-		return types.ErrorForExpression
-	}
-	cd3 = append(cd3, &global.Structure{Tok: ";", Lit: ";"})
 
+	if cLen == 2 {
+		if tok := cd3[1].Tok; tok != "++" && tok != "--" {
+			return types.ErrorForExpression
+		}
+	}
+
+	// FIXME 暂未基于此类表达式做通用处理
+	if cLen >= 3 {
+		if tok := cd3[1].Tok; tok != "+=" && tok != "-=" {
+			return types.ErrorForExpression
+		}
+	}
+
+	cd3 = append(cd3, &global.Structure{Tok: ";", Lit: ";"})
+	var result *global.Structure
 	for {
 		// n < y
 		rv, err := r.parse(cd2, innerVar)
@@ -94,11 +106,23 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 		if !global.ChangeToBool(rv) {
 			break
 		}
-		if _, err = r.initExpr(forExpr.Code, innerVar); err != nil {
+
+		if result, err = r.initExpr(forExpr.Code, innerVar, true); err != nil {
 			return err
 		}
-		if _, err = r.initExpr(cd3, innerVar); err != nil {
+
+		if _, err = r.initExpr(cd3, innerVar, true); err != nil {
 			return err
+		}
+
+		// 发现 continue 则跳出当前循环
+		if result != nil && result.Tok == "continue" {
+			continue
+		}
+
+		// 发现 break 则跳出当前循环
+		if result != nil && result.Tok == "break" {
+			break
 		}
 	}
 	return nil
