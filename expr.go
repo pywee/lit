@@ -20,6 +20,8 @@ import (
 var cfn *fn.CustomFunctions
 
 type expression struct {
+	isContinue     bool
+	isBreak        bool
 	funcBlocks     []*fn.FunctionInfo
 	codeBlocks     []*global.Block
 	publicVariable map[string]*global.Structure
@@ -105,6 +107,16 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 				return nil, err
 			}
 			continue
+		}
+
+		// continue 语句
+		if thisExpr.Tok == "continue" {
+			return &expression{isContinue: true}, nil
+		}
+
+		// break 语句
+		if thisExpr.Tok == "break" {
+			return &expression{isBreak: true}, nil
 		}
 
 		// 变量声明
@@ -196,6 +208,16 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 
 	if len(r.funcBlocks) == 0 {
 		r.funcBlocks = bs.funcBlocks
+	}
+
+	// continue 处理
+	if bs.isContinue {
+		return &global.Structure{Tok: "continue", Lit: "continue "}, nil
+	}
+
+	// break 处理
+	if bs.isBreak {
+		return &global.Structure{Tok: "break", Lit: "break"}, nil
 	}
 
 	for _, block := range bs.codeBlocks {

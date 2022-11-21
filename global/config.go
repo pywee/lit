@@ -1,7 +1,7 @@
 package global
 
 type Block struct {
-	// Type [0-未知, 非法定义; 1.变量赋值; 2.函数声明; 3.函数调用; 4.if语句; 5.for; 6.return]
+	// Type [0-未知, 非法定义; 1.变量赋值; 2.函数声明; 3.函数调用; 4.if语句; 5.for; 6.return; 7.变量自增 n++; 8.变量自减 n--; 9.continue; 10.break]
 	Type int8
 	// 关键词 如果类型是函数 则显示函数名
 	Name string

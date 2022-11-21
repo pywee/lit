@@ -96,6 +96,7 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 	}
 
 	cd3 = append(cd3, &global.Structure{Tok: ";", Lit: ";"})
+	var result *global.Structure
 	for {
 		// n < y
 		rv, err := r.parse(cd2, innerVar)
@@ -105,9 +106,16 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 		if !global.ChangeToBool(rv) {
 			break
 		}
-		if _, err = r.initExpr(forExpr.Code, innerVar); err != nil {
+
+		if result, err = r.initExpr(forExpr.Code, innerVar); err != nil {
 			return err
 		}
+
+		// 发现 break 则跳出当前循环
+		if result != nil && result.Tok == "break" {
+			break
+		}
+
 		if _, err = r.initExpr(cd3, innerVar); err != nil {
 			return err
 		}

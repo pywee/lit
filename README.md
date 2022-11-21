@@ -8,7 +8,7 @@ This is an interpreter which created by Golang. You can also see it as a novel c
 
 关于目前已实现的特性，请看如下文档示例，我将会定期更新。
 
-当前文档更新日期是: 2022.11.16
+当前文档更新日期是: 2022.11.21
 
 ---
 

@@ -42,4 +42,8 @@ const (
 	CodeTypeVariablePlus = 7
 	// CodeTypeVariableReduce 变量自减 n--
 	CodeTypeVariableReduce = 8
+	// CodeTypeContinue continue
+	CodeTypeContinue = 9
+	// CodeTypeBreak break
+	CodeTypeBreak = 10
 )

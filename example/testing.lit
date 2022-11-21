@@ -1,4 +1,7 @@
 
-i = 100
-i += 1+2
-print(i)
+for i = 0; i < 5; i ++ {
+    if i == 1 {
+        break
+    }
+    println(i)
+}
