@@ -10,7 +10,7 @@ var (
 	// ErrorWrongVarOperation 语法错误,变量操作不合法
 	ErrorWrongVarOperation = errors.New("语法错误,变量操作不合法")
 	// ErrorNotFoundVariable 变量不存在，或者你的定义非法
-	ErrorNotFoundVariable = errors.New("变量不存在，或者你的定义非法")
+	ErrorNotFoundVariable = errors.New("变量不存在,或者你的定义非法")
 	// ErrorNotFoundFunction 找不到函数
 	ErrorNotFoundFunction = errors.New("找不到函数")
 	// ErrorArgsNotEnough 参数不足
