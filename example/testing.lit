@@ -1,7 +1,9 @@
 
-for i = 0; i < 5; i ++ {
-    if i == 1 {
-        break
+for j = 0; j < 2; j ++ {
+    for i = 0; i < 5; i ++ {
+        if i == 3 {
+            break
+        }
+        println(i)
     }
-    println(i)
 }
