@@ -17,17 +17,55 @@ func NewCustomFunctions() *CustomFunctions {
 
 // ParseCutFunc 解析函数数据
 func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*FunctionInfo, error) {
-	// 判断是否为类方法或普通函数
-	expr1 := expr[1]
-	// 普通函数处理
-	funcName := expr1.Tok
-	if funcName != "IDENT" {
-		return nil, types.ErrorNotFoundFunction
+	var (
+		bracket    = 0
+		bigBracket = 0
+		expr1      = expr[1]
+		exprLen    = len(expr)
+		args       = make([]*global.Structure, 0, 10)
+		code       = make([]*global.Structure, 0, 20)
+	)
+
+	for i := 0; i < exprLen; i++ {
+		if expr[i].Tok == "(" {
+			bracket++
+			for j := i + 1; j < exprLen; j++ {
+				exprJ := expr[j]
+				if exprJ.Tok == "(" {
+					return nil, types.ErrorFunctionArgsIrregular
+				}
+				if exprJ.Tok == ")" {
+					bracket--
+					if bracket == 0 {
+						i = j
+						break
+					}
+				}
+				args = append(args, exprJ)
+			}
+			continue
+		}
+		if expr[i].Tok == "{" {
+			bigBracket++
+			for j := i + 1; j < exprLen; j++ {
+				exprJ := expr[j]
+				if exprJ.Tok == "{" {
+					bigBracket++
+				} else if exprJ.Tok == "}" {
+					bigBracket--
+					if bigBracket == 0 {
+						i = j
+						break
+					}
+				}
+				code = append(code, exprJ)
+			}
+		}
 	}
 
-	if !global.IsVariableOrFunction(expr1) {
-		return nil, types.ErrorFunctionNameIrregular
-	}
+	// global.Output(code)
+
+	return &FunctionInfo{FunctionName: expr1.Lit}, nil
 
 	// 解析自定义函数 得到其参数及函数体
 	// 此时函数体数据并未解析 只在被调用时解析
@@ -35,7 +73,6 @@ func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*F
 	if err != nil {
 		return nil, err
 	}
-
 	return &FunctionInfo{
 		FunctionName: expr1.Lit,
 		CustFN:       ret.fnBody,

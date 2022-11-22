@@ -29,8 +29,13 @@ func parseExecFUNC(blocks []*global.Block, expr []*global.Structure, i int, rlen
 func parseIdentFUNC(funcBlocks []*fn.FunctionInfo, expr []*global.Structure, i int, rlen int) ([]*fn.FunctionInfo, int, error) {
 	var (
 		bracket  uint8
-		funcCode = make([]*global.Structure, 0, 20)
+		funcCode = make([]*global.Structure, 0, 10)
 	)
+
+	if !global.IsVariableOrFunction(expr[1]) {
+		return nil, 0, types.ErrorFunctionNameIrregular
+	}
+
 	for j := i; j < rlen; j++ {
 		exprJ := expr[j]
 		funcCode = append(funcCode, exprJ)
