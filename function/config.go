@@ -14,7 +14,6 @@ const (
 	FUNCTION_TRIMSPACE = "trimSpace"
 	FUNCTION_LEN       = "len"
 	FUNCTION_UTF8LEN   = "utf8Len"
-	FUNCTION_MD5       = "md5"
 	FUNCTION_REPLACE   = "replace"
 	FUNCTION_CONTAINS  = "contains"
 	FUNCTION_INDEX     = "index"
@@ -23,6 +22,7 @@ const (
 	FUNCTION_TOUPPER   = "toUpper"
 	FUNCTION_TOTITLE   = "toTitle"
 	FUNCTION_REPEAT    = "repeat"
+	FUNCTION_MD5       = "md5"
 
 	// 留到后面实现
 	// FUNCTION_SPLIT      = "split"
