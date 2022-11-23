@@ -22,7 +22,8 @@ func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*F
 		bigBracket = 0
 		expr1      = expr[1]
 		exprLen    = len(expr)
-		args       = make([]*global.Structure, 0, 10)
+		arg        = make([]*global.Structure, 0, 20)
+		args       = make([][]*global.Structure, 0, 10)
 		code       = make([]*global.Structure, 0, 20)
 	)
 
@@ -31,6 +32,10 @@ func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*F
 			bracket++
 			for j := i + 1; j < exprLen; j++ {
 				exprJ := expr[j]
+				if exprJ.Tok == "," {
+					args = append(args, arg)
+					arg = nil
+				}
 				if exprJ.Tok == "(" {
 					return nil, types.ErrorFunctionArgsIrregular
 				}
@@ -41,10 +46,13 @@ func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*F
 						break
 					}
 				}
-				args = append(args, exprJ)
+				if exprJ.Tok != "," {
+					arg = append(arg, exprJ)
+				}
 			}
 			continue
 		}
+
 		if expr[i].Tok == "{" {
 			bigBracket++
 			for j := i + 1; j < exprLen; j++ {
@@ -63,7 +71,23 @@ func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*F
 		}
 	}
 
-	// global.Output(code)
+	if len(arg) > 0 {
+		args = append(args, arg)
+	}
+
+	optionalArgs := false
+	for _, v := range args {
+		vLen := len(v)
+		v1Tok := v[1].Tok
+		if vLen >= 3 && v1Tok == "=" {
+			if !optionalArgs {
+				optionalArgs = true
+			}
+		}
+		if vLen == 1 {
+		}
+		println()
+	}
 
 	return &FunctionInfo{FunctionName: expr1.Lit}, nil
 
