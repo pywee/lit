@@ -22,7 +22,7 @@ func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*F
 		bigBracket = 0
 		expr1      = expr[1]
 		exprLen    = len(expr)
-		arg        = make([]*global.Structure, 0, 20)
+		arg        = make([]*global.Structure, 0, 5)
 		args       = make([][]*global.Structure, 0, 10)
 		code       = make([]*global.Structure, 0, 20)
 	)
@@ -75,170 +75,63 @@ func (f *CustomFunctions) ParseCutFunc(expr []*global.Structure, pos string) (*F
 		args = append(args, arg)
 	}
 
-	optionalArgs := false
-	for _, v := range args {
-		vLen := len(v)
-		v1Tok := v[1].Tok
-		if vLen >= 3 && v1Tok == "=" {
-			if !optionalArgs {
-				optionalArgs = true
-			}
-		}
-		if vLen == 1 {
-		}
-		println()
-	}
-
-	return &FunctionInfo{FunctionName: expr1.Lit}, nil
-
-	// 解析自定义函数 得到其参数及函数体
-	// 此时函数体数据并未解析 只在被调用时解析
-	ret, err := getFunctionArgs(expr, pos)
-	if err != nil {
-		return nil, err
-	}
-	return &FunctionInfo{
-		FunctionName: expr1.Lit,
-		CustFN:       ret.fnBody,
-		MustAmount:   ret.needArgsAmount,
-		MaxAmount:    ret.maxArgsAmount,
-		Args:         ret.list,
-	}, nil
-}
-
-type functionArgsInfo struct {
-	// needArgsAmount 解析后得到必传参数的数量
-	needArgsAmount int
-	// maxArgsAmount 解析后得最大可传参数的数量
-	maxArgsAmount int
-	// list 解析后的函数形参定义数据
-	list []*functionArgs
-	// fnBody 函数体
-	fnBody []*global.Structure
-}
-
-// getFunctionArgs 获取函数内的参数定义信息
-func getFunctionArgs(expr []*global.Structure, pos string) (*functionArgsInfo, error) {
+	// 检查参数定义合法性
 	var (
-		err error
-		// functionArgsInfo 解析后的函数形参定义数据
-		argsInfo = new(functionArgsInfo)
-		// argDefinition 解析后的函数形参定义数据
-		argDefinition *functionArgs
-		// foundBracket 标记发现了括号
-		foundBracket = 0
-		// foundBracketOnce 标记发现了括号
-		foundBracketOnce = false
-		// curlyBracket 标记发现了花括号
-		curlyBracket = 0
-		// arg 收集到的函数 expr 形式
-		arg = make([]*global.Structure, 0, 5)
-		// funcBody 函数体数据保存
-		funcBody = make([]*global.Structure, 0, 10)
+		mustArgsAmount int
+		optionalArgs   bool
+		maxArgsAmount  = len(args)
+		resultArgList  = make([]*functionArgs, 0, maxArgsAmount)
 	)
 
-	for _, v := range expr {
-		if v.Tok == "(" && !foundBracketOnce {
-			foundBracket++
-			if foundBracket == 1 {
-				continue
-			}
-		}
-		if v.Tok == ")" {
-			foundBracket--
+	for _, v := range args {
+		v0 := v[0]
+		if v0.Tok != "IDENT" {
+			return nil, types.ErrorFunctionArgsNotSuitable
 		}
 
-		// 参数定义位置结束
-		if v.Tok == "{" {
-			foundBracketOnce = true
-			curlyBracket++
-			if curlyBracket == 1 {
-				continue
-			}
-		}
-		if v.Tok == "}" {
-			curlyBracket--
-			if foundBracketOnce && curlyBracket == 0 {
-				foundBracketOnce = false
-				argsInfo.fnBody = funcBody
-				break
-			}
-		}
-
-		if curlyBracket > 0 {
-			funcBody = append(funcBody, v)
-			continue
-		}
-
-		if foundBracket > 0 {
-			if foundBracket == 1 && v.Tok == "," {
-				// 形参数据
-				// a, a = 1, b = false
-				if aLen := len(arg); aLen > 0 {
-					if argDefinition, err = checkArguments(arg, aLen); err != nil {
-						return nil, err
-					}
-					if argDefinition.Must {
-						argsInfo.needArgsAmount++
-					}
-					argsInfo.maxArgsAmount++
-					argsInfo.list = append(argsInfo.list, argDefinition)
-					arg = nil
-					continue
-				}
-			}
-			arg = append(arg, v)
-		}
-	}
-
-	if aLen := len(arg); aLen > 0 {
-		if argDefinition, err = checkArguments(arg, aLen); err != nil {
-			return nil, err
-		}
-		if argDefinition != nil {
-			if argDefinition.Must {
-				argsInfo.needArgsAmount++
-			}
-			argsInfo.maxArgsAmount++
-			argsInfo.list = append(argsInfo.list, argDefinition)
-		}
-	}
-
-	if curlyBracket != 0 {
-		return nil, types.ErrorWrongSentence
-	}
-	return argsInfo, nil
-}
-
-// checkArguments 检查定义的函数的形参定义信息并返回合法数据
-func checkArguments(arg []*global.Structure, argLen int) (*functionArgs, error) {
-	// example
-	// func(a)
-	if argLen == 1 {
-		arg0 := arg[0]
-		return &functionArgs{Type: arg0.Tok, Must: true, Name: arg0.Lit}, nil
-	}
-
-	// example
-	// func(a = 1)
-	if argLen == 3 {
-		if arg[1].Tok != "=" {
+		vLen := len(v)
+		if vLen != 1 && vLen != 3 {
 			return nil, types.ErrorFunctionArgsIrregular
 		}
 
-		arg2 := arg[2]
-		return &functionArgs{
-			Type:  arg2.Tok,
-			Value: arg2.Lit,
-			Name:  arg[0].Lit,
-			Must:  false,
-		}, nil
+		if vLen >= 3 {
+			if v[1].Tok != "=" {
+				return nil, types.ErrorFunctionArgsIrregular
+			}
+			v2 := v[2]
+			if v2.Tok == "IDENT" {
+				return nil, types.ErrorIrregularOfFuncArgValue
+			}
+			if !optionalArgs {
+				optionalArgs = true
+			}
+			resultArgList = append(resultArgList, &functionArgs{
+				Name:  v0.Lit,
+				Type:  v2.Tok,
+				Value: v2.Lit,
+			})
+		}
+
+		if vLen == 1 && optionalArgs {
+			return nil, types.ErrorWrongFuncArgsIdented
+		}
+		if !optionalArgs {
+			mustArgsAmount++
+			resultArgList = append(resultArgList, &functionArgs{
+				Must: true,
+				Type: v0.Tok,
+				Name: v0.Lit,
+			})
+		}
 	}
 
-	if argLen > 0 {
-		return nil, types.ErrorFunctionArgsIrregular
-	}
-	return nil, nil
+	return &FunctionInfo{
+		FunctionName: expr1.Lit,
+		CustFN:       code,
+		MustAmount:   mustArgsAmount,
+		MaxAmount:    maxArgsAmount,
+		Args:         resultArgList,
+	}, nil
 }
 
 func (f *CustomFunctions) AddFunc(structName string, fni *FunctionInfo) {

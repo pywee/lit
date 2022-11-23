@@ -32,10 +32,6 @@ func parseIdentFUNC(funcBlocks []*fn.FunctionInfo, expr []*global.Structure, i i
 		funcCode = make([]*global.Structure, 0, 10)
 	)
 
-	if !global.IsVariableOrFunction(expr[1]) {
-		return nil, 0, types.ErrorFunctionNameIrregular
-	}
-
 	for j := i; j < rlen; j++ {
 		exprJ := expr[j]
 		funcCode = append(funcCode, exprJ)
@@ -125,7 +121,7 @@ func (r *expression) execInnerFunc(funcName string, expr []*global.Structure, po
 				// 参数[弱类型]支持
 				// 参数[提前在形参中设置默认值]支持
 				// fmt.Println(fa.Type, rv.Tok)
-				return nil, types.ErrorArgsNotSuitable
+				return nil, types.ErrorFunctionArgsNotSuitable
 			}
 		}
 		paramsList = append(paramsList, rv)

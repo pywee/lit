@@ -154,6 +154,9 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 
 		// 函数定义
 		if expr[i].Tok == "func" {
+			if !global.IsVariableOrFunction(expr[i+1]) {
+				return nil, types.ErrorFunctionNameIrregular
+			}
 			if funcBlocks, i, err = parseIdentFUNC(funcBlocks, expr, i, rlen); err != nil {
 				return nil, err
 			}
