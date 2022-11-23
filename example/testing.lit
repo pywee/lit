@@ -1,4 +1,7 @@
 
-func demo(a,d = 2, b = demo3) {
-    print(1)
+
+demo(111)
+
+func demo(a, b = 2) {
+    println(a + b)
 }
