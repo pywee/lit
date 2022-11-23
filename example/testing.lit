@@ -1,9 +1,7 @@
 
-for j = 0; j < 2; j ++ {
-    for i = 0; i < 5; i ++ {
-        if i == 3 {
-            break
-        }
-        println(i)
-    }
+
+demo(111)
+
+func demo(a, b = 2) {
+    println(a + b)
 }

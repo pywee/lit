@@ -20,8 +20,6 @@ import (
 var cfn *fn.CustomFunctions
 
 type expression struct {
-	isContinue     bool
-	isBreak        bool
 	funcBlocks     []*fn.FunctionInfo
 	codeBlocks     []*global.Block
 	publicVariable map[string]*global.Structure
@@ -156,6 +154,9 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 
 		// 函数定义
 		if expr[i].Tok == "func" {
+			if !global.IsVariableOrFunction(expr[i+1]) {
+				return nil, types.ErrorFunctionNameIrregular
+			}
 			if funcBlocks, i, err = parseIdentFUNC(funcBlocks, expr, i, rlen); err != nil {
 				return nil, err
 			}
@@ -201,6 +202,8 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 			blocks, i = parseIdentedVarREDUCE(blocks, expr, i, rlen)
 			continue
 		}
+
+		return nil, types.ErrorWrongSentence
 	}
 
 	return &expression{codeBlocks: blocks, funcBlocks: funcBlocks}, nil

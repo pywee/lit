@@ -103,15 +103,6 @@ var strFunctions = []*FunctionInfo{
 		},
 	},
 	{
-		FunctionName: FUNCTION_UTF8LEN,
-		MustAmount:   1,
-		MaxAmount:    1,
-		Args:         []*functionArgs{{Type: types.INTERFACE, Must: true}},
-		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
-			return &global.Structure{Tok: "INT", Lit: fmt.Sprintf("%d", strings.Count(args[0].Lit, "")-1)}, nil
-		},
-	},
-	{
 		FunctionName: FUNCTION_SUBSTR,
 		MustAmount:   3,
 		MaxAmount:    3,

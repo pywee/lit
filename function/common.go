@@ -22,6 +22,8 @@ type FunctionInfo struct {
 	FN func(string, ...*global.Structure) (*global.Structure, error)
 	// CustFN 自定义函数体
 	CustFN []*global.Structure
+	// ReturnResult 返回结果
+	ReturnResult interface{}
 }
 
 type functionArgs struct {
