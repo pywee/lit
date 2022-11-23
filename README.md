@@ -8,7 +8,7 @@ This is an interpreter which created by Golang. You can also see it as a novel c
 
 关于目前已实现的特性，请看如下文档示例，我将会定期更新。
 
-当前文档更新日期是: 2022.11.21
+当前文档更新日期是: 2022.11.24
 
 ---
 
@@ -30,7 +30,7 @@ This is an interpreter which created by Golang. You can also see it as a novel c
 
 **八、流程控制 if**
 
-**九、流程控制 for (实验阶段，暂未包含 continue, break关键字)**
+**九、流程控制 for (实验阶段)**
 
 ---
 
