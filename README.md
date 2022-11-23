@@ -80,7 +80,7 @@ func main() {
 a = 5;
 b = a + 6;
 c = a + b * (1 + 2 * (3 + 4) - 5 / b);
-print(a + b + c); // 输出 186
+println(a + b + c); // 输出 186
 
 
 // 例2
@@ -88,8 +88,8 @@ print(a + b + c); // 输出 186
 // * 以下代码如果是在 PHP 中执行会输出 -24，两种语言针对优先级的处理略微不一样，其他语言也是如此
 a = (2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11))) / 10 * 2;
 b = 12 / 333 + 31 + (5 / 10) - 6 | 100;
-print(a); // 输出 16
-print(b); // 输出 125
+println(a); // 输出 16
+println(b); // 输出 125
 
 
 // 例3
@@ -98,7 +98,7 @@ func demo(arg) {
     arg++;
     return arg-false*3/10+(20-1);
 }
-print(demo(10)+70); // 100
+println(demo(10)+70); // 100
 
 
 // 例4
@@ -106,7 +106,7 @@ print(demo(10)+70); // 100
 // isInt(arg) 用来检查 arg 是否为整型 
 // replace(arg1, arg2, arg3, arg4) 用来做字符串替换
 a = replace("Hello Word111!", "1", "", 2-isInt((1+(1 + isInt(123+(1+2)))-1)+2)-2);
-print(a); // 输出 Hello word!
+println(a); // 输出 Hello word!
 
 
 // 例5
@@ -116,19 +116,19 @@ b = isInt(1);
 c = isFloat(1.0);
 d = false == 0.0;
 e = "false" == 0.0;
-print(a); // 0
-print(b); // true
-print(c); // true
-print(d); // true
-print(e); // true
+println(a); // 0
+println(b); // true
+println(c); // true
+println(d); // true
+println(e); // true
 
 a = false;
 b = true;
 c = "123";
 d = 456;
-print(a + b); // 1
-print(a >= b); // false
-print(a + b + c + d); // 580
+println(a + b); // 1
+println(a >= b); // false
+println(a + b + c + d); // 580
 
 
 // 例6
@@ -139,15 +139,15 @@ func functionDemo() {
 }
 if a == 101 - functionDemo() {
     if 1+1 == 2 && 3-1 == 20 {
-        print("yes");
+        println("yes");
     } else {
         if 1+a == 102{
-            print("no");
+            println("no");
         } else {
             if false {
-                print(0)
+                println(0)
             } else {
-                print("Hello world!")
+                println("Hello world!")
             }
         }
     }
@@ -159,7 +159,7 @@ if a == 101 - functionDemo() {
 a = 5;
 if a == 6-demo() {
     for i = 0; i < demo()+a; i ++ {
-        print(a+i); // 输出 5 6 7 8 9 10
+        println(a+i); // 输出 5 6 7 8 9 10
     }
 }
 func demo() {
