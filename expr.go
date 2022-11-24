@@ -41,6 +41,8 @@ func NewExpr(src []byte) (*expression, error) {
 
 	file := fset.AddFile("", fset.Base(), len(src))
 	s.Init(file, src, nil, scanner.ScanComments)
+
+	negative := ""
 	for {
 		pos, tok, lit := s.Scan()
 		if tok == token.EOF {
@@ -49,6 +51,19 @@ func NewExpr(src []byte) (*expression, error) {
 		stok := tok.String()
 		if stok == "COMMENT" {
 			continue
+		}
+
+		// 负数处理
+		if stok == "-" {
+			if eLen := len(expr); eLen > 0 && expr[eLen-1].Lit == "" {
+				negative = "-"
+				continue
+			}
+		}
+
+		if negative == "-" {
+			negative = ""
+			lit = "-" + lit
 		}
 
 		posString := fset.Position(pos).String()
@@ -80,7 +95,6 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		blocks     = make([]*global.Block, 0, 20)
 		funcBlocks = make([]*fn.FunctionInfo, 0, 20)
 	)
-
 	for i := 0; i < rlen; i++ {
 		thisExpr := expr[i]
 		if thisExpr.Tok == ";" && thisExpr.Lit == "\n" {
@@ -128,7 +142,7 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		// 变量声明
 		if thisExpr.Tok == "IDENT" && i < rlen {
 			tok := expr[i+1].Tok
-			if global.InArrayString(tok, mathSym) {
+			if global.InArrayString(tok, global.MathSym) {
 				i, err = parseIdentedVAR(&parseVar{blocks: blocks, expr: expr, r: r, tok: tok, rlen: rlen}, innerVar, i)
 				// global.Output(innerVar)
 				if err != nil {
@@ -202,7 +216,6 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 			blocks, i = parseIdentedVarREDUCE(blocks, expr, i, rlen)
 			continue
 		}
-
 		return nil, types.ErrorWrongSentence
 	}
 

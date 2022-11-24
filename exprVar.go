@@ -7,10 +7,7 @@ import (
 	"github.com/pywee/lit/types"
 )
 
-var mathSym = []string{"=", "+=", "-=", "*=", "/=", "^=", "&=", "|=", "%="}
-
 type parseVar struct {
-	i      int
 	rlen   int
 	tok    string
 	r      *expression
@@ -104,21 +101,6 @@ func parseIdentedVAR(arg *parseVar, innerVal global.InnerVar, i int) (int, error
 	return i, nil
 }
 
-// parseIdentedVAROld 解析变量声明
-func parseIdentedVAROld(blocks []*global.Block, expr []*global.Structure, i int, rlen int) ([]*global.Block, int) {
-	code := make([]*global.Structure, 0, 5)
-	for j := i; j < rlen; j++ {
-		exprJ := expr[j]
-		if exprJ.Tok == ";" {
-			blocks = append(blocks, &global.Block{Type: types.CodeTypeIdentVAR, Code: code})
-			i = j
-			break
-		}
-		code = append(code, exprJ)
-	}
-	return blocks, i
-}
-
 // parseIdentedVarPLUS 解析变量自增
 func parseIdentedVarPLUS(blocks []*global.Block, expr []*global.Structure, i int, rlen int) ([]*global.Block, int) {
 	vplus := make([]*global.Structure, 0, 3)
@@ -144,6 +126,7 @@ func parseIdentedVarREDUCE(blocks []*global.Block, expr []*global.Structure, i i
 	for j := i; j < rlen; j++ {
 		exprJ := expr[j]
 		if exprJ.Tok == ";" {
+			global.Output(vreduce)
 			blocks = append(blocks, &global.Block{
 				Name: expr[i].Lit,
 				Type: types.CodeTypeVariableReduce,
