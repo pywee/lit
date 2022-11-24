@@ -8,19 +8,19 @@ import (
 
 // parseExecFUNC 解析自定义函数调用
 func parseExecFUNC(blocks []*global.Block, expr []*global.Structure, i int, rlen int) ([]*global.Block, int) {
-	block := &global.Block{
-		Name: expr[0].Lit,
-		Type: types.CodeTypeFunctionExec,
-		Code: make([]*global.Structure, 0, 5),
-	}
+	code := make([]*global.Structure, 0, 5)
 	for j := i; j < rlen; j++ {
 		exprJ := expr[j]
 		if exprJ.Tok == ";" {
-			blocks = append(blocks, block)
+			blocks = append(blocks, &global.Block{
+				Name: expr[0].Lit,
+				Type: types.CodeTypeFunctionExec,
+				Code: code,
+			})
 			i = j
 			break
 		}
-		block.Code = append(block.Code, exprJ)
+		code = append(code, exprJ)
 	}
 	return blocks, i
 }
@@ -108,7 +108,6 @@ func (r *expression) execInnerFunc(funcName string, expr []*global.Structure, po
 	for k, varg := range args {
 		// FIXME
 		// 函数中的实参表达式 实参可以是函数、变量、算术表达式等等
-		// global.Output(varg)
 		rv, err := r.parse(varg, innerVar)
 		if err != nil {
 			return nil, err
@@ -181,8 +180,6 @@ func (r *expression) execFUNC(expr []*global.Structure, xArgs []*global.Structur
 	}
 	if innerFunc = fn.GetInnerIdentedFunc(funcName); innerFunc != nil {
 		// 查找是否有内置函数
-		// expr[firstKey+1 : k] 为实参
-		// global.Output(expr[firstKey+1 : k])
 		rv, err := r.execInnerFunc(funcName, xArgs, "", innerVar)
 		if err != nil {
 			return nil, err

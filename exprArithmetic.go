@@ -40,23 +40,17 @@ func (r *expression) findExprK(expr []*global.Structure, pos string) ([]*global.
 		}
 	}
 
-	for k, v := range expr {
-		if global.IsVariableOrFunction(v) {
-			ret, err := r.Get(v.Lit)
-			if err != nil {
-				return nil, err
-			}
-			expr[k] = ret
-		}
-	}
-
 	var (
 		startI   int
 		endI     int
 		startIdx = -1
 		endIdx   = -1
 	)
+
 	for k, v := range expr {
+		if v == nil {
+			return nil, types.ErrorWrongSentence
+		}
 		if v.Tok == "(" {
 			startI++
 			if startIdx == -1 {
@@ -100,9 +94,9 @@ func parsePlusReduceMulDivB(arr []*global.Structure, pos string) ([]*global.Stru
 			return nil, err
 		}
 	}
-	// if len(result) != 1 {
-	// 	return nil, types.ErrorWrongSentence
-	// }
+	if len(result) > 1 {
+		return nil, types.ErrorWrongSentence
+	}
 	return result, nil
 }
 
@@ -281,39 +275,41 @@ func findExprBetweenSymbool(l, m, r *global.Structure) (*exprResult, error) {
 	}
 	if mTok == "/" {
 		if exprTyp == "INT" {
-			return &exprResult{Type: exprTyp, Tok: mTok, Value: left.(int64) / right.(int64)}, nil
+			leftF := float64(left.(int64))
+			rightF := float64(right.(int64))
+			return &exprResult{Type: "FLOAT", Tok: mTok, Value: leftF / rightF}, nil
 		}
 		if exprTyp == "FLOAT" {
-			return &exprResult{Type: exprTyp, Tok: mTok, Value: left.(float64) / right.(float64)}, nil
+			return &exprResult{Type: "FLOAT", Tok: mTok, Value: left.(float64) / right.(float64)}, nil
 		}
 	}
 	if mTok == "+" {
 		if exprTyp == "INT" {
-			return &exprResult{Type: exprTyp, Tok: mTok, Value: left.(int64) + right.(int64)}, nil
+			return &exprResult{Type: "INT", Tok: mTok, Value: left.(int64) + right.(int64)}, nil
 		}
 		if exprTyp == "FLOAT" {
-			return &exprResult{Type: exprTyp, Tok: mTok, Value: left.(float64) + right.(float64)}, nil
+			return &exprResult{Type: "FLOAT", Tok: mTok, Value: left.(float64) + right.(float64)}, nil
 		}
 	}
 	if mTok == "-" {
 		if exprTyp == "INT" {
-			return &exprResult{Type: exprTyp, Tok: mTok, Value: left.(int64) - right.(int64)}, nil
+			return &exprResult{Type: "INT", Tok: mTok, Value: left.(int64) - right.(int64)}, nil
 		}
 		if exprTyp == "FLOAT" {
-			return &exprResult{Type: exprTyp, Tok: mTok, Value: left.(float64) - right.(float64)}, nil
+			return &exprResult{Type: "FLOAT", Tok: mTok, Value: left.(float64) - right.(float64)}, nil
 		}
 	}
 	if mTok == "%" && exprTyp == "INT" {
-		return &exprResult{Type: exprTyp, Tok: mTok, Value: left.(int64) % right.(int64)}, nil
+		return &exprResult{Type: "INT", Tok: mTok, Value: left.(int64) % right.(int64)}, nil
 	}
 	if mTok == "^" && exprTyp == "INT" {
-		return &exprResult{Type: exprTyp, Tok: mTok, Value: left.(int64) ^ right.(int64)}, nil
+		return &exprResult{Type: "INT", Tok: mTok, Value: left.(int64) ^ right.(int64)}, nil
 	}
 	if mTok == "|" && exprTyp == "INT" {
-		return &exprResult{Type: exprTyp, Tok: mTok, Value: left.(int64) | right.(int64)}, nil
+		return &exprResult{Type: "INT", Tok: mTok, Value: left.(int64) | right.(int64)}, nil
 	}
 	if mTok == "&" && exprTyp == "INT" {
-		return &exprResult{Type: exprTyp, Tok: mTok, Value: left.(int64) & right.(int64)}, nil
+		return &exprResult{Type: "INT", Tok: mTok, Value: left.(int64) & right.(int64)}, nil
 	}
 	return nil, types.ErrorWrongSentence
 }

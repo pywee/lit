@@ -1,8 +1,5 @@
 
-for i = 0; i < 10; i ++ {
-    println(demo(i+1)+2)
-}
 
-func demo(a, b = 2) {
-    return (a + b)
-}
+a = 21
+a/=2
+println(a)

@@ -97,4 +97,6 @@ func GetFunctionArgList(expr []*global.Structure) [][]*global.Structure {
 	return list
 }
 
-func BoolToInt(src *global.Structure) {}
+// func formatMathSym(arg *global.Structure, tok string) []*global.Structure {
+// 	return []*global.Structure{{Tok: "="}, arg, {Tok: "-"}}
+// }
