@@ -126,7 +126,6 @@ func parseIdentedVarREDUCE(blocks []*global.Block, expr []*global.Structure, i i
 	for j := i; j < rlen; j++ {
 		exprJ := expr[j]
 		if exprJ.Tok == ";" {
-			global.Output(vreduce)
 			blocks = append(blocks, &global.Block{
 				Name: expr[i].Lit,
 				Type: types.CodeTypeVariableReduce,
