@@ -143,10 +143,8 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		if thisExpr.Tok == "IDENT" && i < rlen {
 			tok := expr[i+1].Tok
 			if global.InArrayString(tok, global.MathSym) {
-				i, err = parseIdentedVAR(&parseVar{blocks: blocks, expr: expr, r: r, tok: tok, rlen: rlen}, innerVar, i)
-				// global.Output(innerVar)
-				if err != nil {
-					return nil, err
+				if blocks, i = parseIdentedVAR(r, blocks, expr, innerVar, tok, rlen, i); i == -1 {
+					return nil, types.ErrorWrongVarOperation
 				}
 				continue
 			}
@@ -216,6 +214,7 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 			blocks, i = parseIdentedVarREDUCE(blocks, expr, i, rlen)
 			continue
 		}
+
 		// 此处如果返回 则 if 语句中针对 else 的解析会出问题
 		// return nil, types.ErrorWrongSentence
 	}
@@ -249,14 +248,15 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 		}
 
 		if block.Type == types.CodeTypeIdentVAR {
-			vName := ""
+			vName := block.Name
 			code := block.Code
-			if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", code); vLeftListEndIdx != -1 {
-				if vLeftListEndIdx == 1 {
-					vName = vleft[0].Lit
-					code = code[vLeftListEndIdx+1:]
-				}
-			}
+			// if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", code); vLeftListEndIdx != -1 {
+			// 	if vLeftListEndIdx == 1 {
+			// 		vName = vleft[0].Lit
+			// 		code = code[vLeftListEndIdx+1:]
+			// 	}
+			// }
+			// global.Output(vName)
 			if vName != "" {
 				rv, err := r.parse(code, innerVar)
 				if err != nil {
