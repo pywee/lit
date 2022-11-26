@@ -1,5 +1,10 @@
 
+a = demo()
 
-a = 21
-a/=2
-println(a)
+for i  =0 ; i < 10; i ++ {
+    println(a+i)
+}
+
+func demo() {
+    return 1
+}

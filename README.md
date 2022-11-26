@@ -8,7 +8,7 @@ This is an interpreter which created by Golang. You can also see it as a novel c
 
 关于目前已实现的特性，请看如下文档示例，我将会定期更新。
 
-当前文档更新日期是: 2022.11.24
+当前文档更新日期是: 2022.11.25
 
 ---
 
@@ -77,58 +77,66 @@ func main() {
 
 // 例1
 // 变量声明、进行算术运算、执行内置函数
-a = 5;
-b = a + 6;
-c = a + b * (1 + 2 * (3 + 4) - 5 / b);
-println(a + b + c); // 输出 186
+a = 5
+b = a + 6
+c = a + b * (1 + 2 * (3 + 4) - 5 / b)
+println(a + b + c) // 输出 186
+
+// 浮点型处理
+a = 11
+a /= 2
+func demo(arg) {
+    return arg+1
+}
+println(demo(a+1)) // 输出 7.5
 
 
 // 例2
 // 较为复杂的算术运算，优先级的处理逻辑与 golang 保持一致
 // * 以下代码如果是在 PHP 中执行会输出 -24，两种语言针对优先级的处理略微不一样，其他语言也是如此
-a = (2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11))) / 10 * 2;
-b = 12 / 333 + 31 + (5 / 10) - 6 | 100;
-println(a); // 输出 16
-println(b); // 输出 125
+a = (2 + 100 ^ 2 - (10*1.1 - 22 + (22 | 11))) / 10 * 2
+b = 12 / 333 + 31 + (5 / 10) - 6 | 100
+println(a) // 输出 16
+println(b) // 输出 125
 
 
 // 例3
 // 自定义函数以及弱类型处理
 func demo(arg) {
-    arg++;
-    return arg-false*3/10+(20-1);
+    arg++
+    return arg-false*3/10+(20-1)
 }
-println(demo(10)+70); // 100
+println(demo(10)+70) // 100
 
 
 // 例4
 // 下面的句子调用了两个函数 
 // isInt(arg) 用来检查 arg 是否为整型 
 // replace(arg1, arg2, arg3, arg4) 用来做字符串替换
-a = replace("Hello Word111!", "1", "", 2-isInt((1+(1 + isInt(123+(1+2)))-1)+2)-2);
-println(a); // 输出 Hello word!
+a = replace("Hello Word111!", "1", "", 2-isInt((1+(1 + isInt(123+(1+2)))-1)+2)-2)
+println(a) // 输出 Hello word!
 
 
 // 例5
 // 更多关于弱类型的处理，基本上参考了 PHP
-a = true - 1;
-b = isInt(1);
-c = isFloat(1.0);
-d = false == 0.0;
-e = "false" == 0.0;
-println(a); // 0
-println(b); // true
-println(c); // true
-println(d); // true
-println(e); // true
+a = true - 1
+b = isInt(1)
+c = isFloat(1.0)
+d = false == 0.0
+e = "false" == 0.0
+println(a) // 0
+println(b) // true
+println(c) // true
+println(d) // true
+println(e) // true
 
-a = false;
-b = true;
-c = "123";
-d = 456;
-println(a + b); // 1
-println(a >= b); // false
-println(a + b + c + d); // 580
+a = false
+b = true
+c = "123"
+d = 456
+println(a + b) // 1
+println(a >= b) // false
+println(a + b + c + d) // 580
 
 
 // 例6
@@ -139,10 +147,10 @@ func functionDemo() {
 }
 if a == 101 - functionDemo() {
     if 1+1 == 2 && 3-1 == 20 {
-        println("yes");
+        println("yes")
     } else {
         if 1+a == 102{
-            println("no");
+            println("no")
         } else {
             if false {
                 println(0)
@@ -166,13 +174,14 @@ func demo() {
     return 1;
 }
 
-// * for 功能仍在迭代中，仅实现了一种
-// * 我在完成对数组的支持后会继续迭代 for 功能，实现 range 操作
-
 ```
+
 ```golang
 // 最后即可在当前目录执行 go run . 输出结果
 // go run .
+
+// * for 功能仍在迭代中，仅实现了一种 针对 (i = 0; i < n; i++)
+// * 我在完成对数组的支持后会继续迭代 for 功能，实现 range 操作
 ```
 
 ---

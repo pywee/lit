@@ -7,24 +7,11 @@ import (
 	"github.com/pywee/lit/types"
 )
 
-type parseVar struct {
-	rlen   int
-	tok    string
-	r      *expression
-	blocks []*global.Block
-	expr   []*global.Structure
-}
-
 // parseIdentedVAR 解析变量声明
-func parseIdentedVAR(arg *parseVar, innerVal global.InnerVar, i int) (int, error) {
+func parseIdentedVAR(r *expression, blocks []*global.Block, expr []*global.Structure, innerVal global.InnerVar, tok string, rlen, i int) ([]*global.Block, int) {
 	var (
-		err     error
-		rv      *global.Structure
-		tok     = arg.tok
-		expr    = arg.expr
-		rlen    = arg.rlen
-		thisLit = expr[0].Lit
-		thisTok = expr[0].Tok
+		thisLit = expr[i].Lit
+		thisTok = expr[i].Tok
 		code    = make([]*global.Structure, 0, 5)
 	)
 
@@ -36,69 +23,75 @@ func parseIdentedVAR(arg *parseVar, innerVal global.InnerVar, i int) (int, error
 		}
 
 		if len(code) < 3 {
-			return 0, types.ErrorWrongVarOperation
+			return nil, -1
 		}
 
-		code2 := code[2:]
 		if tok == "=" {
-			if rv, err = arg.r.parse(code2, innerVal); err != nil {
-				return 0, err
-			}
-		} else if tok == "+=" {
-			code2 = append(code2, &global.Structure{Tok: ")"})
-			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "+"}, {Tok: "("}}, code2...)
-			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
-				return 0, err
-			}
-		} else if tok == "-=" {
-			code2 = append(code2, &global.Structure{Tok: ")"})
-			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "-"}, {Tok: "("}}, code2...)
-			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
-				return 0, err
-			}
-		} else if tok == "*=" {
-			code2 = append(code2, &global.Structure{Tok: ")"})
-			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "*"}, {Tok: "("}}, code2...)
-			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
-				return 0, err
-			}
-		} else if tok == "/=" {
-			code2 = append(code2, &global.Structure{Tok: ")"})
-			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "/"}, {Tok: "("}}, code2...)
-			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
-				return 0, err
-			}
-		} else if tok == "%=" {
-			code2 = append(code2, &global.Structure{Tok: ")"})
-			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "%"}, {Tok: "("}}, code2...)
-			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
-				return 0, err
-			}
-		} else if tok == "&=" {
-			code2 = append(code2, &global.Structure{Tok: ")"})
-			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "&"}, {Tok: "("}}, code2...)
-			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
-				return 0, err
-			}
-		} else if tok == "|=" {
-			code2 = append(code2, &global.Structure{Tok: ")"})
-			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "|"}, {Tok: "("}}, code2...)
-			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
-				return 0, err
-			}
-		} else if tok == "^=" {
-			code2 = append(code2, &global.Structure{Tok: ")"})
-			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "^"}, {Tok: "("}}, code2...)
-			if rv, err = arg.r.parse(nexpr, innerVal); err != nil {
-				return 0, err
-			}
+			blocks = append(blocks, &global.Block{Name: thisLit, Type: types.CodeTypeIdentVAR, Code: code[2:]})
+			return blocks, j
 		}
-		i = j
-		innerVal[thisLit] = rv
-		break
+
+		varValue := code[2:]
+		if tok == "+=" {
+			varValue = append(varValue, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "+"}, {Tok: "("}}, varValue...)
+			blocks = append(blocks, &global.Block{Name: thisLit, Type: types.CodeTypeIdentVAR, Code: nexpr})
+			return blocks, j
+		}
+
+		if tok == "-=" {
+			varValue = append(varValue, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "-"}, {Tok: "("}}, varValue...)
+			blocks = append(blocks, &global.Block{Name: thisLit, Type: types.CodeTypeIdentVAR, Code: nexpr})
+			return blocks, j
+		}
+
+		if tok == "*=" {
+			varValue = append(varValue, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "*"}, {Tok: "("}}, varValue...)
+			blocks = append(blocks, &global.Block{Name: thisLit, Type: types.CodeTypeIdentVAR, Code: nexpr})
+			return blocks, j
+		}
+
+		if tok == "/=" {
+			varValue = append(varValue, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "/"}, {Tok: "("}}, varValue...)
+			blocks = append(blocks, &global.Block{Name: thisLit, Type: types.CodeTypeIdentVAR, Code: nexpr})
+			return blocks, j
+		}
+
+		if tok == "%=" {
+			varValue = append(varValue, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "%"}, {Tok: "("}}, varValue...)
+			blocks = append(blocks, &global.Block{Name: thisLit, Type: types.CodeTypeIdentVAR, Code: nexpr})
+			return blocks, j
+		}
+
+		if tok == "&=" {
+			varValue = append(varValue, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "&"}, {Tok: "("}}, varValue...)
+			blocks = append(blocks, &global.Block{Name: thisLit, Type: types.CodeTypeIdentVAR, Code: nexpr})
+			return blocks, j
+		}
+
+		if tok == "|=" {
+			varValue = append(varValue, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "|"}, {Tok: "("}}, varValue...)
+			blocks = append(blocks, &global.Block{Name: thisLit, Type: types.CodeTypeIdentVAR, Code: nexpr})
+			return blocks, j
+		}
+
+		if tok == "^=" {
+			varValue = append(varValue, &global.Structure{Tok: ")"})
+			nexpr := append([]*global.Structure{{Tok: thisTok, Lit: thisLit}, {Tok: "^"}, {Tok: "("}}, varValue...)
+			blocks = append(blocks, &global.Block{Name: thisLit, Type: types.CodeTypeIdentVAR, Code: nexpr})
+			return blocks, j
+		}
 	}
 
-	return i, nil
+	// FIXME 当前不确定此处返回是否存在副作用
+	// 逻辑上而言不会走到这里
+	return nil, -1
 }
 
 // parseIdentedVarPLUS 解析变量自增
@@ -126,7 +119,6 @@ func parseIdentedVarREDUCE(blocks []*global.Block, expr []*global.Structure, i i
 	for j := i; j < rlen; j++ {
 		exprJ := expr[j]
 		if exprJ.Tok == ";" {
-			global.Output(vreduce)
 			blocks = append(blocks, &global.Block{
 				Name: expr[i].Lit,
 				Type: types.CodeTypeVariableReduce,

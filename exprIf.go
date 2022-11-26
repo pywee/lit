@@ -12,8 +12,9 @@ import (
 )
 
 type parsedIf struct {
-	i      int
-	blocks []*global.Block
+	i         int
+	foundElse bool
+	blocks    []*global.Block
 }
 
 // parseIdentedIF 解析if
@@ -68,19 +69,13 @@ func parseIdentedIF(blocks []*global.Block, expr []*global.Structure, i int, rle
 	return parsed, nil
 }
 
-type pasedElse struct {
-	i         int
-	foundElse bool
-	blocks    []*global.Block
-}
-
 // parseIdentELSE 解析if句子else和elseif部分
-func parseIdentELSE(blocks []*global.Block, expr []*global.Structure, i int, rlen int) (*pasedElse, error) {
+func parseIdentELSE(blocks []*global.Block, expr []*global.Structure, i int, rlen int) (*parsedIf, error) {
 	var (
 		foundElse  bool
 		count      int16
 		elseIF     = "else"
-		parsed     = new(pasedElse)
+		parsed     = new(parsedIf)
 		code       = make([]*global.Structure, 0, 5)
 		body       = make([]*global.Structure, 0, 10)
 		conditions = make([]*global.Structure, 0, 10)
