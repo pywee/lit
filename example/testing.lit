@@ -1,6 +1,5 @@
-a = 11
-a /= 2
-func demo(arg) {
-    return arg+1
-}
-println(demo(a+1))
+
+
+a = 1
+a += 1
+println(a += 2)

@@ -216,7 +216,8 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 			blocks, i = parseIdentedVarREDUCE(blocks, expr, i, rlen)
 			continue
 		}
-		return nil, types.ErrorWrongSentence
+		// 此处如果返回 则 if 语句中针对 else 的解析会出问题
+		// return nil, types.ErrorWrongSentence
 	}
 
 	return &expression{codeBlocks: blocks, funcBlocks: funcBlocks}, nil

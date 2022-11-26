@@ -124,7 +124,11 @@ func ChangeTokTypeStringToTypeIntOrFloat(src *Structure) error {
 }
 
 func Output(expr interface{}, x ...interface{}) {
-	if fmt.Sprintf("%T", expr) == "[][]*global.Structure" {
+	if fmt.Sprintf("%T", expr) == "[]*global.ExIf" {
+		for _, v := range expr.([]*ExIf) {
+			fmt.Println("output from []arr:", v.Condition, v.Body)
+		}
+	} else if fmt.Sprintf("%T", expr) == "[][]*global.Structure" {
 		for _, v := range expr.([][]*Structure) {
 			for _, vv := range v {
 				fmt.Println("output from [][]arr:", vv)

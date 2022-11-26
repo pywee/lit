@@ -275,9 +275,7 @@ func findExprBetweenSymbool(l, m, r *global.Structure) (*exprResult, error) {
 	}
 	if mTok == "/" {
 		if exprTyp == "INT" {
-			leftF := float64(left.(int64))
-			rightF := float64(right.(int64))
-			return &exprResult{Type: "FLOAT", Tok: mTok, Value: leftF / rightF}, nil
+			return &exprResult{Type: "FLOAT", Tok: mTok, Value: float64(left.(int64)) / float64(right.(int64))}, nil
 		}
 		if exprTyp == "FLOAT" {
 			return &exprResult{Type: "FLOAT", Tok: mTok, Value: left.(float64) / right.(float64)}, nil
