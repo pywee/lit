@@ -397,13 +397,13 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 				} else if exprJ.Tok == ")" {
 					bracketCount--
 					if bracketCount == 0 {
-						// global.Output(bracketExprs[1:len(bracketExprs)-1], "..")
+						global.Output(bracketExprs[1 : len(bracketExprs)-1])
 						rv, err := r.parse(bracketExprs[1:len(bracketExprs)-1], innerVar)
 						if err != nil {
 							return nil, err
 						}
-						innerExpr = append(innerExpr, rv)
 						i = j
+						innerExpr = append(innerExpr, rv)
 						break
 					}
 				}
