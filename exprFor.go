@@ -71,7 +71,7 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 	}
 
 	// n = 0
-	if _, err := r.initExpr(cd1, innerVar, false); err != nil {
+	if _, err := r.initExpr(cd1, innerVar, nil); err != nil {
 		return err
 	}
 
@@ -107,11 +107,11 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 			break
 		}
 
-		if result, err = r.initExpr(forExpr.Code, innerVar, true); err != nil {
+		if result, err = r.initExpr(forExpr.Code, innerVar, &parsing{isInLoop: true}); err != nil {
 			return err
 		}
 
-		if _, err = r.initExpr(cd3, innerVar, true); err != nil {
+		if _, err = r.initExpr(cd3, innerVar, &parsing{isInLoop: true}); err != nil {
 			return err
 		}
 

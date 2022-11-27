@@ -31,6 +31,7 @@ func (r *expression) parseOr(expr, nExpr []*global.Structure, innerVar global.In
 		left  *global.Structure
 		right *global.Structure
 	)
+
 	if left, err = r.parse(nExpr, innerVar); err != nil {
 		return nil, err
 	}

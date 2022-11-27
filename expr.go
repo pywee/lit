@@ -82,12 +82,18 @@ func NewExpr(src []byte) (*expression, error) {
 	}
 
 	innerVar := make(map[string]*global.Structure, 5)
-	_, err := result.initExpr(expr, innerVar, false)
+	_, err := result.initExpr(expr, innerVar, nil)
+	// global.Output(innerVar["a"])
 	return nil, err
 }
 
+type parsing struct {
+	isInLoop bool
+	isInFunc bool
+}
+
 // parseExprs 解析代码块
-func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerVar, isInLoop bool) (*expression, error) {
+func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerVar, runtime *parsing) (*expression, error) {
 	var (
 		err        error
 		foundElse  bool
@@ -123,7 +129,7 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 
 		// continue 语句
 		if thisExpr.Tok == "continue" {
-			if !isInLoop {
+			if runtime == nil || !runtime.isInLoop {
 				return nil, types.ErrorForContinue
 			}
 			blocks = append(blocks, &global.Block{Type: types.CodeTypeContinue})
@@ -132,7 +138,7 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 
 		// break 语句
 		if thisExpr.Tok == "break" {
-			if !isInLoop {
+			if runtime == nil || !runtime.isInLoop {
 				return nil, types.ErrorForBreak
 			}
 			blocks = append(blocks, &global.Block{Type: types.CodeTypeBreak})
@@ -201,6 +207,9 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 			i = parsed.i
 			blocks = parsed.blocks
 			foundElse = parsed.foundElse
+
+			// FIXME 不确定此处 continue 是否存在副作用
+			continue
 		}
 
 		// 变量自增操作
@@ -216,7 +225,7 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		}
 
 		// 此处如果返回 则 if 语句中针对 else 的解析会出问题
-		// return nil, types.ErrorWrongSentence
+		return nil, types.ErrorWrongSentence
 	}
 
 	return &expression{codeBlocks: blocks, funcBlocks: funcBlocks}, nil
@@ -224,8 +233,8 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 
 // initExpr 全局表达式入口
 // 代码块中如果带有 if 等复杂语句 则需要从这里进入递归
-func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar, isInLoop bool) (*global.Structure, error) {
-	bs, err := r.parseExprs(expr, innerVar, isInLoop)
+func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar, runtime *parsing) (*global.Structure, error) {
+	bs, err := r.parseExprs(expr, innerVar, runtime)
 	if err != nil {
 		return nil, err
 	}
@@ -248,25 +257,18 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 		}
 
 		if block.Type == types.CodeTypeIdentVAR {
-			vName := block.Name
-			code := block.Code
-			// if vleft, vLeftListEndIdx := findStrInfrontSymbool("=", code); vLeftListEndIdx != -1 {
-			// 	if vLeftListEndIdx == 1 {
-			// 		vName = vleft[0].Lit
-			// 		code = code[vLeftListEndIdx+1:]
-			// 	}
-			// }
-			// global.Output(vName)
-			if vName != "" {
-				rv, err := r.parse(code, innerVar)
-				if err != nil {
-					return nil, err
-				}
-				if rv != nil {
-					innerVar[vName] = rv
-				}
-				// return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+			if block.Name == "" {
+				return nil, types.ErrorWrongSentence
 			}
+			rv, err := r.parse(block.Code, innerVar)
+			if err != nil {
+				return nil, err
+			}
+			if rv == nil {
+				rv = &global.Structure{Tok: "NULL", Lit: "NULL"}
+			}
+			innerVar[block.Name] = rv
+			// return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
 		} else if block.Type == types.CodeTypeFunctionExec {
 			rv, err := r.parse(block.Code, innerVar)
 			if err != nil {
@@ -301,7 +303,7 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 				if blen < 2 {
 					return nil, types.ErrorIfExpression
 				}
-				ret, err := r.initExpr(v.Body[1:blen-1], innerVar, isInLoop)
+				ret, err := r.initExpr(v.Body[1:blen-1], innerVar, runtime)
 				if err != nil {
 					return nil, err
 				}
@@ -352,7 +354,7 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 		return rv, nil
 	}
 
-	var nExpr = make([]*global.Structure, 0, 10)
+	var innerExpr = make([]*global.Structure, 0, 10)
 	for i := 0; i < exLen; i++ {
 		if expr[i].Tok == "IDENT" && i+1 < exLen && expr[i+1].Tok == "(" {
 			var (
@@ -372,7 +374,7 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 							return nil, err
 						}
 						if rv != nil {
-							nExpr = append(nExpr, rv)
+							innerExpr = append(innerExpr, rv)
 						}
 						i = j
 						break
@@ -395,11 +397,12 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 				} else if exprJ.Tok == ")" {
 					bracketCount--
 					if bracketCount == 0 {
+						// global.Output(bracketExprs[1:len(bracketExprs)-1], "..")
 						rv, err := r.parse(bracketExprs[1:len(bracketExprs)-1], innerVar)
 						if err != nil {
 							return nil, err
 						}
-						nExpr = append(nExpr, rv)
+						innerExpr = append(innerExpr, rv)
 						i = j
 						break
 					}
@@ -411,7 +414,7 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 		// 获取变量的值
 		if exprI := expr[i]; exprI.Tok == "IDENT" {
 			if value, exists := innerVar[exprI.Lit]; exists {
-				nExpr = append(nExpr, value)
+				innerExpr = append(innerExpr, value)
 				continue
 			}
 			return nil, types.ErrorNotFoundVariable
@@ -419,39 +422,41 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 
 		// 逻辑运算 ||
 		if exprI := expr[i]; exprI.Tok == "||" {
-			return r.parseOr(expr, nExpr, innerVar, i)
+			return r.parseOr(expr, innerExpr, innerVar, i)
 		}
 
 		// 逻辑运算 &&
 		if exprI := expr[i]; exprI.Tok == "&&" {
-			return r.parseAnd(expr, nExpr, innerVar, i)
+			return r.parseAnd(expr, innerExpr, innerVar, i)
 		}
-
-		// 比较运算
-		// 考虑后期再支持 ===
-		if tok := inArray(expr[i].Tok, []string{"==", "!=", ">", "<", ">=", "<="}); tok != "" {
-			return r.parseComparison(i, &parseComparisonStruct{
-				tok:      tok,
-				innerVar: innerVar,
-				expr:     expr,
-				nExpr:    nExpr,
-			})
-		}
-
-		nExpr = append(nExpr, expr[i])
+		innerExpr = append(innerExpr, expr[i])
 	}
 
-	if len(nExpr) == 1 {
-		return nExpr[0], nil
+	if iLen := len(expr); iLen >= 3 {
+		for i := 0; i < iLen; i++ {
+			// 比较运算
+			// 考虑后期再支持 ===
+			if tok := inArray(expr[i].Tok, []string{"==", "!=", ">", "<", ">=", "<="}); tok != "" {
+				rv, err := r.parseComparison(i, tok, expr, innerVar)
+				if err != nil {
+					return nil, err
+				}
+				return rv, nil
+			}
+		}
+	}
+
+	if len(innerExpr) == 1 {
+		return innerExpr[0], nil
 	}
 
 	// 数学计算
-	nExpr, err := r.parseExpr(nExpr, "")
+	innerExpr, err := r.parseExpr(innerExpr, "")
 	if err != nil {
 		return nil, err
 	}
-	if len(nExpr) == 1 {
-		return nExpr[0], nil
+	if len(innerExpr) == 1 {
+		return innerExpr[0], nil
 	}
 	return nil, nil
 }

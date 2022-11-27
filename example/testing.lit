@@ -1,10 +1,8 @@
 
-a = demo()
 
-for i  =0 ; i < 10; i ++ {
-    println(a+i)
-}
-
-func demo() {
-    return 1
+for i = 0; i < 10; i ++ {
+    if i == 1 || i == 2 {
+        continue
+    }
+    println(i)
 }
