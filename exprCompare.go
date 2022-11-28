@@ -7,13 +7,11 @@ import (
 	"github.com/pywee/lit/types"
 )
 
-func (r *expression) parseComparison(i int, tok string, expr []*global.Structure, innerVar global.InnerVar) (*global.Structure, error) {
+func (r *expression) parseComparison(left, right []*global.Structure, tok string, innerVar global.InnerVar) (*global.Structure, error) {
 	var (
 		err     error
 		leftRv  *global.Structure
 		rightRv *global.Structure
-		left    = expr[:i]
-		right   = expr[i+1:]
 	)
 
 	if len(left) == 1 && left[0].Tok != "IDENT" {

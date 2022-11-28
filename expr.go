@@ -345,7 +345,7 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 	if exLen == 1 {
 		// 变量解析
 		rv := expr[0]
-		if rv != nil && rv.Tok == "IDENT" && global.IsVariableOrFunction(rv) {
+		if rv != nil && rv.Tok == "IDENT" {
 			if innerRv, ok := innerVar[rv.Lit]; ok {
 				return innerRv, nil
 			}
@@ -384,7 +384,7 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 			continue
 		}
 
-		if exprI := expr[i]; exprI.Tok == "(" {
+		if expr[i].Tok == "(" {
 			var (
 				bracketCount uint8
 				bracketExprs = make([]*global.Structure, 0, 10)
@@ -397,7 +397,6 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 				} else if exprJ.Tok == ")" {
 					bracketCount--
 					if bracketCount == 0 {
-						global.Output(bracketExprs[1 : len(bracketExprs)-1])
 						rv, err := r.parse(bracketExprs[1:len(bracketExprs)-1], innerVar)
 						if err != nil {
 							return nil, err
@@ -412,8 +411,8 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 		}
 
 		// 获取变量的值
-		if exprI := expr[i]; exprI.Tok == "IDENT" {
-			if value, exists := innerVar[exprI.Lit]; exists {
+		if expr[i].Tok == "IDENT" {
+			if value, exists := innerVar[expr[i].Lit]; exists {
 				innerExpr = append(innerExpr, value)
 				continue
 			}
@@ -421,23 +420,23 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 		}
 
 		// 逻辑运算 ||
-		if exprI := expr[i]; exprI.Tok == "||" {
+		if expr[i].Tok == "||" {
 			return r.parseOr(expr, innerExpr, innerVar, i)
 		}
 
 		// 逻辑运算 &&
-		if exprI := expr[i]; exprI.Tok == "&&" {
+		if expr[i].Tok == "&&" {
 			return r.parseAnd(expr, innerExpr, innerVar, i)
 		}
 		innerExpr = append(innerExpr, expr[i])
 	}
 
-	if iLen := len(expr); iLen >= 3 {
-		for i := 0; i < iLen; i++ {
+	if iLen := len(innerExpr); iLen >= 3 {
+		for n := 0; n < iLen; n++ {
 			// 比较运算
 			// 考虑后期再支持 ===
-			if tok := inArray(expr[i].Tok, []string{"==", "!=", ">", "<", ">=", "<="}); tok != "" {
-				rv, err := r.parseComparison(i, tok, expr, innerVar)
+			if tok := inArray(innerExpr[n].Tok, []string{"==", "!=", ">", "<", ">=", "<="}); tok != "" {
+				rv, err := r.parseComparison(innerExpr[:n], innerExpr[n+1:], tok, innerVar)
 				if err != nil {
 					return nil, err
 				}
