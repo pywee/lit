@@ -55,7 +55,7 @@ func NewExpr(src []byte) (*expression, error) {
 
 		// 负数处理
 		if stok == "-" {
-			if eLen := len(expr); eLen > 0 && expr[eLen-1].Lit == "" {
+			if eLen := len(expr); eLen > 0 && expr[eLen-1].Lit == "" && expr[eLen-1].Tok != ")" {
 				negative = "-"
 				continue
 			}
@@ -397,6 +397,7 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 				} else if exprJ.Tok == ")" {
 					bracketCount--
 					if bracketCount == 0 {
+						// global.Output(bracketExprs[1 : len(bracketExprs)-1])
 						rv, err := r.parse(bracketExprs[1:len(bracketExprs)-1], innerVar)
 						if err != nil {
 							return nil, err
@@ -448,6 +449,8 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 	if len(innerExpr) == 1 {
 		return innerExpr[0], nil
 	}
+
+	// global.Output(innerExpr, ".")
 
 	// 数学计算
 	innerExpr, err := r.parseExpr(innerExpr, "")

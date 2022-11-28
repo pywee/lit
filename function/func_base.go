@@ -11,8 +11,25 @@ import (
 // 支持的内置函数: 通用处理函数
 var baseFunctions = []*FunctionInfo{
 	{
-		// println
+		// print
 		FunctionName: FUNCTION_PRINT,
+		MustAmount:   1,
+		MaxAmount:    -1,
+		Args: []*functionArgs{
+			{Type: types.INTERFACE, Must: true},
+		},
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			for _, v := range args {
+				if v != nil {
+					print(v.Lit, " ")
+				}
+			}
+			return nil, nil
+		},
+	},
+	{
+		// println
+		FunctionName: FUNCTION_PRINTLN,
 		MustAmount:   1,
 		MaxAmount:    -1,
 		Args: []*functionArgs{

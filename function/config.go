@@ -3,7 +3,8 @@ package function
 const (
 	// baseFunctions
 	// 支持的内置函数: 通用处理函数
-	FUNCTION_PRINT     = "println"
+	FUNCTION_PRINT     = "print"
+	FUNCTION_PRINTLN   = "println"
 	FUNCTION_VARDUMP   = "varDump"
 	FUNCTION_ISBOOL    = "isBool"
 	FUNCTION_ISINT     = "isInt"
