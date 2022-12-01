@@ -179,7 +179,7 @@ func demo() {
 // 例8-01
 // 访问多维数组
 arr = [[[123]]]
-println(arr[0][0][0]) // 输入 123
+println(arr[0][0][0]) // 输出 123
 
 // 例8-02
 // 数组定义
@@ -193,7 +193,7 @@ func demo(arg) {
         println(arg[i])
     }
 }
-demo(a) // 输入 1
+demo(a) // 输出 1
 
 ```
 

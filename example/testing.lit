@@ -1,7 +1,7 @@
 
 // 访问多维数组
 arr = [[[123]]]
-println(arr[0][0][0]) // 输入 123
+println(arr[0][0][0]) // 输出 123
 
 // 数组定义
 // 当前正在实验阶段，尚未支持 key:value 形式的弱类型数组
@@ -14,4 +14,4 @@ func demo(arg) {
         println(arg[i])
     }
 }
-demo(a) // 输入 1
+demo(a) // 输出 1
