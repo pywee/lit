@@ -1,6 +1,8 @@
 package lit
 
-import "github.com/pywee/lit/global"
+import (
+	"github.com/pywee/lit/global"
+)
 
 // parseIdentARRAY 解析数组定义
 // 递归操作 得出树状数组
