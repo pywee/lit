@@ -1,8 +1,17 @@
 
+// 访问多维数组
+arr = [[[123]]]
+println(arr[0][0][0]) // 输入 123
 
-
-a = [11, [3]]
-println(a[1][0]+demo())
-func demo() {
-    return 1
+// 数组定义
+// 当前正在实验阶段，尚未支持 key:value 形式的弱类型数组
+a = [1, 2, 3]
+func demo(arg) {
+    for i = 0; i < 3; i ++ {
+        if arg[i] > 1 {
+            break
+        }
+        println(arg[i])
+    }
 }
+demo(a) // 输入 1
