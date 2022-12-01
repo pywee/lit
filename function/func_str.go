@@ -88,18 +88,9 @@ var strFunctions = []*FunctionInfo{
 		FunctionName: FUNCTION_TRIMSPACE,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgs{{Type: types.INTERFACE, Must: true}},
+		Args:         []*functionArgs{{Type: types.STRING, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{Tok: types.STRING, Lit: strings.TrimSpace(args[0].Lit)}, nil
-		},
-	},
-	{
-		FunctionName: FUNCTION_LEN,
-		MustAmount:   1,
-		MaxAmount:    1,
-		Args:         []*functionArgs{{Type: types.INTERFACE, Must: true}},
-		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
-			return &global.Structure{Tok: "INT", Lit: fmt.Sprintf("%d", len(args[0].Lit))}, nil
 		},
 	},
 	{
@@ -120,7 +111,7 @@ var strFunctions = []*FunctionInfo{
 		FunctionName: FUNCTION_MD5,
 		MustAmount:   1,
 		MaxAmount:    1,
-		Args:         []*functionArgs{{Type: types.INTERFACE, Must: true}},
+		Args:         []*functionArgs{{Type: types.STRING, Must: true}},
 		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
 			return &global.Structure{
 				Tok: "STRING",
@@ -140,6 +131,36 @@ var strFunctions = []*FunctionInfo{
 			return &global.Structure{
 				Tok: "BOOL",
 				Lit: fmt.Sprintf("%v", strings.Contains(args[0].Lit, args[1].Lit)),
+			}, nil
+		},
+	},
+	{
+		FunctionName: FUNCTION_HASPREFIX,
+		MustAmount:   2,
+		MaxAmount:    2,
+		Args: []*functionArgs{
+			{Type: types.STRING, Must: true},
+			{Type: types.STRING, Must: true},
+		},
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			return &global.Structure{
+				Tok: "BOOL",
+				Lit: fmt.Sprintf("%v", strings.HasPrefix(args[0].Lit, args[1].Lit)),
+			}, nil
+		},
+	},
+	{
+		FunctionName: FUNCTION_HASSUFFIX,
+		MustAmount:   2,
+		MaxAmount:    2,
+		Args: []*functionArgs{
+			{Type: types.STRING, Must: true},
+			{Type: types.STRING, Must: true},
+		},
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			return &global.Structure{
+				Tok: "BOOL",
+				Lit: fmt.Sprintf("%v", strings.HasSuffix(args[0].Lit, args[1].Lit)),
 			}, nil
 		},
 	},
@@ -206,6 +227,25 @@ var strFunctions = []*FunctionInfo{
 			return &global.Structure{
 				Tok: "STRING",
 				Lit: strings.ToTitle(args[0].Lit),
+			}, nil
+		},
+	},
+	{
+		FunctionName: FUNCTION_REPEAT,
+		MustAmount:   2,
+		MaxAmount:    2,
+		Args: []*functionArgs{
+			{Type: types.STRING, Must: true},
+			{Type: types.INT, Must: true},
+		},
+		FN: func(pos string, args ...*global.Structure) (*global.Structure, error) {
+			count, err := strconv.ParseInt(args[1].Lit, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			return &global.Structure{
+				Tok: "STRING",
+				Lit: strings.Repeat(args[0].Lit, int(count)),
 			}, nil
 		},
 	},

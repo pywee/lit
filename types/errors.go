@@ -70,6 +70,13 @@ var (
 	ErrorForBreak      = errors.New("break 关键字应在循环语句中出现")
 )
 
+var (
+	ErrorArrayIndexNotExists       = errors.New("访问的下标不存在")
+	ErrorArrayIndexVisiting        = errors.New("用于访问数组的下标表达式有误")
+	ErrorArrayIndexVisitingIlligle = errors.New("非法访问数组")
+	ErrorVariableIsNotAndArray     = errors.New("访问了并不是数组的变量")
+)
+
 func WithError(pos, err string) error {
 	return errors.New(pos + err)
 }

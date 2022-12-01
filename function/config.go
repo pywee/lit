@@ -44,6 +44,8 @@ const (
 	FUNCTION_CONTAINS   = "contains"
 	FUNCTION_INDEX      = "index"
 	FUNCTION_LASTINDEX  = "lastIndex"
+	FUNCTION_HASPREFIX  = "hasPrefix"
+	FUNCTION_HASSUFFIX  = "hasSuffix"
 	FUNCTION_TOLOWER    = "toLower"
 	FUNCTION_TOUPPER    = "toUpper"
 	FUNCTION_TOTITLE    = "toTitle"

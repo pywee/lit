@@ -3,6 +3,7 @@ package lit
 import (
 	"go/scanner"
 	"go/token"
+	"strconv"
 	"strings"
 
 	fn "github.com/pywee/lit/function"
@@ -67,7 +68,6 @@ func NewExpr(src []byte) (*expression, error) {
 		}
 
 		posString := fset.Position(pos).String()
-		posLine := strings.Split(posString, ":")[0]
 		if sLit := strings.ToLower(lit); sLit == "false" || sLit == "true" {
 			stok = "BOOL"
 		}
@@ -77,7 +77,7 @@ func NewExpr(src []byte) (*expression, error) {
 		expr = append(expr, &global.Structure{
 			Tok:      stok,
 			Lit:      lit,
-			Position: posLine,
+			Position: posString,
 		})
 	}
 
@@ -157,6 +157,7 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		}
 
 		// return 语句
+		// FIXME 函数外执行时未做判断 此时不应该通过
 		if thisExpr.Tok == "return" {
 			var returnExpr = make([]*global.Structure, 0, 5)
 			for j := i + 1; j < rlen; j++ {
@@ -293,7 +294,7 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 					if err != nil {
 						return nil, err
 					}
-					conditionResult = global.ChangeToBool(rv)
+					conditionResult = global.TransformAllToBool(rv)
 				}
 				if !conditionResult {
 					continue
@@ -354,12 +355,18 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 		return rv, nil
 	}
 
+	// 解析数组
+	if exLen > 1 && expr[0].Tok == "[" && expr[exLen-1].Tok == "]" {
+		// 解析数组元素
+		return &global.Structure{Tok: "ARRAY", Arr: parseIdentARRAY(expr)}, nil
+	}
+
 	var innerExpr = make([]*global.Structure, 0, 10)
 	for i := 0; i < exLen; i++ {
 		if expr[i].Tok == "IDENT" && i+1 < exLen && expr[i+1].Tok == "(" {
 			var (
 				brCount  uint8
-				funcExec = make([]*global.Structure, 0, 5)
+				funcExec = make([]*global.Structure, 0, 3)
 			)
 			for j := i; j < exLen; j++ {
 				funcExec = append(funcExec, expr[j])
@@ -369,6 +376,8 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 				if expr[j].Tok == ")" {
 					brCount--
 					if brCount == 0 {
+						// global.Output(innerVar["a"])
+						// global.Output(expr[i+2 : j])
 						rv, err := r.execFUNC(funcExec, expr[i+2:j], innerVar)
 						if err != nil {
 							return nil, err
@@ -387,7 +396,7 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 		if expr[i].Tok == "(" {
 			var (
 				bracketCount uint8
-				bracketExprs = make([]*global.Structure, 0, 10)
+				bracketExprs = make([]*global.Structure, 0, 5)
 			)
 			for j := i; j < exLen; j++ {
 				exprJ := expr[j]
@@ -408,6 +417,67 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 					}
 				}
 			}
+			continue
+		}
+
+		// 访问数组下标
+		if expr[i].Tok == "IDENT" && exLen > 3 && expr[i+1].Tok == "[" {
+			var (
+				mBracket  int8
+				indexExpr = make([]*global.Structure, 0, 5)
+			)
+
+			for j := i + 1; j < exLen; j++ {
+				exprJ := expr[j]
+				if exprJ.Tok == "[" {
+					mBracket++
+				} else if exprJ.Tok == "]" {
+					mBracket--
+					if len(indexExpr) <= 1 {
+						return nil, types.ErrorArrayIndexVisitingIlligle
+					}
+
+					// 解析变量
+					thisArrayVar, ok := innerVar[expr[i].Lit]
+					if !ok {
+						return nil, types.ErrorNotFoundVariable
+					}
+					if thisArrayVar.Tok != "ARRAY" {
+						return nil, types.ErrorVariableIsNotAndArray
+					}
+
+					// 解析下标表达式
+					idxResult, err := r.parse(indexExpr[1:], innerVar)
+					if err != nil {
+						return nil, err
+					}
+					if idxResult.Tok == "INT" {
+						intIndex, err := strconv.ParseInt(idxResult.Lit, 10, 64)
+						if err != nil {
+							return nil, err
+						}
+						thisIndex := thisArrayVar.Arr[intIndex]
+						if thisIndex == nil {
+							return nil, types.ErrorArrayIndexNotExists
+						}
+
+						// 获得 array 值
+						if len(thisIndex.List) == 0 {
+							return &global.Structure{Tok: "NULL", Lit: "NULL"}, nil
+						}
+
+						arrValue, err := r.parse(thisIndex.List, innerVar)
+						if err != nil {
+							return nil, err
+						}
+						innerExpr = append(innerExpr, arrValue)
+					}
+					i = j
+					break
+				}
+				indexExpr = append(indexExpr, exprJ)
+			}
+			// return nil, types.ErrorArrayIndexNotExists
 			continue
 		}
 

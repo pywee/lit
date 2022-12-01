@@ -103,7 +103,7 @@ func (r *expression) execFORType1(forExpr *global.ForExpression, innerVar global
 		if err != nil {
 			return err
 		}
-		if !global.ChangeToBool(rv) {
+		if !global.TransformAllToBool(rv) {
 			break
 		}
 

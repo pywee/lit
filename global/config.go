@@ -43,6 +43,14 @@ type Structure struct {
 	Position string
 	Tok      string
 	Lit      string
+	Arr      []*Array
+}
+
+// Array 数组结构
+type Array struct {
+	Len  int
+	List []*Structure
+	Son  *Array
 }
 
 type InnerVar map[string]*Structure

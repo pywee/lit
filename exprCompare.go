@@ -196,21 +196,21 @@ func changeTypeToCompare(left, right *global.Structure) (interface{}, interface{
 	var err error
 
 	if left.Tok == "STRING" {
-		if err = global.ChangeTokTypeStringToTypeIntOrFloat(left); err != nil {
+		if err = global.TransformTokTypeStringToTypeIntOrFloat(left); err != nil {
 			return nil, nil, err
 		}
 	} else if left.Tok == "BOOL" {
-		if err = global.ChangeBoolToInt(left); err != nil {
+		if err = global.TransformBoolToInt(left); err != nil {
 			return nil, nil, err
 		}
 	}
 
 	if right.Tok == "STRING" {
-		if err = global.ChangeTokTypeStringToTypeIntOrFloat(right); err != nil {
+		if err = global.TransformTokTypeStringToTypeIntOrFloat(right); err != nil {
 			return nil, nil, err
 		}
 	} else if right.Tok == "BOOL" {
-		if err = global.ChangeBoolToInt(right); err != nil {
+		if err = global.TransformBoolToInt(right); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -244,11 +244,11 @@ func formatValueTypeToCompare(src *global.Structure) (interface{}, error) {
 	)
 
 	if src.Tok == "STRING" {
-		if err = global.ChangeTokTypeStringToTypeIntOrFloat(src); err != nil {
+		if err = global.TransformTokTypeStringToTypeIntOrFloat(src); err != nil {
 			return nil, err
 		}
 	} else if src.Tok == "BOOL" {
-		if err = global.ChangeBoolToInt(src); err != nil {
+		if err = global.TransformBoolToInt(src); err != nil {
 			return nil, err
 		}
 	}
