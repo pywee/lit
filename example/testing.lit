@@ -1,10 +1,8 @@
 
-a = demo()
 
-for i  =0 ; i < 10; i ++ {
-    println(a+i)
-}
 
+a = [11, [3]]
+println(a[1][0]+demo())
 func demo() {
     return 1
 }

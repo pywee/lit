@@ -77,7 +77,7 @@ func (r *expression) execCustomFunc(fni *fn.FunctionInfo, realArgValues []*globa
 	// 函数体代码解析
 	// 递归回去 从头开始操作
 	// FIXME.需要进一步检查参数上下文传递问题
-	return r.initExpr(fni.CustFN, innerVar, false)
+	return r.initExpr(fni.CustFN, innerVar, nil)
 }
 
 // execInnerFunc 执行内置函数
@@ -108,6 +108,7 @@ func (r *expression) execInnerFunc(funcName string, expr []*global.Structure, po
 	for k, varg := range args {
 		// FIXME
 		// 函数中的实参表达式 实参可以是函数、变量、算术表达式等等
+		// global.Output(varg)
 		rv, err := r.parse(varg, innerVar)
 		if err != nil {
 			return nil, err
@@ -125,6 +126,9 @@ func (r *expression) execInnerFunc(funcName string, expr []*global.Structure, po
 		}
 		paramsList = append(paramsList, rv)
 	}
+
+	// global.Output(paramsList)
+
 	fRet, err := fArgs.FN(pos, paramsList...)
 	if err != nil {
 		return nil, err
@@ -180,6 +184,7 @@ func (r *expression) execFUNC(expr []*global.Structure, xArgs []*global.Structur
 	}
 	if innerFunc = fn.GetInnerIdentedFunc(funcName); innerFunc != nil {
 		// 查找是否有内置函数
+		// global.Output(xArgs)
 		rv, err := r.execInnerFunc(funcName, xArgs, "", innerVar)
 		if err != nil {
 			return nil, err

@@ -39,8 +39,8 @@ func InArrayString(str string, arr []string) bool {
 }
 
 // FIXME
-// ChangeToBool 将当前的输入转换为布尔值
-func ChangeToBool(src *Structure) bool {
+// TransformAllToBool 将当前的输入转换为布尔值
+func TransformAllToBool(src *Structure) bool {
 	if src == nil {
 		return false
 	}
@@ -73,8 +73,8 @@ func ChangeToBool(src *Structure) bool {
 	return returnBool
 }
 
-// ChangeBoolToInt 将布尔值转换为整型
-func ChangeBoolToInt(src *Structure) error {
+// TransformBoolToInt 将布尔值转换为整型
+func TransformBoolToInt(src *Structure) error {
 	src.Tok = "INT"
 	if src.Lit == "false" {
 		src.Lit = "0"
@@ -87,8 +87,16 @@ func ChangeBoolToInt(src *Structure) error {
 	return types.ErrorIdentType
 }
 
-// ChangeTokTypeStringToTypeIntOrFloat 将字符串数字标记为整型
-func ChangeTokTypeStringToTypeIntOrFloat(src *Structure) error {
+// TODO
+func TransformAllToInt(src *Structure) error {
+	if src.Tok == "BOOL" {
+		return TransformBoolToInt(src)
+	}
+	return nil
+}
+
+// TransformTokTypeStringToTypeIntOrFloat 将字符串数字标记为整型
+func TransformTokTypeStringToTypeIntOrFloat(src *Structure) error {
 	var (
 		ok  bool
 		err error
@@ -187,3 +195,8 @@ func FormatString(s string) string {
 	// }
 	// return lit
 }
+
+// func unixMd5() string {
+// 	data := []byte(time.Now().Format("2006-01-02 15:03"))
+// 	fmt.Printf("%x", md5.Sum(data))
+// }

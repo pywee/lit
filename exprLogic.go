@@ -12,14 +12,14 @@ func (r *expression) parseAnd(expr, nExpr []*global.Structure, innerVar global.I
 	if left, err = r.parse(nExpr, innerVar); err != nil {
 		return nil, err
 	}
-	if !global.ChangeToBool(left) {
+	if !global.TransformAllToBool(left) {
 		return left, nil
 	}
 
 	if right, err = r.parse(expr[i+1:], innerVar); err != nil {
 		return nil, err
 	}
-	global.ChangeToBool(right)
+	global.TransformAllToBool(right)
 
 	return right, nil
 }
@@ -31,16 +31,17 @@ func (r *expression) parseOr(expr, nExpr []*global.Structure, innerVar global.In
 		left  *global.Structure
 		right *global.Structure
 	)
+
 	if left, err = r.parse(nExpr, innerVar); err != nil {
 		return nil, err
 	}
-	if global.ChangeToBool(left) {
+	if global.TransformAllToBool(left) {
 		return left, nil
 	}
 
 	if right, err = r.parse(expr[i+1:], innerVar); err != nil {
 		return nil, err
 	}
-	global.ChangeToBool(right)
+	global.TransformAllToBool(right)
 	return right, nil
 }

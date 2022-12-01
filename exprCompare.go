@@ -7,45 +7,85 @@ import (
 	"github.com/pywee/lit/types"
 )
 
-type parseComparisonStruct struct {
-	tok      string
-	innerVar global.InnerVar
-	expr     []*global.Structure
-	nExpr    []*global.Structure
-}
-
-// 解析比较运算 == >= <= != > < === !==
-func (r *expression) parseComparison(i int, arg *parseComparisonStruct) (*global.Structure, error) {
+func (r *expression) parseComparison(left, right []*global.Structure, tok string, innerVar global.InnerVar) (*global.Structure, error) {
 	var (
-		ok       bool
-		err      error
-		left     *global.Structure
-		right    *global.Structure
-		tok      = arg.tok
-		expr     = arg.expr
-		nExpr    = arg.nExpr
-		innerVar = arg.innerVar
+		err     error
+		leftRv  *global.Structure
+		rightRv *global.Structure
 	)
 
-	if left, err = r.parse(nExpr, innerVar); err != nil {
+	if len(left) == 1 && left[0].Tok != "IDENT" {
+		leftRv = left[0]
+	} else if leftRv, err = r.parse(left, innerVar); err != nil {
 		return nil, err
 	}
-	if right, err = r.parse(expr[i+1:], innerVar); err != nil {
+
+	if len(right) == 1 && right[0].Tok != "IDENT" {
+		rightRv = right[0]
+	} else if rightRv, err = r.parse(right, innerVar); err != nil {
 		return nil, err
 	}
-	if tok == "==" && compareEqual(left, right) {
-		return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+
+	if tok == "==" {
+		if compareEqual(leftRv, rightRv) {
+			return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+		}
 	}
-	if tok == "!=" && compareNotEqual(left, right) {
-		return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+
+	if tok == "!=" {
+		if compareNotEqual(leftRv, rightRv) {
+			return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+		}
 	}
-	if ok, err = compareGreaterLessEqual(tok, left, right); err != nil {
+
+	var ok bool
+	if ok, err = compareGreaterLessEqual(tok, leftRv, rightRv); err != nil {
 		return nil, err
-	} else if ok {
+	}
+	if ok {
 		return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
 	}
 	return &global.Structure{Tok: "BOOL", Lit: "false"}, nil
 }
+
+// type parseComparisonStruct struct {
+// 	tok      string
+// 	innerVar global.InnerVar
+// 	expr     []*global.Structure
+// }
+
+// // 解析比较运算 == >= <= != > < === !==
+// func (r *expression) parseComparison2(i int, arg *parseComparisonStruct) (*global.Structure, error) {
+// 	var (
+// 		ok       bool
+// 		err      error
+// 		left     *global.Structure
+// 		right    *global.Structure
+// 		tok      = arg.tok
+// 		expr     = arg.expr
+// 		innerVar = arg.innerVar
+// 	)
+
+// 	if left, err = r.parse(expr, innerVar); err != nil {
+// 		return nil, err
+// 	}
+// 	if right, err = r.parse(expr[i+1:], innerVar); err != nil {
+// 		return nil, err
+// 	}
+// 	if tok == "==" && compareEqual(left, right) {
+// 		return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+// 	}
+// 	if tok == "!=" && compareNotEqual(left, right) {
+// 		return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+// 	}
+// 	if ok, err = compareGreaterLessEqual(tok, left, right); err != nil {
+// 		return nil, err
+// 	}
+// 	if ok {
+// 		return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+// 	}
+// 	return &global.Structure{Tok: "BOOL", Lit: "false"}, nil
+// }
 
 // compareEqual 比较符: ==
 func compareEqual(left, right *global.Structure) bool {
@@ -74,7 +114,7 @@ func compareEqual(left, right *global.Structure) bool {
 		return false
 	}
 
-	// 未做类型断言
+	// FIXME 未做类型断言
 	return l == r
 }
 
@@ -156,21 +196,21 @@ func changeTypeToCompare(left, right *global.Structure) (interface{}, interface{
 	var err error
 
 	if left.Tok == "STRING" {
-		if err = global.ChangeTokTypeStringToTypeIntOrFloat(left); err != nil {
+		if err = global.TransformTokTypeStringToTypeIntOrFloat(left); err != nil {
 			return nil, nil, err
 		}
 	} else if left.Tok == "BOOL" {
-		if err = global.ChangeBoolToInt(left); err != nil {
+		if err = global.TransformBoolToInt(left); err != nil {
 			return nil, nil, err
 		}
 	}
 
 	if right.Tok == "STRING" {
-		if err = global.ChangeTokTypeStringToTypeIntOrFloat(right); err != nil {
+		if err = global.TransformTokTypeStringToTypeIntOrFloat(right); err != nil {
 			return nil, nil, err
 		}
 	} else if right.Tok == "BOOL" {
-		if err = global.ChangeBoolToInt(right); err != nil {
+		if err = global.TransformBoolToInt(right); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -204,11 +244,11 @@ func formatValueTypeToCompare(src *global.Structure) (interface{}, error) {
 	)
 
 	if src.Tok == "STRING" {
-		if err = global.ChangeTokTypeStringToTypeIntOrFloat(src); err != nil {
+		if err = global.TransformTokTypeStringToTypeIntOrFloat(src); err != nil {
 			return nil, err
 		}
 	} else if src.Tok == "BOOL" {
-		if err = global.ChangeBoolToInt(src); err != nil {
+		if err = global.TransformBoolToInt(src); err != nil {
 			return nil, err
 		}
 	}

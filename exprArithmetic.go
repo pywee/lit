@@ -313,11 +313,11 @@ func findExprBetweenSymbool(l, m, r *global.Structure) (*exprResult, error) {
 }
 
 // findStrInfrontSymbool 查找指定符号之前的数据
-func findStrInfrontSymbool(sym string, src []*global.Structure) ([]*global.Structure, int) {
-	for k, v := range src {
-		if sym == v.Tok {
-			return src[:k], k
-		}
-	}
-	return nil, -1
-}
+// func findStrInfrontSymbool(sym string, src []*global.Structure) ([]*global.Structure, int) {
+// 	for k, v := range src {
+// 		if sym == v.Tok {
+// 			return src[:k], k
+// 		}
+// 	}
+// 	return nil, -1
+// }
