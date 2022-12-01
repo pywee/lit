@@ -2,13 +2,13 @@
 
 This is an interpreter which created by Golang. You can also see it as a novel computer language, but i'm now still working on it to produce a bit more features ...
 
-这是一个基于纯 Golang 开发的解释型编程语言，目前仍在持续开发中，还没有<b>正式的名字</b>，暂且叫作 <b>Lit</b>。
+Lit 是一个基于纯 Golang 开发的解释型编程语言，目前仍在持续开发中。
 
-最终我想把它实现为一个解释型的弱类型编程语言，希望它能用于日常的 Web 开发。
+最终我想把它实现为一个解释型的弱类型编程语言，用于日常的 Web 开发。
 
 关于目前已实现的特性，请看如下文档示例，我将会定期更新。
 
-当前文档更新日期是: 2022.11.25
+当前文档更新日期是: 2022.12.02
 
 ---
 
@@ -260,5 +260,3 @@ isFloat
 由于它将是一个解释型语言，出于效率考虑，我不会让它支持任何的语法糖，不支持多余的、锦上添花的特性，避免在运行时过多影响效率。
 
 得益于 Golang 原生支持的一些高级特性，例如 管道、协程 这些可轻松实现异步操作，Lit 会有更多扩展空间，它会比 php 更灵活、更小巧。
-
-敬请期待...

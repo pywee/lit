@@ -355,10 +355,9 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 		return rv, nil
 	}
 
-	// 解析数组
+	// 解析数组定义 将元素放入树结构
 	if exLen > 1 && expr[0].Tok == "[" && expr[exLen-1].Tok == "]" {
-		// 解析数组元素
-		return &global.Structure{Tok: "ARRAY", Arr: parseIdentARRAY(expr)}, nil
+		return &global.Structure{Tok: "ARRAY", Lit: "Array", Arr: parseIdentARRAY(expr)}, nil
 	}
 
 	var innerExpr = make([]*global.Structure, 0, 10)
@@ -420,8 +419,35 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 			continue
 		}
 
+		var (
+			// arrayType 判断当前是否为访问数组下标
+			// 如果当前是外部变量 则标识为1 如访问 a[0] 此时 a is array
+			// 如果当前是临时变量 则标识为2 如访问 a[0][1] 的时候，a[0]返回的是一个临时变量 重新进行递归
+			// 此则 a[0]的结果就是 arrayType=2
+			arrayType uint8
+			// thisArrayVar 当前访问到下标的数组结果
+			thisArrayVar *global.Structure
+		)
+
+		if exLen > 3 {
+			if expr[i].Tok == "IDENT" && expr[i+1].Tok == "[" {
+				var ok bool
+				arrayType = 1
+				thisArrayVar, ok = innerVar[expr[i].Lit]
+				if !ok {
+					return nil, types.ErrorNotFoundVariable
+				}
+				if thisArrayVar.Tok != "ARRAY" {
+					return nil, types.ErrorVariableIsNotAndArray
+				}
+			} else if expr[i].Tok == "ARRAY" && expr[i+1].Tok == "[" {
+				arrayType = 2
+				thisArrayVar = expr[i]
+			}
+		}
+
 		// 访问数组下标
-		if expr[i].Tok == "IDENT" && exLen > 3 && expr[i+1].Tok == "[" {
+		if arrayType > 0 {
 			var (
 				mBracket  int8
 				indexExpr = make([]*global.Structure, 0, 5)
@@ -437,15 +463,6 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 						return nil, types.ErrorArrayIndexVisitingIlligle
 					}
 
-					// 解析变量
-					thisArrayVar, ok := innerVar[expr[i].Lit]
-					if !ok {
-						return nil, types.ErrorNotFoundVariable
-					}
-					if thisArrayVar.Tok != "ARRAY" {
-						return nil, types.ErrorVariableIsNotAndArray
-					}
-
 					// 解析下标表达式
 					idxResult, err := r.parse(indexExpr[1:], innerVar)
 					if err != nil {
@@ -456,21 +473,26 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 						if err != nil {
 							return nil, err
 						}
-						thisIndex := thisArrayVar.Arr[intIndex]
+						thisIndex := thisArrayVar.Arr.List[intIndex]
 						if thisIndex == nil {
 							return nil, types.ErrorArrayIndexNotExists
 						}
 
 						// 获得 array 值
-						if len(thisIndex.List) == 0 {
+						listLen := len(thisIndex.Values)
+						if listLen == 0 && thisIndex.Child == nil {
 							return &global.Structure{Tok: "NULL", Lit: "NULL"}, nil
 						}
 
-						arrValue, err := r.parse(thisIndex.List, innerVar)
-						if err != nil {
-							return nil, err
+						if listLen > 0 {
+							arrValue, err := r.parse(thisIndex.Values, innerVar)
+							if err != nil {
+								return nil, err
+							}
+							innerExpr = append(innerExpr, arrValue)
+						} else if thisIndex.Child != nil {
+							innerExpr = append(innerExpr, &global.Structure{Tok: "ARRAY", Lit: "Array", Arr: thisIndex.Child})
 						}
-						innerExpr = append(innerExpr, arrValue)
 					}
 					i = j
 					break
@@ -516,11 +538,17 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 		}
 	}
 
-	if len(innerExpr) == 1 {
+	innerLen := len(innerExpr)
+	if innerLen == 1 {
 		return innerExpr[0], nil
 	}
 
-	// global.Output(innerExpr, ".")
+	// 访问多维数组操作
+	// a[0][0][0]
+	if innerLen >= 4 && innerExpr[0].Tok == "ARRAY" {
+		// global.Output(innerExpr[0])
+		return r.parse(innerExpr, innerVar)
+	}
 
 	// 数学计算
 	innerExpr, err := r.parseExpr(innerExpr, "")

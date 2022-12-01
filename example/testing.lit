@@ -1,6 +1,8 @@
 
 
 
-a = [1, 21+2, 3]
-println(a[1+0] + 2)
-
+a = [11, [3]]
+println(a[1][0]+demo())
+func demo() {
+    return 1
+}

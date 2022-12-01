@@ -73,7 +73,7 @@ var (
 var (
 	ErrorArrayIndexNotExists       = errors.New("访问的下标不存在")
 	ErrorArrayIndexVisiting        = errors.New("用于访问数组的下标表达式有误")
-	ErrorArrayIndexVisitingIlligle = errors.New("非法访问数组")
+	ErrorArrayIndexVisitingIlligle = errors.New("语法错误，非法访问数组")
 	ErrorVariableIsNotAndArray     = errors.New("访问了并不是数组的变量")
 )
 

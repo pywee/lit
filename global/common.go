@@ -195,3 +195,8 @@ func FormatString(s string) string {
 	// }
 	// return lit
 }
+
+// func unixMd5() string {
+// 	data := []byte(time.Now().Format("2006-01-02 15:03"))
+// 	fmt.Printf("%x", md5.Sum(data))
+// }

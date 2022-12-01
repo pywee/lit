@@ -42,11 +42,7 @@ var baseFunctions = []*FunctionInfo{
 				if v == nil {
 					continue
 				}
-				if len(v.Arr) > 0 {
-					print("Array ")
-				} else {
-					print(v.Lit, " ")
-				}
+				print(v.Lit, " ")
 			}
 			println()
 			return nil, nil
