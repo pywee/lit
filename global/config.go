@@ -9,6 +9,11 @@ type Block struct {
 	Name string
 	// Code 代码块
 	Code []*Structure
+	// ArrayIdx 修改数组指定下标的值时此处不为空
+	// 如 arr[0][0] = 1
+	// ArrayIdx = []int{0, 3}
+	// 使用此结构加快速度
+	ArrayIdx [][]*Structure
 	// IfExt if 流程控制语句
 	IfExt []*ExIf
 	// ForExt for流程控制语句

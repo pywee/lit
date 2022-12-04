@@ -150,14 +150,17 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		// 变量赋值
 		// 数组赋值
 		if thisExpr.Tok == "IDENT" && i+1 < rlen {
-			i1 := i + 1
-			if tokIdx := global.IsTokInArray(expr[i:], "="); tokIdx != -1 && expr[i1].Tok == "[" {
-				parseIdentedArrayVAR(r, blocks, expr, innerVar, i+tokIdx, rlen, i)
-				continue
-			}
-			if tok := expr[i1].Tok; global.InArrayString(tok, global.MathSym) {
+			tok := expr[i+1].Tok
+			if global.InArrayString(tok, global.MathSym) {
+				// global.Output(expr, " \n")
 				if blocks, i = parseIdentedVAR(r, blocks, expr, innerVar, tok, rlen, i); i == -1 {
 					return nil, types.ErrorWrongVarOperation
+				}
+				continue
+			}
+			if tokIdx := global.IsTokInArray(expr[i:], "="); tokIdx != -1 && tok == "[" {
+				if blocks, i = parseIdentedArrayVAR(r, blocks, expr, innerVar, i+tokIdx, rlen, i); i == -1 {
+					return nil, types.ErrorIlligleVisitedOfArray
 				}
 				continue
 			}
@@ -247,6 +250,12 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 		return nil, err
 	}
 
+	for _, v := range bs.codeBlocks {
+		global.Output(v.ArrayIdx)
+	}
+
+	return nil, nil
+
 	if len(r.funcBlocks) == 0 {
 		r.funcBlocks = bs.funcBlocks
 	}
@@ -268,7 +277,7 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 			if block.Name == "" {
 				return nil, types.ErrorWrongSentence
 			}
-			// global.Output(block.Code)
+			global.Output(block.Code)
 			rv, err := r.parse(block.Code, innerVar)
 			if err != nil {
 				return nil, err
@@ -337,11 +346,18 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 			}
 		} else if block.Type == types.CodeTypeIdentFOR {
 			forExpr := block.ForExt
-			if forExpr.Type == 1 {
+			if forExpr.Type == types.TypeForExpressionIteration {
 				if err = r.execFORType1(forExpr, innerVar); err != nil {
 					return nil, err
 				}
 			}
+		} else if block.Type == types.CodeTypeIdentArrayVAR {
+			// v, ok := innerVar[block.Name]
+			// if !ok {
+			// 	return nil, types.ErrorNotFoundIdentedArray
+			// }
+			// global.Output("v")
+			return nil, nil
 		}
 	}
 	return nil, nil
