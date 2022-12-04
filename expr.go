@@ -5,6 +5,7 @@ import (
 	"go/token"
 	"strconv"
 	"strings"
+	"sync"
 
 	fn "github.com/pywee/lit/function"
 	"github.com/pywee/lit/global"
@@ -21,6 +22,7 @@ import (
 var cfn *fn.CustomFunctions
 
 type expression struct {
+	lk             sync.RWMutex
 	funcBlocks     []*fn.FunctionInfo
 	codeBlocks     []*global.Block
 	publicVariable map[string]*global.Structure
@@ -145,10 +147,15 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 			return &expression{codeBlocks: blocks, funcBlocks: funcBlocks}, nil
 		}
 
-		// 变量声明
-		if thisExpr.Tok == "IDENT" && i < rlen {
-			tok := expr[i+1].Tok
-			if global.InArrayString(tok, global.MathSym) {
+		// 变量赋值
+		// 数组赋值
+		if thisExpr.Tok == "IDENT" && i+1 < rlen {
+			i1 := i + 1
+			if tokIdx := global.IsTokInArray(expr[i:], "="); tokIdx != -1 && expr[i1].Tok == "[" {
+				parseIdentedArrayVAR(r, blocks, expr, innerVar, i+tokIdx, rlen, i)
+				continue
+			}
+			if tok := expr[i1].Tok; global.InArrayString(tok, global.MathSym) {
 				if blocks, i = parseIdentedVAR(r, blocks, expr, innerVar, tok, rlen, i); i == -1 {
 					return nil, types.ErrorWrongVarOperation
 				}
@@ -261,6 +268,7 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 			if block.Name == "" {
 				return nil, types.ErrorWrongSentence
 			}
+			// global.Output(block.Code)
 			rv, err := r.parse(block.Code, innerVar)
 			if err != nil {
 				return nil, err
@@ -468,31 +476,52 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 					if err != nil {
 						return nil, err
 					}
-					if idxResult.Tok == "INT" {
-						intIndex, err := strconv.ParseInt(idxResult.Lit, 10, 64)
+
+					// 针对整型类字符串下标访问的处理
+					if idxResult.Tok == "STRING" {
+						var ok bool
+						if ok, err = global.IsInt(idxResult.Lit); err != nil {
+							return nil, err
+						}
+						if !ok {
+							return nil, types.ErrorInvalidArrayIndexType
+						}
+						if idxResult, err = global.TransformAllToInt(idxResult); err != nil {
+							return nil, err
+						}
+					}
+
+					if idxResult.Tok != "INT" {
+						return nil, types.ErrorInvalidArrayIndexType
+					}
+					intIndex, err := strconv.ParseInt(idxResult.Lit, 10, 64)
+					if err != nil {
+						return nil, err
+					}
+
+					thisArrayVarArrList := thisArrayVar.Arr.List
+					if int(intIndex) >= len(thisArrayVarArrList) {
+						return nil, types.ErrorOutOfArrayRange
+					}
+					thisIndex := thisArrayVarArrList[intIndex]
+					if thisIndex == nil {
+						return nil, types.ErrorArrayIndexNotExists
+					}
+
+					// 获得 array 值
+					listLen := len(thisIndex.Values)
+					if listLen == 0 && thisIndex.Child == nil {
+						return &global.Structure{Tok: "NULL", Lit: "NULL"}, nil
+					}
+
+					if listLen > 0 {
+						arrValue, err := r.parse(thisIndex.Values, innerVar)
 						if err != nil {
 							return nil, err
 						}
-						thisIndex := thisArrayVar.Arr.List[intIndex]
-						if thisIndex == nil {
-							return nil, types.ErrorArrayIndexNotExists
-						}
-
-						// 获得 array 值
-						listLen := len(thisIndex.Values)
-						if listLen == 0 && thisIndex.Child == nil {
-							return &global.Structure{Tok: "NULL", Lit: "NULL"}, nil
-						}
-
-						if listLen > 0 {
-							arrValue, err := r.parse(thisIndex.Values, innerVar)
-							if err != nil {
-								return nil, err
-							}
-							innerExpr = append(innerExpr, arrValue)
-						} else if thisIndex.Child != nil {
-							innerExpr = append(innerExpr, &global.Structure{Tok: "ARRAY", Lit: "Array", Arr: thisIndex.Child})
-						}
+						innerExpr = append(innerExpr, arrValue)
+					} else if thisIndex.Child != nil {
+						innerExpr = append(innerExpr, &global.Structure{Tok: "ARRAY", Lit: "Array", Arr: thisIndex.Child})
 					}
 					i = j
 					break

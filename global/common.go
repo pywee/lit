@@ -20,6 +20,24 @@ func IsInt(s string) (bool, error) {
 	return regexp.MatchString(`^[-0-9]+$`, s)
 }
 
+func IsLitInArray(expr []*Structure, sep string) int {
+	for k, v := range expr {
+		if v.Lit == sep {
+			return k
+		}
+	}
+	return -1
+}
+
+func IsTokInArray(expr []*Structure, sep string) int {
+	for k, v := range expr {
+		if v.Tok == sep {
+			return k
+		}
+	}
+	return -1
+}
+
 // IsVariableOrFunction 判断是否为标准变量和函数名称
 func IsVariableOrFunction(expr *Structure) bool {
 	if expr != nil && expr.Tok == "IDENT" {
@@ -74,25 +92,58 @@ func TransformAllToBool(src *Structure) bool {
 }
 
 // TransformBoolToInt 将布尔值转换为整型
-func TransformBoolToInt(src *Structure) error {
+func TransformBoolToInt(src *Structure) (*Structure, error) {
 	src.Tok = "INT"
 	if src.Lit == "false" {
 		src.Lit = "0"
-		return nil
+		return src, nil
 	}
 	if src.Lit == "true" {
 		src.Lit = "1"
-		return nil
+		return src, nil
 	}
-	return types.ErrorIdentType
+	return nil, types.ErrorIdentType
 }
 
-// TODO
-func TransformAllToInt(src *Structure) error {
+// TODO 转换所有基础类型为整型
+func TransformAllToInt(src *Structure) (*Structure, error) {
 	if src.Tok == "BOOL" {
 		return TransformBoolToInt(src)
 	}
-	return nil
+	if src.Tok == "FLOAT" {
+		arr := strings.Split(src.Lit, ".")
+		src.Tok = "INT"
+		src.Lit = arr[0]
+		return src, nil
+	}
+	if src.Tok == "STRING" {
+		var (
+			ok  bool
+			err error
+		)
+		if ok, err = IsInt(src.Lit); err != nil {
+			return nil, err
+		}
+		if ok {
+			src.Tok = "INT"
+			return src, nil
+		}
+		if ok, err = IsFloat(src.Lit); err != nil {
+			return nil, err
+		}
+		if ok {
+			arr := strings.Split(src.Lit, ".")
+			src.Tok = "INT"
+			src.Lit = arr[0]
+			return src, nil
+		}
+	}
+	if src.Tok == "NULL" {
+		src.Tok = "INT"
+		src.Lit = "0"
+		return src, nil
+	}
+	return nil, types.ErrorHandleUnsupported
 }
 
 // TransformTokTypeStringToTypeIntOrFloat 将字符串数字标记为整型

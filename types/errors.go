@@ -75,6 +75,8 @@ var (
 	ErrorArrayIndexVisiting        = errors.New("用于访问数组的下标表达式有误")
 	ErrorArrayIndexVisitingIlligle = errors.New("语法错误，非法访问数组")
 	ErrorVariableIsNotAndArray     = errors.New("访问了并不是数组的变量")
+	ErrorInvalidArrayIndexType     = errors.New("数组访问值类型非法")
+	ErrorOutOfArrayRange           = errors.New("数组访问越界")
 )
 
 func WithError(pos, err string) error {

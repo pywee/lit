@@ -200,7 +200,7 @@ func changeTypeToCompare(left, right *global.Structure) (interface{}, interface{
 			return nil, nil, err
 		}
 	} else if left.Tok == "BOOL" {
-		if err = global.TransformBoolToInt(left); err != nil {
+		if left, err = global.TransformBoolToInt(left); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -210,7 +210,7 @@ func changeTypeToCompare(left, right *global.Structure) (interface{}, interface{
 			return nil, nil, err
 		}
 	} else if right.Tok == "BOOL" {
-		if err = global.TransformBoolToInt(right); err != nil {
+		if right, err = global.TransformBoolToInt(right); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -248,7 +248,7 @@ func formatValueTypeToCompare(src *global.Structure) (interface{}, error) {
 			return nil, err
 		}
 	} else if src.Tok == "BOOL" {
-		if err = global.TransformBoolToInt(src); err != nil {
+		if src, err = global.TransformBoolToInt(src); err != nil {
 			return nil, err
 		}
 	}

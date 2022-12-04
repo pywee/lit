@@ -100,6 +100,11 @@ func parseIdentedVAR(r *expression, blocks []*global.Block, expr []*global.Struc
 	return nil, -1
 }
 
+// parseIdentedArrayVAR 解析数组赋值
+func parseIdentedArrayVAR(r *expression, blocks []*global.Block, expr []*global.Structure, innerVal global.InnerVar, tokIdx, rlen, i int) {
+	global.Output(expr[i:], " ")
+}
+
 // parseIdentedVarPLUS 解析变量自增
 func parseIdentedVarPLUS(blocks []*global.Block, expr []*global.Structure, i int, rlen int) ([]*global.Block, int) {
 	vplus := make([]*global.Structure, 0, 3)
