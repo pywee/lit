@@ -53,13 +53,15 @@ type Structure struct {
 
 // Array 数组结构
 type Array struct {
+	// Name 数组名称 当数组是一个多维数组时 它有可能为空
+	// 因为有临时变量存在
 	Name string
+	// List 数组的每一个元素
 	List []*ArrayIdent
 }
 
 type ArrayIdent struct {
 	InnerKey int
-	key      string
 	Name     string
 	Values   []*Structure
 	Child    *Array

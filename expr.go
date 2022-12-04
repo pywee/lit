@@ -250,11 +250,9 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 		return nil, err
 	}
 
-	for _, v := range bs.codeBlocks {
-		global.Output(v.ArrayIdx)
-	}
-
-	return nil, nil
+	// for _, v := range bs.codeBlocks {
+	// 	global.Output(v.ArrayIdx)
+	// }
 
 	if len(r.funcBlocks) == 0 {
 		r.funcBlocks = bs.funcBlocks
@@ -277,7 +275,7 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 			if block.Name == "" {
 				return nil, types.ErrorWrongSentence
 			}
-			global.Output(block.Code)
+			// global.Output(block.Code)
 			rv, err := r.parse(block.Code, innerVar)
 			if err != nil {
 				return nil, err
@@ -287,6 +285,13 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 			}
 			innerVar[block.Name] = rv
 			// return &global.Structure{Tok: "BOOL", Lit: "true"}, nil
+		} else if block.Type == types.CodeTypeIdentArrayVAR {
+			v, ok := innerVar[block.Name]
+			if !ok || v.Tok != "ARRAY" {
+				return nil, types.ErrorNotFoundIdentedArray
+			}
+			global.Output(v.Arr.List[0])
+			return nil, nil
 		} else if block.Type == types.CodeTypeFunctionExec {
 			rv, err := r.parse(block.Code, innerVar)
 			if err != nil {
@@ -351,13 +356,6 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 					return nil, err
 				}
 			}
-		} else if block.Type == types.CodeTypeIdentArrayVAR {
-			// v, ok := innerVar[block.Name]
-			// if !ok {
-			// 	return nil, types.ErrorNotFoundIdentedArray
-			// }
-			// global.Output("v")
-			return nil, nil
 		}
 	}
 	return nil, nil
