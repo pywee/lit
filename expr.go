@@ -290,7 +290,27 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 			if !ok || v.Tok != "ARRAY" {
 				return nil, types.ErrorNotFoundIdentedArray
 			}
-			global.Output(v.Arr.List[0])
+
+			// vArr := v.Arr
+			idxs := block.ArrayIdx
+			for _, idx := range idxs {
+				idxLen := len(idx)
+				if idxLen == 1 {
+					thisIdx := idx[0]
+					if thisIdx.Tok != "ARRAY" && thisIdx.Tok != "IDENT" {
+						global.Output(v.Arr.List[0].Values, thisIdx)
+					}
+				}
+
+				// if idxLen := len(idx); idxLen > 1 {
+				// 	rv, err := r.parse(idx, innerVar)
+				// 	if err != nil {
+				// 		return nil, err
+				// 	}
+				// 	global.Output(rv)
+				// }
+			}
+			// global.Output(block.ArrayIdx)
 			return nil, nil
 		} else if block.Type == types.CodeTypeFunctionExec {
 			rv, err := r.parse(block.Code, innerVar)

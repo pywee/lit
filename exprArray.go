@@ -66,3 +66,8 @@ func parseIdentARRAY(expr []*global.Structure) *global.Array {
 	arr.List = arrays
 	return arr
 }
+
+func checkArrayIdx(idxs []*global.Structure) int {
+
+	return 0
+}
