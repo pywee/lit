@@ -310,12 +310,17 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 					return nil, types.ErrorOutOfArrayRange
 				}
 
+				// 定义数组并赋值
+				// 修改指定下标值
+				// a = [123]
+				// a[0] = "hello"
+				// println(a[0]) 得到 hello
+
 				thisArr := arrList[idxINT]
-				thisArrLen := len(thisArr.Values)
-				if thisArrLen > 0 {
-					global.Output(block.Code)
-					v.Arr.List[idxINT].Values = []*global.Structure{{Tok: "INT", Lit: "1"}}
-				} else if thisArrLen == 0 && thisArr.Child != nil {
+				if thisArrValuesLen := len(thisArr.Values); thisArrValuesLen > 0 {
+					arrList[idxINT].Values = block.Code
+					// v.Arr.List[idxINT].Values = []*global.Structure{{Tok: "INT", Lit: "1"}}
+				} else if thisArrValuesLen == 0 && thisArr.Child != nil {
 					arrList = thisArr.Child.List
 				}
 			}

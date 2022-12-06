@@ -134,14 +134,10 @@ func parseIdentedArrayVAR(r *expression, blocks []*global.Block, expr []*global.
 		}
 	}
 
-	newCode := expr[tokIdx+1:]
-	if nl := len(newCode); nl > 0 {
-		newCode = newCode[:nl-1]
-	}
 	blocks = append(blocks, &global.Block{
 		Name:     expr[0].Lit,
 		Type:     types.CodeTypeIdentArrayVAR,
-		Code:     newCode,
+		Code:     expr[tokIdx+1 : i],
 		ArrayIdx: idxExprs,
 	})
 	return blocks, i
