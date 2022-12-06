@@ -1,7 +1,11 @@
 package lit
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/pywee/lit/global"
+	"github.com/pywee/lit/types"
 )
 
 // parseIdentARRAY 解析数组定义
@@ -67,7 +71,31 @@ func parseIdentARRAY(expr []*global.Structure) *global.Array {
 	return arr
 }
 
-func checkArrayIdx(idxs []*global.Structure) int {
+// checkArrayIdx
+// 检查访问数组时的下标合法性
+// 进入此函数的下标必须是表达式解析后的数据
+func checkArrayIdx(src *global.Structure) (int, error) {
+	var (
+		ret int64
+		err error
+	)
 
-	return 0
+	lit := strings.TrimSpace(src.Lit)
+	if src.Tok == "INT" {
+		if ret, err = strconv.ParseInt(lit, 10, 64); err != nil {
+			return 0, err
+		}
+		return int(ret), nil
+	}
+
+	if src.Tok == "STRING" && lit != "" {
+		if ok, err := global.IsInt(lit); err != nil || !ok {
+			return 0, types.ErrorInvalidArrayIndexType
+		}
+		if ret, err = strconv.ParseInt(lit, 10, 64); err != nil {
+			return 0, err
+		}
+		return int(ret), nil
+	}
+	return 0, types.ErrorInvalidArrayIndexType
 }

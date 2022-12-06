@@ -182,41 +182,6 @@ func TransformTokTypeStringToTypeIntOrFloat(src *Structure) error {
 	return types.ErrorStringIntCompared
 }
 
-func Output(expr interface{}, x ...interface{}) {
-	if fmt.Sprintf("%T", expr) == "[]*global.ExIf" {
-		for _, v := range expr.([]*ExIf) {
-			fmt.Println("output from []arr:", v.Condition, v.Body)
-		}
-	} else if fmt.Sprintf("%T", expr) == "[][]*global.Structure" {
-		for _, v := range expr.([][]*Structure) {
-			for _, vv := range v {
-				fmt.Println("output from [][]arr:", vv)
-			}
-			println()
-		}
-	} else if fmt.Sprintf("%T", expr) == "[]*global.Structure" {
-		for _, v := range expr.([]*Structure) {
-			fmt.Println("output from []arr:", v)
-		}
-	} else if fmt.Sprintf("%T", expr) == "*global.Structure" {
-		fmt.Println("result value output:", expr)
-	} else {
-		fmt.Println(expr)
-	}
-	if len(x) > 0 {
-		Output(x[0])
-	}
-}
-
-func Output2(expr [][]*Structure, k int) {
-	for _, x := range expr {
-		for _, v := range x {
-			fmt.Println(k, "output:", v.Tok, v.Lit)
-		}
-	}
-	println("")
-}
-
 type CodeInfomation struct {
 	Name  string
 	Type  string
@@ -251,3 +216,38 @@ func FormatString(s string) string {
 // 	data := []byte(time.Now().Format("2006-01-02 15:03"))
 // 	fmt.Printf("%x", md5.Sum(data))
 // }
+
+func Output(expr interface{}, x ...interface{}) {
+	if fmt.Sprintf("%T", expr) == "[]*global.ExIf" {
+		for _, v := range expr.([]*ExIf) {
+			fmt.Println("output from []arr:", v.Condition, v.Body)
+		}
+	} else if fmt.Sprintf("%T", expr) == "[][]*global.Structure" {
+		for _, v := range expr.([][]*Structure) {
+			for _, vv := range v {
+				fmt.Println("output from [][]arr:", vv)
+			}
+			println()
+		}
+	} else if fmt.Sprintf("%T", expr) == "[]*global.Structure" {
+		for _, v := range expr.([]*Structure) {
+			fmt.Println("output from []arr:", v)
+		}
+	} else if fmt.Sprintf("%T", expr) == "*global.Structure" {
+		fmt.Println("result value output:", expr)
+	} else {
+		fmt.Println(expr)
+	}
+	if len(x) > 0 {
+		Output(x[0])
+	}
+}
+
+func Output2(expr [][]*Structure, k int) {
+	for _, x := range expr {
+		for _, v := range x {
+			fmt.Println(k, "output:", v.Tok, v.Lit)
+		}
+	}
+	println("")
+}

@@ -291,27 +291,34 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 				return nil, types.ErrorNotFoundIdentedArray
 			}
 
-			// vArr := v.Arr
+			// arrList 当前维度数组数据
+			arrList := v.Arr.List
+			// idxs 所有访问下标
 			idxs := block.ArrayIdx
+			// arrLen 当前维度下的数组长度
+			arrLen := len(arrList)
 			for _, idx := range idxs {
-				idxLen := len(idx)
-				if idxLen == 1 {
-					thisIdx := idx[0]
-					if thisIdx.Tok != "ARRAY" && thisIdx.Tok != "IDENT" {
-						global.Output(v.Arr.List[0].Values, thisIdx)
-					}
+				parsedIdx, err := r.parse(idx, innerVar)
+				if err != nil {
+					return nil, err
+				}
+				idxINT, err := checkArrayIdx(parsedIdx)
+				if err != nil {
+					return nil, err
+				}
+				if idxINT >= arrLen {
+					return nil, types.ErrorOutOfArrayRange
 				}
 
-				// if idxLen := len(idx); idxLen > 1 {
-				// 	rv, err := r.parse(idx, innerVar)
-				// 	if err != nil {
-				// 		return nil, err
-				// 	}
-				// 	global.Output(rv)
-				// }
+				thisArr := arrList[idxINT]
+				thisArrLen := len(thisArr.Values)
+				if thisArrLen > 0 {
+					global.Output(block.Code)
+					v.Arr.List[idxINT].Values = []*global.Structure{{Tok: "INT", Lit: "1"}}
+				} else if thisArrLen == 0 && thisArr.Child != nil {
+					arrList = thisArr.Child.List
+				}
 			}
-			// global.Output(block.ArrayIdx)
-			return nil, nil
 		} else if block.Type == types.CodeTypeFunctionExec {
 			rv, err := r.parse(block.Code, innerVar)
 			if err != nil {
