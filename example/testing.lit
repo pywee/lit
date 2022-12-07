@@ -1,17 +1,19 @@
 
-// 访问多维数组
-arr = [[[123]]]
-println(arr[0][0][0]) // 输出 123
 
-// 数组定义
-// 当前正在实验阶段，尚未支持 key:value 形式的弱类型数组
-a = [1, 2, 3]
-func demo(arg) {
-    for i = 0; i < 3; i ++ {
-        if arg[i] > 1 {
-            break
-        }
-        println(arg[i])
-    }
+
+// 声明数组 a
+// 直接通过 println 输出 a 及其下标 a[0]
+a = [1]
+
+// 输出 Array 1
+println(a, a[0])
+
+// 多维数组的声明及参与运算的效果
+b = [9, [123]]
+b[1][0] = 1
+func demo(arr) {
+    return arr[1]
 }
-demo(a) // 输出 1
+
+// 输出 2
+println(demo(b)[0]+1)

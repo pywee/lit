@@ -71,10 +71,14 @@ var (
 )
 
 var (
+	ErrorNotFoundIdentedArray      = errors.New("数组不存在，无法访问")
 	ErrorArrayIndexNotExists       = errors.New("访问的下标不存在")
 	ErrorArrayIndexVisiting        = errors.New("用于访问数组的下标表达式有误")
 	ErrorArrayIndexVisitingIlligle = errors.New("语法错误，非法访问数组")
 	ErrorVariableIsNotAndArray     = errors.New("访问了并不是数组的变量")
+	ErrorInvalidArrayIndexType     = errors.New("数组访问值类型非法")
+	ErrorOutOfArrayRange           = errors.New("数组访问越界")
+	ErrorIlligleVisitedOfArray     = errors.New("数组非法访问，格式不规范")
 )
 
 func WithError(pos, err string) error {

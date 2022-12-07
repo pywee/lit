@@ -42,7 +42,7 @@ func (r *expression) parseIdentedFOR(expr []*global.Structure, blocks []*global.
 
 	blocks = append(blocks, &global.Block{
 		Name:   "FOR",
-		ForExt: &global.ForExpression{Type: 1, Conditions: conditions, Code: curlyBracketCode[1 : len(curlyBracketCode)-1]},
+		ForExt: &global.ForExpression{Type: types.TypeForExpressionIteration, Conditions: conditions, Code: curlyBracketCode[1 : len(curlyBracketCode)-1]},
 		Type:   types.CodeTypeIdentFOR,
 	})
 	return blocks, i, nil
