@@ -151,16 +151,16 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		// 数组赋值
 		if thisExpr.Tok == "IDENT" && i+1 < rlen {
 			tok := expr[i+1].Tok
-			if global.InArrayString(tok, global.MathSym) {
-				// global.Output(expr, " \n")
-				if blocks, i = parseIdentedVAR(r, blocks, expr, innerVar, tok, rlen, i); i == -1 {
-					return nil, types.ErrorWrongVarOperation
+			if tokIdx := global.IsTokInArray(expr[i:], "="); tokIdx != -1 && tok == "[" {
+				// global.Output(expr[i:])
+				if blocks, i = parseIdentedArrayVAR(r, blocks, expr, innerVar, i+tokIdx, rlen, i); i == -1 {
+					return nil, types.ErrorIlligleVisitedOfArray
 				}
 				continue
 			}
-			if tokIdx := global.IsTokInArray(expr[i:], "="); tokIdx != -1 && tok == "[" {
-				if blocks, i = parseIdentedArrayVAR(r, blocks, expr, innerVar, i+tokIdx, rlen, i); i == -1 {
-					return nil, types.ErrorIlligleVisitedOfArray
+			if global.InArrayString(tok, global.MathSym) {
+				if blocks, i = parseIdentedVAR(r, blocks, expr, innerVar, tok, rlen, i); i == -1 {
+					return nil, types.ErrorWrongVarOperation
 				}
 				continue
 			}
@@ -306,6 +306,7 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 				if err != nil {
 					return nil, err
 				}
+				// global.Output(innerVar["b"].Arr.List[1].Values)
 				if idxINT >= arrLen {
 					return nil, types.ErrorOutOfArrayRange
 				}

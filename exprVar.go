@@ -100,9 +100,10 @@ func parseIdentedVAR(r *expression, blocks []*global.Block, expr []*global.Struc
 // 当出现错误时返回变量 i 的值为 -1
 func parseIdentedArrayVAR(r *expression, blocks []*global.Block, expr []*global.Structure, innerVal global.InnerVar, tokIdx, rlen, i int) ([]*global.Block, int) {
 	var (
-		brkCount int
-		brkExpr  = make([]*global.Structure, 0, 1)
-		idxExprs = make([][]*global.Structure, 0, 2)
+		brkCount  int
+		arrayName = expr[i].Lit
+		brkExpr   = make([]*global.Structure, 0, 1)
+		idxExprs  = make([][]*global.Structure, 0, 2)
 	)
 
 	for j := i + 1; j < rlen; j++ {
@@ -135,7 +136,7 @@ func parseIdentedArrayVAR(r *expression, blocks []*global.Block, expr []*global.
 	}
 
 	blocks = append(blocks, &global.Block{
-		Name:     expr[0].Lit,
+		Name:     arrayName,
 		Type:     types.CodeTypeIdentArrayVAR,
 		Code:     expr[tokIdx+1 : i],
 		ArrayIdx: idxExprs,
