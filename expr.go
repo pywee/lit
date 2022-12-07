@@ -151,16 +151,16 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		// 数组赋值
 		if thisExpr.Tok == "IDENT" && i+1 < rlen {
 			tok := expr[i+1].Tok
+			if global.InArrayString(tok, global.MathSym) {
+				if blocks, i = parseIdentedVAR(r, blocks, expr, innerVar, tok, rlen, i); i == -1 {
+					return nil, types.ErrorWrongVarOperation
+				}
+				continue
+			}
 			if tokIdx := global.IsTokInArray(expr[i:], "="); tokIdx != -1 && tok == "[" {
 				// global.Output(expr[i:])
 				if blocks, i = parseIdentedArrayVAR(r, blocks, expr, innerVar, i+tokIdx, rlen, i); i == -1 {
 					return nil, types.ErrorIlligleVisitedOfArray
-				}
-				continue
-			}
-			if global.InArrayString(tok, global.MathSym) {
-				if blocks, i = parseIdentedVAR(r, blocks, expr, innerVar, tok, rlen, i); i == -1 {
-					return nil, types.ErrorWrongVarOperation
 				}
 				continue
 			}
@@ -485,7 +485,7 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 		)
 
 		if exLen > 3 {
-			if expr[i].Tok == "IDENT" && expr[i+1].Tok == "[" {
+			if i+1 < exLen && expr[i].Tok == "IDENT" && expr[i+1].Tok == "[" {
 				var ok bool
 				arrayType = 1
 				thisArrayVar, ok = innerVar[expr[i].Lit]
