@@ -5,7 +5,6 @@ import (
 	"go/token"
 	"strconv"
 	"strings"
-	"sync"
 
 	fn "github.com/pywee/lit/function"
 	"github.com/pywee/lit/global"
@@ -22,7 +21,6 @@ import (
 var cfn *fn.CustomFunctions
 
 type expression struct {
-	lk             sync.RWMutex
 	funcBlocks     []*fn.FunctionInfo
 	codeBlocks     []*global.Block
 	publicVariable map[string]*global.Structure
@@ -36,6 +34,7 @@ type exprResult struct {
 
 func NewExpr(src []byte) (*expression, error) {
 	var (
+		err    error
 		s      scanner.Scanner
 		fset   = token.NewFileSet()
 		expr   = make([]*global.Structure, 0, 100)
@@ -74,7 +73,10 @@ func NewExpr(src []byte) (*expression, error) {
 			stok = "BOOL"
 		}
 		if stok == "STRING" || stok == "CHAR" {
-			lit = global.FormatString(lit)
+			lit, err = global.FormatString(lit)
+			if err != nil {
+				return nil, err
+			}
 		}
 		expr = append(expr, &global.Structure{
 			Tok:      stok,
@@ -84,7 +86,7 @@ func NewExpr(src []byte) (*expression, error) {
 	}
 
 	innerVar := make(map[string]*global.Structure, 5)
-	_, err := result.initExpr(expr, innerVar, nil)
+	_, err = result.initExpr(expr, innerVar, nil)
 	// global.Output(innerVar["a"])
 	return nil, err
 }
@@ -670,7 +672,8 @@ func (r *expression) GetVal(vName string) interface{} {
 		return types.ErrorNotFoundVariable
 	}
 	if len(ret.Lit) > 1 && (ret.Tok == "STRING" || ret.Tok == "CHAR") {
-		return global.FormatString(ret.Lit)
+		lit, _ := global.FormatString(ret.Lit)
+		return lit
 	}
 	return ret.Lit
 }
