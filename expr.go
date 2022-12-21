@@ -194,7 +194,7 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		}
 
 		// 函数调用
-		if expr[i].Tok == "IDENT" && i < rlen && expr[i+1].Tok == "(" {
+		if expr[i].Tok == "IDENT" && i+1 < rlen && expr[i+1].Tok == "(" {
 			blocks, i = parseExecFUNC(blocks, expr, i, rlen)
 			continue
 		}
@@ -225,13 +225,13 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 		}
 
 		// 变量自增操作
-		if thisExpr.Tok == "IDENT" && i < rlen && expr[i+1].Tok == "++" {
+		if thisExpr.Tok == "IDENT" && i+1 < rlen && expr[i+1].Tok == "++" {
 			blocks, i = parseIdentedVarPLUS(blocks, expr, i, rlen)
 			continue
 		}
 
 		// 变量自减操作
-		if thisExpr.Tok == "IDENT" && i < rlen && expr[i+1].Tok == "--" {
+		if thisExpr.Tok == "IDENT" && i+1 < rlen && expr[i+1].Tok == "--" {
 			blocks, i = parseIdentedVarREDUCE(blocks, expr, i, rlen)
 			continue
 		}
@@ -245,9 +245,11 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 
 // initExpr 全局表达式入口
 // 代码块中如果带有 if 等复杂语句 则需要从这里进入递归
+// 调用此函数时 expr 结尾处必须带入分号 ";"
 func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar, runtime *parsing) (*global.Structure, error) {
 	bs, err := r.parseExprs(expr, innerVar, runtime)
 	if err != nil {
+		// global.Output(expr)
 		return nil, err
 	}
 
@@ -385,8 +387,12 @@ func (r *expression) initExpr(expr []*global.Structure, innerVar global.InnerVar
 			}
 		} else if block.Type == types.CodeTypeIdentFOR {
 			forExpr := block.ForExt
-			if forExpr.Type == types.TypeForExpressionIteration {
+			if fType := forExpr.Type; fType == types.TypeForExpressionIteration {
 				if err = r.execFORType1(forExpr, innerVar); err != nil {
+					return nil, err
+				}
+			} else if fType == types.TypeForExpressionRange {
+				if err = r.execForTypeRange(forExpr, innerVar); err != nil {
 					return nil, err
 				}
 			}

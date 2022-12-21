@@ -65,9 +65,10 @@ var (
 
 // for 流程控制语句错误处理
 var (
-	ErrorForExpression = errors.New("for 语法错误")
-	ErrorForContinue   = errors.New("continue 关键字应在循环语句中出现")
-	ErrorForBreak      = errors.New("break 关键字应在循环语句中出现")
+	ErrorForExpression     = errors.New("for 语法错误")
+	ErrorForContinue       = errors.New("continue 关键字应在循环语句中出现")
+	ErrorForBreak          = errors.New("break 关键字应在循环语句中出现")
+	ErrorNotSupportToRange = errors.New("此数据不支持使用 range 循环")
 )
 
 var (

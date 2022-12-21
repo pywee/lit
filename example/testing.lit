@@ -1,2 +1,5 @@
-a = [3]
-println(a[0] * 2)
+
+arr = [1, 2, 3]
+for k, v = range arr {
+
+}
