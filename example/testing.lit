@@ -1,10 +1,2 @@
-
-func demo() {
-    return [1, 2, 3]
-}
-
-for i = 0 ; i < 3; i ++ {
-    if demo()[i] != 2 {
-        println(demo()[i])
-    }
-}
+a = [3]
+println(a[0] * 2)

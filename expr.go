@@ -160,7 +160,6 @@ func (r *expression) parseExprs(expr []*global.Structure, innerVar global.InnerV
 				continue
 			}
 			if tokIdx := global.IsTokInArray(expr[i:], "="); tokIdx != -1 && tok == "[" {
-				// global.Output(expr[i:])
 				if blocks, i = parseIdentedArrayVAR(r, blocks, expr, innerVar, i+tokIdx, rlen, i); i == -1 {
 					return nil, types.ErrorIlligleVisitedOfArray
 				}
@@ -624,7 +623,10 @@ func (r *expression) parse(expr []*global.Structure, innerVar global.InnerVar) (
 	// 访问多维数组操作
 	// a[0][0][0]
 	if innerLen >= 4 && innerExpr[0].Tok == "ARRAY" {
-		// global.Output(innerExpr[0])
+		// FIXME 检测合法性
+		if innerExpr[1].Tok != "[" {
+			return nil, types.ErrorWrongSentence
+		}
 		return r.parse(innerExpr, innerVar)
 	}
 

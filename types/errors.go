@@ -9,8 +9,8 @@ var (
 	ErrorWrongSentence = errors.New("语法错误")
 	// ErrorWrongVarOperation 语法错误,变量操作不合法
 	ErrorWrongVarOperation = errors.New("语法错误,变量操作不合法")
-	// ErrorNotFoundVariable 变量不存在，或者你的定义非法
-	ErrorNotFoundVariable = errors.New("变量不存在,或者你的定义非法")
+	// ErrorNotFoundVariable 非法定义
+	ErrorNotFoundVariable = errors.New("非法定义")
 	// ErrorNonNumberic 非法字符参与数学计算
 	ErrorNonNumberic = errors.New("a non-numeric value encountered has found")
 	// ErrorIdentType 源类型错误，当前类型不能转换为整型
