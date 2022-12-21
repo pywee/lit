@@ -1,5 +1,5 @@
 
-arr = [1, 2, 3]
+arr = [1+2, 2, 3]
 for k, v = range arr {
-
+    println(k, v)
 }

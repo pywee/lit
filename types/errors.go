@@ -10,7 +10,7 @@ var (
 	// ErrorWrongVarOperation 语法错误,变量操作不合法
 	ErrorWrongVarOperation = errors.New("语法错误,变量操作不合法")
 	// ErrorNotFoundVariable 非法定义
-	ErrorNotFoundVariable = errors.New("非法定义")
+	ErrorNotFoundVariable = errors.New("非法定义，或者访问了不存在的变量")
 	// ErrorNonNumberic 非法字符参与数学计算
 	ErrorNonNumberic = errors.New("a non-numeric value encountered has found")
 	// ErrorIdentType 源类型错误，当前类型不能转换为整型

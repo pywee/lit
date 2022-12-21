@@ -72,10 +72,11 @@ func (r *expression) execForTypeRange(forExpr *global.ForExpression, innerVar gl
 	}
 
 	var (
-		err    error
-		rv     *global.Structure
-		arr    = cds[rangeIdx+1:]
-		arrLen = len(arr)
+		err        error
+		rv         *global.Structure
+		arr        = cds[rangeIdx+1:]
+		conditions = cds[1:rangeIdx]
+		arrLen     = len(arr)
 	)
 
 	if arrLen == 1 && arr[0].Tok == "IDENT" {
@@ -93,8 +94,14 @@ func (r *expression) execForTypeRange(forExpr *global.ForExpression, innerVar gl
 
 	// TODO 暂时先写到这里
 	thisArrList := rv.Arr.List
-	for i := 0; i < len(thisArrList); i++ {
-		global.Output(thisArrList[i].Values)
+	if code := forExpr.Code; len(code) > 0 {
+		for i := 0; i < len(thisArrList); i++ {
+			global.Output(conditions)
+			_, err := r.initExpr(code, innerVar, &parsing{isInLoop: true})
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
