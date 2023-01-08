@@ -1,6 +1,9 @@
 package lit
 
 import (
+	"fmt"
+	"regexp"
+
 	"github.com/pywee/lit/global"
 	"github.com/pywee/lit/types"
 )
@@ -72,12 +75,14 @@ func (r *expression) execForTypeRange(forExpr *global.ForExpression, innerVar gl
 	}
 
 	var (
-		err        error
-		rv         *global.Structure
-		arr        = cds[rangeIdx+1:]
-		conditions = cds[1:rangeIdx]
-		arrLen     = len(arr)
+		err    error
+		rv     *global.Structure
+		arr    = cds[rangeIdx+1:]
+		kvs    = cds[1 : rangeIdx-1]
+		arrLen = len(arr)
 	)
+
+	_ = kvs
 
 	if arrLen == 1 && arr[0].Tok == "IDENT" {
 		rv, err = r.parse(arr, innerVar)
@@ -95,16 +100,60 @@ func (r *expression) execForTypeRange(forExpr *global.ForExpression, innerVar gl
 	// TODO 暂时先写到这里
 	thisArrList := rv.Arr.List
 	if code := forExpr.Code; len(code) > 0 {
+		nkv, err := forKvs(kvs)
+		if err != nil {
+			return err
+		}
+		kvLen := len(nkv)
 		for i := 0; i < len(thisArrList); i++ {
-			global.Output(conditions)
-			_, err := r.initExpr(code, innerVar, &parsing{isInLoop: true})
-			if err != nil {
-				return err
+			if kvLen == 2 {
+				innerVar[nkv[0]] = &global.Structure{Lit: fmt.Sprintf("%d", i), Tok: "INT"}
+				// innerVar[nkv[1]] = &global.Structure{Lit: fmt.Sprintf("%d", i)}
 			}
+			// global.Output(code)
+			// _, err := r.initExpr(code, innerVar, &parsing{isInLoop: true})
+			// if err != nil {
+			// 	return err
+			// }
 		}
 	}
 
 	return nil
+}
+
+// forKvs 检查 for range 循环中的 key=>value 是否合法
+func forKvs(kvs []*global.Structure) ([]string, error) {
+	var expr string
+	var kv = make([]string, 0, 2)
+	re, _ := regexp.Compile(`^[_a-zA-Z]+[_a-zA-Z0-9]*$`)
+	for _, v := range kvs {
+		if v.Tok == "," {
+			if ok := re.MatchString(expr); !ok {
+				return nil, types.ErrorForExpression
+			}
+			kv = append(kv, expr)
+			expr = ""
+			continue
+		}
+		if v.Lit == "" {
+			expr += v.Tok
+		} else {
+			expr += v.Lit
+		}
+	}
+
+	if expr != "" {
+		if ok := re.MatchString(expr); !ok {
+			return nil, types.ErrorForExpression
+		}
+		kv = append(kv, expr)
+	}
+
+	if len(kv) > 2 {
+		return nil, types.ErrorForExpression
+	}
+
+	return kv, nil
 }
 
 // execFORType1 解析以下形式的 for 流程控制:
